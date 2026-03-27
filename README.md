@@ -5,7 +5,7 @@
 * Java: 21
 * Spring Boot: 3.5.13
 * Build Tool: Maven
-* Database: MySQL 8
+* Database: MySQL
 * ORM: Spring Data JPA (Hibernate)
 * Migration: Flyway
 * Security: Spring Security (Session-based, RBAC)
@@ -35,27 +35,28 @@ com.quizptit
 ## Prerequisites
 
 * Java 21
-* Maven (hoặc dùng `mvnw`)
+* Maven (hoặc sử dụng `mvnw`)
 * MySQL 8
 
 ---
 
-## Setup & Run Local
+## Setup and Run (Local Environment)
+
+### 1. Clone repository
 
 ```bash
-# clone project
 git clone <repo-url>
 cd quizptit
-
-# lấy branch develop
-git checkout develop
-git pull
-
-# tạo file env
-cp .env.example .env
 ```
 
-### Cấu hình database
+### 2. Checkout development branch
+
+```bash
+git checkout develop
+git pull
+```
+
+### 3. Configure local database
 
 Tạo database trong MySQL:
 
@@ -63,23 +64,42 @@ Tạo database trong MySQL:
 CREATE DATABASE quizptit;
 ```
 
-Cập nhật file `.env`:
+Tạo file cấu hình local:
 
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=quizptit
-DB_USER=root
-DB_PASSWORD=your_password
-SPRING_PROFILES_ACTIVE=local
+* Sao chép file mẫu:
+
+```
+src/main/resources/application-local.example.yml
+```
+
+* Thành:
+
+```
+src/main/resources/application-local.yml
+```
+
+* Cập nhật thông tin kết nối database theo môi trường máy:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/quizptit
+    username: your_database_username
+    password: your_database_password
 ```
 
 ---
 
-### Chạy application
+### 4. Run application
 
 ```bash
 ./mvnw spring-boot:run
+```
+
+Ứng dụng sẽ chạy tại:
+
+```
+http://localhost:8080
 ```
 
 ---
@@ -87,10 +107,8 @@ SPRING_PROFILES_ACTIVE=local
 ## Configuration
 
 ```
-application.yml           : cấu hình chung
-application-local.yml     : cấu hình local
-.env.example              : mẫu biến môi trường
-.env                      : cấu hình local (không commit)
+application.yml                      : cấu hình chung của hệ thống
+application-local.yml                : cấu hình local 
 ```
 
 ---
@@ -100,33 +118,41 @@ application-local.yml     : cấu hình local
 ### Branch Strategy
 
 ```
-main      : stable
-develop   : working branch
-feature/* : branch cho từng task
+main        : nhánh ổn định (dùng cho release / demo)
+develop     : nhánh phát triển chính
+feature/*   : nhánh phát triển theo từng chức năng
 ```
 
 ---
 
-### Quy trình làm việc
+### Development Workflow
 
 ```bash
-# luôn bắt đầu từ develop
+# cập nhật nhánh develop
 git checkout develop
 git pull
 
-# tạo branch mới
+# tạo nhánh chức năng
 git checkout -b feature/<ten-task>
 
-# code xong
+# thực hiện phát triển và commit
 git add .
 git commit -m "feat: <mo-ta>"
+
+# đẩy nhánh lên remote
 git push origin feature/<ten-task>
 ```
 
-Sau đó:
+Sau khi hoàn thành:
 
-* tạo Pull Request: `feature/* → develop`
-* không push trực tiếp vào `main`
+* Tạo Pull Request từ `feature/*` vào `develop`
+* Thực hiện review trước khi merge
+* Không commit trực tiếp vào `main`
 
 ---
 
+## Notes
+
+* Không commit các file cấu hình môi trường local
+* Không lưu trữ thông tin nhạy cảm (password, secret) trong source code
+* Mọi thay đổi phải thông qua Pull Request và được review trước khi merge
