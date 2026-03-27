@@ -1,0 +1,104 @@
+# =========================
+# Project help / generated docs
+# =========================
+HELP.md
+
+# =========================
+# Maven / Build outputs
+# =========================
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven wrapper jar should be committed
+!.mvn/wrapper/maven-wrapper.jar
+
+# =========================
+# Gradle / other build outputs
+# =========================
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =========================
+# STS / Eclipse
+# =========================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# =========================
+# NetBeans
+# =========================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+*.out
+
+# =========================
+# Environment / local secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Java
+# =========================
+*.class
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# =========================
+# Coverage / reports
+# Uncomment if your team later generates these locally
+# =========================
+# coverage/
+# reports/
+
+# =========================
+# Runtime local storage
+# Uncomment if the project later uses local file uploads
+# =========================
+# uploads/
+# storage/
+# temp/
