@@ -5,7 +5,7 @@
 * Java: 21
 * Spring Boot: 3.5.13
 * Build Tool: Maven
-* Database: MySQL 8
+* Database: MySQL
 * ORM: Spring Data JPA (Hibernate)
 * Migration: Flyway
 * Security: Spring Security (Session-based, RBAC)
