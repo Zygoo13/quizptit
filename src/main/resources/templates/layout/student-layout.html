@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content)">
+
+<!-- 1. Tận dụng Fragment Head đã có để đồng bộ CSS/Icons -->
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+
+<body class="d-flex flex-column min-vh-100">
+
+<!-- 2. Tận dụng Fragment Navbar hiện đại -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- 3. Nội dung chính (Main Content) -->
+<main class="flex-grow-1 py-4">
+    <div class="container">
+        <!-- Tự động hiển thị Flash Messages (Thông báo thành công/lỗi) -->
+        <div th:replace="~{fragments/flash-message :: flash-message}"></div>
+        
+        <!-- Khung bao nội dung trang (Page Box) -->
+        <div class="app-card shadow-sm border-0">
+            <!-- Nội dung cụ thể của từng trang sẽ được chèn vào đây -->
+            <div th:insert="${content}">
+                <p class="text-muted italic">Nội dung trang đang được tải...</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 4. Tận dụng Fragment Footer chuyên nghiệp -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- 5. Scripts -->
+<script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
+
+<style>
+    /* Tinh chỉnh thêm cho Layout Student */
+    body {
+        background-color: #f4f7f6; /* Màu nền nhẹ nhàng hơn */
+    }
+    .app-card {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 2rem;
+        min-height: 400px; /* Đảm bảo trang không quá ngắn */
+    }
+</style>
+</body>
+</html>

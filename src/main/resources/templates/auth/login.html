@@ -1,40 +1,49 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Login - QuizPTIT</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/public-layout :: layout('Đăng nhập', ~{::content})}">
+<head></head>
 <body>
-<h1>Login</h1>
-
-<div th:if="${param.error}">
-    Invalid email or password.
-</div>
-
-<div th:if="${param.logout}">
-    You have been logged out.
-</div>
-
-<div th:if="${successMessage}">
-    <p th:text="${successMessage}"></p>
-</div>
-
-<form th:action="@{/auth/login}" method="post">
-    <div>
-        <label>Email</label>
-        <input type="email" name="email" required />
+<div th:fragment="content">
+    <h4 class="text-center mb-4 fw-bold">Đăng nhập hệ thống</h4>
+    
+    <!-- Thông báo từ Spring Security -->
+    <div th:if="${param.error}" class="alert alert-danger shadow-sm">
+        <i class="bi bi-exclamation-circle me-2"></i> Sai email hoặc mật khẩu.
     </div>
     
-    <div>
-        <label>Password</label>
-        <input type="password" name="password" required />
+    <div th:if="${param.logout}" class="alert alert-info shadow-sm">
+        <i class="bi bi-info-circle me-2"></i> Đã đăng xuất thành công.
     </div>
     
-    <button type="submit">Login</button>
-</form>
-
-<div style="margin-top: 16px;">
-    <a th:href="@{/auth/register}">Go to Register</a>
+    <form th:action="@{/auth/login}" method="post">
+        <!-- CSRF Token -->
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        
+        <div class="mb-3">
+            <label class="form-label fw-bold small text-uppercase">Email</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope"></i></span>
+                <input type="email" name="email" class="form-control border-start-0" placeholder="example@ptit.edu.vn" required autofocus />
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="form-label fw-bold small text-uppercase">Mật khẩu</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock"></i></span>
+                <input type="password" name="password" class="form-control border-start-0" placeholder="••••••••" required />
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-100 shadow-sm py-2 fw-bold">
+            Đăng nhập ngay
+        </button>
+    </form>
+    
+    <div class="text-center mt-4 border-top pt-3">
+        <p class="text-muted small mb-1">Chưa có tài khoản?</p>
+        <a th:href="@{/auth/register}" class="text-decoration-none fw-bold">Đăng ký thành viên mới</a>
+    </div>
 </div>
 </body>
 </html>

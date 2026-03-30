@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>500 - Server Error</title>
-</head>
+<head th:replace="~{fragments/head :: head('500 - Internal Server Error')}"></head>
 <body>
-<h1>500 - Internal Server Error</h1>
-<p th:text="${errorMessage}"></p>
-<a href="/">Go Home</a>
+<div class="container py-5">
+    <div class="app-card">
+        <h1>500 - Internal Server Error</h1>
+        <p th:text="${errorMessage != null ? errorMessage : 'An unexpected error occurred.'}">
+            An unexpected error occurred.
+        </p>
+        <a class="btn btn-primary btn-sm" th:href="@{/}">Back Home</a>
+    </div>
+</div>
 </body>
 </html>

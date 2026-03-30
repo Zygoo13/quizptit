@@ -1,45 +1,161 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Register - QuizPTIT</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/public-layout :: layout('Đăng ký tài khoản', ~{::content})}">
+<head></head>
 <body>
-<h1>Register</h1>
-<div th:if="${errorMessage}">
-    <p th:text="${errorMessage}"></p>
-</div>
+<div th:fragment="content">
+    <style>
+        .register-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
 
-<form th:action="@{/auth/register}" th:object="${registerForm}" method="post">
-    <div>
-        <label>Full Name</label>
-        <input type="text" th:field="*{fullName}" />
-        <div th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
-    </div>
-    
-    <div>
-        <label>Email</label>
-        <input type="email" th:field="*{email}" />
-        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-    </div>
-    
-    <div>
-        <label>Password</label>
-        <input type="password" th:field="*{password}" />
-        <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-    </div>
-    
-    <div>
-        <label>Confirm Password</label>
-        <input type="password" th:field="*{confirmPassword}" />
-        <div th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
-    </div>
-    
-    <button type="submit">Register</button>
-</form>
+        .register-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #212529;
+            margin-bottom: 0.5rem;
+        }
 
-<div style="margin-top: 16px;">
-    <a th:href="@{/auth/login}">Back to Login</a>
+        .register-subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: none;
+        }
+
+        .form-control {
+            border-left: none;
+            border-radius: 0 8px 8px 0 !important;
+            padding: 0.7rem 0.95rem;
+        }
+
+        .input-group .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: none;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #0d6efd;
+        }
+
+        .error-text {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .btn-register {
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .register-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eef1f4;
+        }
+
+        .register-footer p {
+            margin-bottom: 0.35rem;
+            color: #6c757d;
+        }
+    </style>
+    
+    <div class="register-header">
+        <div class="register-title">Tạo tài khoản mới</div>
+        <p class="register-subtitle">Điền thông tin để bắt đầu sử dụng QuizPTIT</p>
+    </div>
+    
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <form th:action="@{/auth/register}" th:object="${registerForm}" method="post">
+        <div class="mb-3">
+            <label class="form-label">Họ và tên</label>
+            <div class="input-group has-validation">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text"
+                       th:field="*{fullName}"
+                       th:classappend="${#fields.hasErrors('fullName')} ? ' is-invalid' : ''"
+                       class="form-control"
+                       placeholder="Nguyễn Văn A">
+            </div>
+            <div class="error-text"
+                 th:if="${#fields.hasErrors('fullName')}"
+                 th:errors="*{fullName}"></div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Địa chỉ email</label>
+            <div class="input-group has-validation">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email"
+                       th:field="*{email}"
+                       th:classappend="${#fields.hasErrors('email')} ? ' is-invalid' : ''"
+                       class="form-control"
+                       placeholder="name@example.com">
+            </div>
+            <div class="error-text"
+                 th:if="${#fields.hasErrors('email')}"
+                 th:errors="*{email}"></div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Mật khẩu</label>
+            <div class="input-group has-validation">
+                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                <input type="password"
+                       th:field="*{password}"
+                       th:classappend="${#fields.hasErrors('password')} ? ' is-invalid' : ''"
+                       class="form-control"
+                       placeholder="••••••••">
+            </div>
+            <div class="error-text"
+                 th:if="${#fields.hasErrors('password')}"
+                 th:errors="*{password}"></div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="form-label">Xác nhận mật khẩu</label>
+            <div class="input-group has-validation">
+                <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                <input type="password"
+                       th:field="*{confirmPassword}"
+                       th:classappend="${#fields.hasErrors('confirmPassword')} ? ' is-invalid' : ''"
+                       class="form-control"
+                       placeholder="••••••••">
+            </div>
+            <div class="error-text"
+                 th:if="${#fields.hasErrors('confirmPassword')}"
+                 th:errors="*{confirmPassword}"></div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-100 btn-register shadow-sm">
+            Đăng ký tài khoản
+        </button>
+    </form>
+    
+    <div class="register-footer">
+        <p>Đã có tài khoản?</p>
+        <a th:href="@{/auth/login}" class="text-decoration-none fw-bold">Quay lại đăng nhập</a>
+    </div>
 </div>
 </body>
 </html>
