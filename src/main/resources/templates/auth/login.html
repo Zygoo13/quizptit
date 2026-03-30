@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - QuizPTIT</title>
+</head>
+<body>
+<h1>Login</h1>
+
+<div th:if="${param.error}">
+    Invalid email or password.
+</div>
+
+<div th:if="${param.logout}">
+    You have been logged out.
+</div>
+
+<div th:if="${successMessage}">
+    <p th:text="${successMessage}"></p>
+</div>
+
+<form th:action="@{/auth/login}" method="post">
+    <div>
+        <label>Email</label>
+        <input type="email" name="email" required />
+    </div>
+    
+    <div>
+        <label>Password</label>
+        <input type="password" name="password" required />
+    </div>
+    
+    <button type="submit">Login</button>
+</form>
+
+<div style="margin-top: 16px;">
+    <a th:href="@{/auth/register}">Go to Register</a>
+</div>
+</body>
+</html>

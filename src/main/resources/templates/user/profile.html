@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - QuizPTIT</title>
+</head>
+<body>
+
+<h1>User Profile</h1>
+
+<!-- SUCCESS -->
+<div th:if="${successMessage}">
+    <p style="color: green;" th:text="${successMessage}"></p>
+</div>
+
+<!-- PROFILE ERROR -->
+<div th:if="${profileErrorMessage}">
+    <p style="color: red;" th:text="${profileErrorMessage}"></p>
+</div>
+
+<!-- PASSWORD ERROR -->
+<div th:if="${passwordErrorMessage}">
+    <p style="color: red;" th:text="${passwordErrorMessage}"></p>
+</div>
+
+<hr>
+
+<h2>Current Information</h2>
+
+<p>User ID: <strong th:text="${currentUserId}">1</strong></p>
+<p>Email: <strong th:text="${currentUserEmail}">user@email.com</strong></p>
+<p>Role: <strong th:text="${currentUserRole}">STUDENT</strong></p>
+<p>Status: <strong th:text="${currentUserStatus}">ACTIVE</strong></p>
+
+<div th:if="${currentAvatarUrl != null}">
+    <p>Current Avatar:</p>
+    <img th:src="${currentAvatarUrl}" alt="Avatar" width="160"/>
+</div>
+
+<hr>
+
+<h2>Update Profile</h2>
+
+<form th:action="@{/profile}" th:object="${updateProfileForm}" method="post" enctype="multipart/form-data">
+    
+    <!-- FULL NAME -->
+    <div>
+        <label>Full Name</label><br>
+        <input type="text" th:field="*{fullName}" />
+        <div style="color:red"
+             th:if="${#fields.hasErrors('fullName')}"
+             th:errors="*{fullName}"></div>
+    </div>
+    
+    <br>
+    
+    <!-- AVATAR UPLOAD ONLY -->
+    <div>
+        <label>Upload Avatar</label><br>
+        <input type="file" name="avatarFile" accept="image/*"/>
+    </div>
+    
+    <br>
+    
+    <button type="submit">Update Profile</button>
+</form>
+
+<hr>
+
+<h2>Change Password</h2>
+
+<form th:action="@{/profile/change-password}" th:object="${changePasswordForm}" method="post">
+    
+    <!-- CURRENT PASSWORD -->
+    <div>
+        <label>Current Password</label><br>
+        <input type="password" th:field="*{currentPassword}" />
+        <div style="color:red"
+             th:if="${#fields.hasErrors('currentPassword')}"
+             th:errors="*{currentPassword}"></div>
+    </div>
+    
+    <br>
+    
+    <!-- NEW PASSWORD -->
+    <div>
+        <label>New Password</label><br>
+        <input type="password" th:field="*{newPassword}" />
+        <div style="color:red"
+             th:if="${#fields.hasErrors('newPassword')}"
+             th:errors="*{newPassword}"></div>
+    </div>
+    
+    <br>
+    
+    <!-- CONFIRM PASSWORD -->
+    <div>
+        <label>Confirm New Password</label><br>
+        <input type="password" th:field="*{confirmNewPassword}" />
+        <div style="color:red"
+             th:if="${#fields.hasErrors('confirmNewPassword')}"
+             th:errors="*{confirmNewPassword}"></div>
+    </div>
+    
+    <br>
+    
+    <button type="submit">Change Password</button>
+</form>
+
+<hr>
+
+<div>
+    <a th:href="@{/}">Back to Home</a>
+</div>
+
+</body>
+</html>
