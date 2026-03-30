@@ -1,117 +1,165 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Profile - QuizPTIT</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('QuizPTIT - Hồ sơ cá nhân')}"></head>
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #003d99 100%);
+        height: 120px;
+        border-radius: 12px 12px 0 0;
+    }
+    .profile-avatar-wrapper {
+        margin-top: -60px;
+        padding: 0 2rem;
+    }
+    .profile-img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 5px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .nav-pills .nav-link {
+        color: #495057;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+    }
+    .nav-pills .nav-link.active {
+        background-color: #e7f1ff;
+        color: #0d6efd;
+    }
+    .info-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    .info-value {
+        font-weight: 700;
+        color: #212529;
+        font-size: 1.1rem;
+    }
+</style>
 <body>
 
-<h1>User Profile</h1>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 
-<!-- SUCCESS -->
-<div th:if="${successMessage}">
-    <p style="color: green;" th:text="${successMessage}"></p>
+<div class="container py-5">
+    <!-- Thông báo Flash Messages -->
+    <div th:replace="~{fragments/flash-message :: flash-message}"></div>
+    
+    <!-- Password & Profile specific errors (if not in flash-message) -->
+    <div th:if="${profileErrorMessage}" class="alert alert-danger" th:text="${profileErrorMessage}"></div>
+    <div th:if="${passwordErrorMessage}" class="alert alert-danger" th:text="${passwordErrorMessage}"></div>
+    
+    <div class="row">
+        <!-- Cột trái: Thông tin tổng quan -->
+        <div class="col-lg-4">
+            <div class="app-card p-0 overflow-hidden shadow-sm">
+                <div class="profile-header"></div>
+                <div class="profile-avatar-wrapper text-center mb-3">
+                    <img th:src="${currentAvatarUrl != null ? currentAvatarUrl : '/images/default-avatar.png'}"
+                         class="profile-img bg-white" alt="Avatar">
+                    <h4 class="mt-3 mb-0" th:text="${currentUserEmail}">user@email.com</h4>
+                    <span class="badge rounded-pill bg-primary mt-2" th:text="${currentUserRole}">STUDENT</span>
+                </div>
+                
+                <div class="p-4 pt-0">
+                    <hr class="my-4">
+                    <div class="mb-3">
+                        <div class="info-label">ID Người dùng</div>
+                        <div class="info-value" th:text="${currentUserId}">1</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="info-label">Trạng thái tài khoản</div>
+                        <div class="info-value">
+                            <span class="text-success" th:if="${currentUserStatus == 'ACTIVE'}">● Hoạt động</span>
+                            <span class="text-danger" th:unless="${currentUserStatus == 'ACTIVE'}">● Bị khóa</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="list-group nav-pills shadow-sm border-0" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active text-start mb-2" id="v-pills-profile-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile" type="button" role="tab">
+                    <i class="bi bi-person-lines-fill me-2"></i> Chỉnh sửa hồ sơ
+                </button>
+                <button class="nav-link text-start" id="v-pills-password-tab" data-bs-toggle="pill" data-bs-target="#v-pills-password" type="button" role="tab">
+                    <i class="bi bi-shield-lock-fill me-2"></i> Đổi mật khẩu
+                </button>
+            </div>
+        </div>
+        
+        <!-- Cột phải: Form tương tác -->
+        <div class="col-lg-8">
+            <div class="tab-content mt-4 mt-lg-0" id="v-pills-tabContent">
+                
+                <!-- Tab 1: Update Profile -->
+                <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel">
+                    <div class="app-card shadow-sm">
+                        <h5 class="app-section-title">Cập nhật thông tin</h5>
+                        <form th:action="@{/profile}" th:object="${updateProfileForm}" method="post" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Họ và Tên</label>
+                                <input type="text" th:field="*{fullName}" class="form-control"
+                                       th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''" placeholder="Nhập tên của bạn" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Thay đổi ảnh đại diện</label>
+                                <input type="file" name="avatarFile" class="form-control" accept="image/*" />
+                                <div class="form-text">Định dạng hỗ trợ: JPG, PNG. Dung lượng tối đa 2MB.</div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">Lưu thay đổi</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: Change Password -->
+                <div class="tab-pane fade" id="v-pills-password" role="tabpanel">
+                    <div class="app-card shadow-sm border-danger-subtle">
+                        <h5 class="app-section-title text-danger">Bảo mật tài khoản</h5>
+                        <form th:action="@{/profile/change-password}" th:object="${changePasswordForm}" method="post">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mật khẩu hiện tại</label>
+                                <input type="password" th:field="*{currentPassword}" class="form-control"
+                                       th:classappend="${#fields.hasErrors('currentPassword')} ? 'is-invalid' : ''" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('currentPassword')}" th:errors="*{currentPassword}"></div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Mật khẩu mới</label>
+                                    <input type="password" th:field="*{newPassword}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('newPassword')} ? 'is-invalid' : ''" />
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Xác nhận mật khẩu mới</label>
+                                    <input type="password" th:field="*{confirmNewPassword}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('confirmNewPassword')} ? 'is-invalid' : ''" />
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmNewPassword')}" th:errors="*{confirmNewPassword}"></div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            <button type="submit" class="btn btn-danger px-4 py-2 fw-bold">Cập nhật mật khẩu</button>
+                        </form>
+                    </div>
+                </div>
+            
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- PROFILE ERROR -->
-<div th:if="${profileErrorMessage}">
-    <p style="color: red;" th:text="${profileErrorMessage}"></p>
-</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- PASSWORD ERROR -->
-<div th:if="${passwordErrorMessage}">
-    <p style="color: red;" th:text="${passwordErrorMessage}"></p>
-</div>
-
-<hr>
-
-<h2>Current Information</h2>
-
-<p>User ID: <strong th:text="${currentUserId}">1</strong></p>
-<p>Email: <strong th:text="${currentUserEmail}">user@email.com</strong></p>
-<p>Role: <strong th:text="${currentUserRole}">STUDENT</strong></p>
-<p>Status: <strong th:text="${currentUserStatus}">ACTIVE</strong></p>
-
-<div th:if="${currentAvatarUrl != null}">
-    <p>Current Avatar:</p>
-    <img th:src="${currentAvatarUrl}" alt="Avatar" width="160"/>
-</div>
-
-<hr>
-
-<h2>Update Profile</h2>
-
-<form th:action="@{/profile}" th:object="${updateProfileForm}" method="post" enctype="multipart/form-data">
-    
-    <!-- FULL NAME -->
-    <div>
-        <label>Full Name</label><br>
-        <input type="text" th:field="*{fullName}" />
-        <div style="color:red"
-             th:if="${#fields.hasErrors('fullName')}"
-             th:errors="*{fullName}"></div>
-    </div>
-    
-    <br>
-    
-    <!-- AVATAR UPLOAD ONLY -->
-    <div>
-        <label>Upload Avatar</label><br>
-        <input type="file" name="avatarFile" accept="image/*"/>
-    </div>
-    
-    <br>
-    
-    <button type="submit">Update Profile</button>
-</form>
-
-<hr>
-
-<h2>Change Password</h2>
-
-<form th:action="@{/profile/change-password}" th:object="${changePasswordForm}" method="post">
-    
-    <!-- CURRENT PASSWORD -->
-    <div>
-        <label>Current Password</label><br>
-        <input type="password" th:field="*{currentPassword}" />
-        <div style="color:red"
-             th:if="${#fields.hasErrors('currentPassword')}"
-             th:errors="*{currentPassword}"></div>
-    </div>
-    
-    <br>
-    
-    <!-- NEW PASSWORD -->
-    <div>
-        <label>New Password</label><br>
-        <input type="password" th:field="*{newPassword}" />
-        <div style="color:red"
-             th:if="${#fields.hasErrors('newPassword')}"
-             th:errors="*{newPassword}"></div>
-    </div>
-    
-    <br>
-    
-    <!-- CONFIRM PASSWORD -->
-    <div>
-        <label>Confirm New Password</label><br>
-        <input type="password" th:field="*{confirmNewPassword}" />
-        <div style="color:red"
-             th:if="${#fields.hasErrors('confirmNewPassword')}"
-             th:errors="*{confirmNewPassword}"></div>
-    </div>
-    
-    <br>
-    
-    <button type="submit">Change Password</button>
-</form>
-
-<hr>
-
-<div>
-    <a th:href="@{/}">Back to Home</a>
-</div>
-
+<script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>

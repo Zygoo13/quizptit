@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="admin-sidebar" class="admin-sidebar shadow-sm">
+    <style>
+        .admin-sidebar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        .sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #adb5bd;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+        }
+        .sidebar-title:first-child {
+            margin-top: 0;
+        }
+        .nav-link-admin {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+            font-size: 0.95rem;
+        }
+        .nav-link-admin i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+        .nav-link-admin:hover {
+            background-color: #f8f9fa;
+            color: #0d6efd;
+        }
+        /* Class active giả định khi URL khớp */
+        .nav-link-admin.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        .sidebar-divider {
+            margin: 1rem 0;
+            border-top: 1px solid #f1f3f5;
+        }
+    </style>
+    
+    <div class="sidebar-title">Chính</div>
+    <nav class="nav flex-column">
+        <a class="nav-link-admin" th:href="@{/admin}"
+           th:classappend="${#httpServletRequest.requestURI == '/admin' ? 'active' : ''}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/users}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/users') ? 'active' : ''}">
+            <i class="bi bi-people"></i> Người dùng
+        </a>
+    </nav>
+    
+    <div class="sidebar-title">Học liệu</div>
+    <nav class="nav flex-column">
+        <a class="nav-link-admin" th:href="@{/admin/subjects}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/subjects') ? 'active' : ''}">
+            <i class="bi bi-book"></i> Môn học
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/topics}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/topics') ? 'active' : ''}">
+            <i class="bi bi-journal-text"></i> Chủ đề
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/questions}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/questions') ? 'active' : ''}">
+            <i class="bi bi-patch-question"></i> Câu hỏi
+        </a>
+    </nav>
+    
+    <div class="sidebar-title">Vận hành</div>
+    <nav class="nav flex-column">
+        <a class="nav-link-admin" th:href="@{/admin/quizzes}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/quizzes') ? 'active' : ''}">
+            <i class="bi bi-card-checklist"></i> Quản lý Quiz
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/progress}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/admin/progress') ? 'active' : ''}">
+            <i class="bi bi-bar-chart-line"></i> Tiến trình học
+        </a>
+    </nav>
+    
+    <div class="sidebar-title">Cộng đồng</div>
+    <nav class="nav flex-column">
+        <a class="nav-link-admin" th:href="@{/admin/community/questions}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/community/questions') ? 'active' : ''}">
+            <i class="bi bi-chat-left-text"></i> Bài thảo luận
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/community/comments}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/community/comments') ? 'active' : ''}">
+            <i class="bi bi-chat-dots"></i> Bình luận
+        </a>
+        <a class="nav-link-admin" th:href="@{/admin/community/moderation-records}"
+           th:classappend="${#httpServletRequest.requestURI.contains('/moderation-records') ? 'active' : ''}">
+            <i class="bi bi-shield-check"></i> Nhật ký kiểm duyệt
+        </a>
+    </nav>
+    
+    <div class="sidebar-divider"></div>
+    
+    <nav class="nav flex-column">
+        <a class="nav-link-admin text-secondary" th:href="@{/}">
+            <i class="bi bi-house-door"></i> Về trang học viên
+        </a>
+    </nav>
+</div>
+</body>
+</html>

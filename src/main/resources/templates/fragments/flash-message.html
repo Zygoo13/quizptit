@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="flash-message" class="flash-messages-container">
+    <style>
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .alert i {
+            font-size: 1.25rem;
+            margin-right: 12px;
+        }
+        .alert-content {
+            flex-grow: 1;
+        }
+    </style>
+    
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="alert-content" th:text="${successMessage}">Thành công!</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <div class="alert-content" th:text="${errorMessage}">Đã xảy ra lỗi!</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <!-- Warning Message -->
+    <div th:if="${warningMessage}" class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div class="alert-content" th:text="${warningMessage}">Cảnh báo!</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <!-- Info Message -->
+    <div th:if="${infoMessage}" class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-info-circle-fill"></i>
+        <div class="alert-content" th:text="${infoMessage}">Thông báo.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+</body>
+</html>

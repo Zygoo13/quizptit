@@ -1,66 +1,127 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>User List - QuizPTIT</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('QuizPTIT - User Management')}"></head>
+<style>
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+    }
+    .table-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .table thead {
+        background-color: #f1f3f5;
+    }
+    .status-active { color: #198754; font-weight: 600; }
+    .status-inactive { color: #ffc107; font-weight: 600; }
+    .status-banned { color: #dc3545; font-weight: 600; }
+</style>
 <body>
-<h1>User List</h1>
 
-<p>
-    Current admin: <strong th:text="${currentUserEmail}">admin@quizptit.local</strong>
-</p>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 
-<form th:action="@{/admin/users}" th:object="${filterForm}" method="get" style="margin-bottom: 16px;">
-    <div>
-        <label>Email Keyword</label>
-        <input type="text" th:field="*{keyword}" placeholder="Search by email" />
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Quản lý người dùng</h1>
+            <p class="text-muted small mb-0">Admin đang đăng nhập: <span class="fw-bold" th:text="${currentUserEmail}">admin@quizptit.local</span></p>
+        </div>
+        <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
     </div>
     
-    <div style="margin-top: 8px;">
-        <label>Status</label>
-        <select th:field="*{status}">
-            <option value="">All</option>
-            <option th:each="status : ${statuses}"
-                    th:value="${status}"
-                    th:text="${status}">
-            </option>
-        </select>
+    <!-- Bộ lọc (Search & Filter) -->
+    <div class="card filter-card mb-4">
+        <div class="card-body">
+            <form th:action="@{/admin/users}" th:object="${filterForm}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Tìm kiếm Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" th:field="*{keyword}" placeholder="Nhập email cần tìm..." />
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Trạng thái</label>
+                    <select class="form-select" th:field="*{status}">
+                        <option value="">Tất cả trạng thái</option>
+                        <option th:each="status : ${statuses}"
+                                th:value="${status}"
+                                th:text="${status}">
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-filter"></i> Lọc dữ liệu
+                    </button>
+                    <a th:href="@{/admin/users}" class="btn btn-light border px-4">Làm mới</a>
+                </div>
+            </form>
+        </div>
     </div>
     
-    <div style="margin-top: 8px;">
-        <button type="submit">Search</button>
-        <a th:href="@{/admin/users}">Reset</a>
+    <!-- Bảng danh sách -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Họ và Tên</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user : ${users}">
+                        <td class="ps-4 fw-bold" th:text="${user.userId}">1</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2 text-white bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                    <span th:text="${#strings.substring(user.fullName,0,1)}">U</span>
+                                </div>
+                                <span th:text="${user.fullName}">Full Name</span>
+                            </div>
+                        </td>
+                        <td th:text="${user.email}">email@example.com</td>
+                        <td>
+                            <span class="badge rounded-pill bg-light text-dark border" th:text="${user.role.roleName}">STUDENT</span>
+                        </td>
+                        <td>
+                            <span th:if="${user.status.name() == 'ACTIVE'}" class="status-active">● Active</span>
+                            <span th:if="${user.status.name() == 'INACTIVE'}" class="status-inactive">● Inactive</span>
+                            <span th:if="${user.status.name() == 'BANNED'}" class="status-banned">● Banned</span>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{/admin/users/{id}(id=${user.userId})}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Xem chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                    <!-- Hiển thị khi danh sách trống -->
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="6" class="text-center py-5 text-muted">Không tìm thấy người dùng nào phù hợp.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</form>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="user : ${users}">
-            <td th:text="${user.userId}">1</td>
-            <td th:text="${user.fullName}">Full Name</td>
-            <td th:text="${user.email}">email@example.com</td>
-            <td th:text="${user.role.roleName}">STUDENT</td>
-            <td th:text="${user.status}">ACTIVE</td>
-            <td>
-                <a th:href="@{/admin/users/{id}(id=${user.userId})}">View Detail</a>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<div style="margin-top: 16px;">
-    <a th:href="@{/admin}">Back to Admin Dashboard</a>
 </div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Scripts -->
+<script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>
