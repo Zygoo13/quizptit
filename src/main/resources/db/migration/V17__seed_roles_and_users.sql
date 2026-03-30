@@ -24,7 +24,7 @@ SELECT
     r.role_id,
     'System Administrator',
     'admin@quizptit.local',
-    '$2a$10$wH8Gqz6kZs1r8g1J0yqG6O8bW2xj3h0z8z7r6lF9eQk3wV1bY7x2C', -- 88888888
+    '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG', -- 88888888
     NULL,
     'ACTIVE',
     CURRENT_TIMESTAMP,
@@ -49,7 +49,7 @@ SELECT
     r.role_id,
     'Test Student',
     'student@quizptit.local',
-    '$2a$10$wH8Gqz6kZs1r8g1J0yqG6O8bW2xj3h0z8z7r6lF9eQk3wV1bY7x2C', -- 88888888
+    '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG', -- 88888888
     NULL,
     'ACTIVE',
     CURRENT_TIMESTAMP,

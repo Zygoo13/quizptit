@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User List - QuizPTIT</title>
+</head>
+<body>
+<h1>User List</h1>
+
+<p>
+    Current admin: <strong th:text="${currentUserEmail}">admin@quizptit.local</strong>
+</p>
+
+<form th:action="@{/admin/users}" th:object="${filterForm}" method="get" style="margin-bottom: 16px;">
+    <div>
+        <label>Email Keyword</label>
+        <input type="text" th:field="*{keyword}" placeholder="Search by email" />
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <label>Status</label>
+        <select th:field="*{status}">
+            <option value="">All</option>
+            <option th:each="status : ${statuses}"
+                    th:value="${status}"
+                    th:text="${status}">
+            </option>
+        </select>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <button type="submit">Search</button>
+        <a th:href="@{/admin/users}">Reset</a>
+    </div>
+</form>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.userId}">1</td>
+            <td th:text="${user.fullName}">Full Name</td>
+            <td th:text="${user.email}">email@example.com</td>
+            <td th:text="${user.role.roleName}">STUDENT</td>
+            <td th:text="${user.status}">ACTIVE</td>
+            <td>
+                <a th:href="@{/admin/users/{id}(id=${user.userId})}">View Detail</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="margin-top: 16px;">
+    <a th:href="@{/admin}">Back to Admin Dashboard</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>QuizPTIT</title>
+</head>
+<body>
+<h1>QuizPTIT Home</h1>
+
+<p th:if="${isLoggedIn}">
+    Logged in as: <strong th:text="${currentUserEmail}">user@email.com</strong>
+</p>
+
+<div>
+    <a th:href="@{/profile}">Profile</a>
+</div>
+
+<div style="margin-top: 8px;">
+    <a th:href="@{/admin}">Admin Dashboard</a>
+</div>
+
+<form th:action="@{/auth/logout}" method="post" style="margin-top: 16px;">
+    <button type="submit">Logout</button>
+</form>
+</body>
+</html>

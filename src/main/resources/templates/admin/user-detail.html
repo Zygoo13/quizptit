@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Detail - QuizPTIT</title>
+</head>
+<body>
+<h1>User Detail</h1>
+
+<div th:if="${successMessage}">
+    <p th:text="${successMessage}"></p>
+</div>
+
+<div th:if="${roleErrorMessage}">
+    <p th:text="${roleErrorMessage}"></p>
+</div>
+
+<p>Current admin: <strong th:text="${currentUserEmail}">admin@quizptit.local</strong></p>
+
+<hr>
+
+<p>User ID: <strong th:text="${selectedUser.userId}">1</strong></p>
+<p>Full Name: <strong th:text="${selectedUser.fullName}">Full Name</strong></p>
+<p>Email: <strong th:text="${selectedUser.email}">email@example.com</strong></p>
+<p>Role: <strong th:text="${selectedUser.role.roleName}">STUDENT</strong></p>
+<p>Status: <strong th:text="${selectedUser.status}">ACTIVE</strong></p>
+<p>Avatar URL: <strong th:text="${selectedUser.avatarUrl} ?: 'N/A'">N/A</strong></p>
+
+<hr>
+
+<h2>Change Role</h2>
+<form th:action="@{/admin/users/{id}/change-role(id=${selectedUser.userId})}"
+      th:object="${changeUserRoleForm}"
+      method="post">
+    <select th:field="*{roleName}">
+        <option th:each="role : ${availableRoles}"
+                th:value="${role.name()}"
+                th:text="${role.name()}">
+        </option>
+    </select>
+    <button type="submit">Change Role</button>
+</form>
+
+<hr>
+
+<h2>Change Status</h2>
+
+<form th:if="${selectedUser.status.name() != 'ACTIVE'}"
+      th:action="@{/admin/users/{id}/activate(id=${selectedUser.userId})}"
+      method="post">
+    <button type="submit">Activate User</button>
+</form>
+
+<form th:if="${selectedUser.status.name() != 'INACTIVE'}"
+      th:action="@{/admin/users/{id}/deactivate(id=${selectedUser.userId})}"
+      method="post"
+      style="margin-top: 8px;">
+    <button type="submit">Deactivate User</button>
+</form>
+
+<form th:if="${selectedUser.status.name() != 'BANNED'}"
+      th:action="@{/admin/users/{id}/ban(id=${selectedUser.userId})}"
+      method="post"
+      style="margin-top: 8px;">
+    <button type="submit">Ban User</button>
+</form>
+
+<div style="margin-top: 16px;">
+    <a th:href="@{/admin/users}">Back to User List</a>
+</div>
+</body>
+</html>

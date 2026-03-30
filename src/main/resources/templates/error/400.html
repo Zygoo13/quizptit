@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>400 - Bad Request</title>
+</head>
+<body>
+<h1>400 - Bad Request</h1>
+<p th:text="${errorMessage}"></p>
+
+<div th:if="${validationErrors != null}">
+    <ul>
+        <li th:each="err : ${validationErrors}">
+            <span th:text="${err.key}"></span>:
+            <span th:text="${err.value}"></span>
+        </li>
+    </ul>
+</div>
+
+<a href="/">Go Home</a>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - QuizPTIT</title>
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+
+<p>
+    Current admin: <strong th:text="${currentUserEmail}">admin@quizptit.local</strong>
+</p>
+
+<ul>
+    <li><a th:href="@{/admin/users}">Manage Users</a></li>
+</ul>
+
+<div style="margin-top: 16px;">
+    <a th:href="@{/}">Back to Home</a>
+</div>
+</body>
+</html>

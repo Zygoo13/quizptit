@@ -5,3 +5,8 @@ spring:
     password: your_database_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+app:
+  file:
+    upload-dir: uploads
+    max-image-size-bytes: 5242880
+
