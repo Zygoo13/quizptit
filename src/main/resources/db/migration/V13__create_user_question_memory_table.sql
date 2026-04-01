@@ -21,7 +21,7 @@ CREATE TABLE user_question_memory (
     CONSTRAINT ck_user_question_memory_correct_streak
         CHECK (correct_streak >= 0),
     CONSTRAINT ck_user_question_memory_wrong_streak
-        CHECK (wrong_count >= 0),
+        CHECK (wrong_streak >= 0),
     CONSTRAINT ck_user_question_memory_review_count
         CHECK (review_count >= 0),
     CONSTRAINT ck_user_question_memory_memory_score
