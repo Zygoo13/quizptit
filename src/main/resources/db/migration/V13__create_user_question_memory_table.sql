@@ -4,7 +4,7 @@ CREATE TABLE user_question_memory (
     question_id BIGINT NOT NULL,
     last_result BOOLEAN NOT NULL DEFAULT FALSE,
     correct_streak INT NOT NULL DEFAULT 0,
-    wrong_count INT NOT NULL DEFAULT 0,
+    wrong_streak INT NOT NULL DEFAULT 0,
     review_count INT NOT NULL DEFAULT 0,
     memory_score DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     last_reviewed_at DATETIME NULL,
