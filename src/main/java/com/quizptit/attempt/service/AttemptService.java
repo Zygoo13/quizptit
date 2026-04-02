@@ -31,6 +31,8 @@ public class AttemptService {
     private final QuizQuestionRepository quizQuestionRepository;
     private final AttemptQuestionRepository attemptQuestionRepository;
 
+    private final ProgressService progressService;
+
     @Transactional
     public Attempt startAttempt(Long quizId, Long userId) {
         Quiz quiz = quizRepository.findById(quizId)
@@ -72,4 +74,6 @@ public class AttemptService {
 
         return savedAttempt;
     }
+
+    // Chờ finishAttempt để chèn progressService.updateQuizProgress
 }
