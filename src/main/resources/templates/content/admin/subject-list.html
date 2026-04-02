@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Môn học</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Quản lý Môn học (Admin)</h2>
+        <a href="/admin/subjects/create" class="btn btn-success fw-bold px-4">+ Tạo mới</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success border-0 shadow-sm" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger border-0 shadow-sm" th:text="${errorMessage}"></div>
+
+    <form class="mb-4 row g-3 bg-light p-3 rounded" action="/admin/subjects" method="get">
+        <div class="col-md-6">
+            <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm môn học..." th:value="${keyword}">
+        </div>
+        <div class="col-md-4">
+            <select name="isActive" class="form-select">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="true" th:selected="${isActive == true}">Đang hoạt động</option>
+                <option value="false" th:selected="${isActive == false}">Đã ẩn</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100 fw-bold" type="submit">Lọc kết quả</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover border shadow-sm rounded">
+            <thead class="table-light text-secondary small text-uppercase">
+                <tr>
+                    <th>ID</th>
+                    <th>Tên môn</th>
+                    <th>Mô tả</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="subject : ${subjects.content}">
+                    <td th:text="${subject.subjectId}">ID</td>
+                    <td class="fw-bold text-dark" th:text="${subject.subjectName}">Name</td>
+                    <td class="text-muted small" th:text="${subject.description}">Desc</td>
+                    <td>
+                        <span th:if="${subject.isActive}" class="badge bg-success-subtle text-success border border-success">Hoạt động</span>
+                        <span th:unless="${subject.isActive}" class="badge bg-secondary-subtle text-secondary border border-secondary">Đã ẩn</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a th:href="@{/admin/subjects/{id}/edit(id=${subject.subjectId})}" class="btn btn-warning btn-sm">Sửa</a>
+                            <form th:action="@{/admin/subjects/{id}/toggle-status(id=${subject.subjectId})}" method="post">
+                                <button type="submit" class="btn btn-sm" th:classappend="${subject.isActive} ? 'btn-outline-danger' : 'btn-outline-success'" th:text="${subject.isActive} ? 'Ẩn' : 'Bật'"></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${subjects.empty}">
+                    <td colspan="5" class="text-center py-4 text-muted">Danh sách đang trống. Hãy tạo môn học mới!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
