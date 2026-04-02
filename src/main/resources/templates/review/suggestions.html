@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gợi ý ôn tập - QuizPTIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div th:replace="~{fragments/navbar::navbar}"></div>
+    
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-danger">Câu hỏi cần ôn tập hôm nay</h2>
+            <span class="badge bg-info text-dark" th:text="${suggestions.size() + ' câu hỏi'}">0 câu hỏi</span>
+        </div>
+
+        <div class="list-group shadow-sm">
+            <div th:each="item : ${suggestions}" class="list-group-item list-group-item-action p-3">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                        <div class="fw-bold text-dark mb-1" th:text="${item.subjectName}">Môn học</div>
+                        <p class="mb-1 text-secondary" th:text="${item.contentSnippet}">Nội dung câu hỏi...</p>
+                        
+                        <small class="text-muted">
+                            Ngày ôn tiếp theo: 
+                            <span th:class="${item.isOverdue} ? 'text-danger fw-bold' : ''" 
+                                  th:text="${#temporals.format(item.nextReviewAt, 'dd/MM/yyyy')}">01/01/2026</span>
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <div class="mb-2">
+                            <span class="badge rounded-pill bg-warning text-dark">
+                                Tỉ lệ nắm vững: <span th:text="${#numbers.formatDecimal(item.memoryScore * 100, 1, 0)}">10</span>%
+                            </span>
+                        </div>
+                        <a th:href="@{/review/session/start(questionId=${item.questionId})}" class="btn btn-sm btn-outline-primary">Ôn tập ngay</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(suggestions)}" class="card text-center p-5 border-0">
+            <h3>Xin chúc mừng!</h3>
+            <p>Bạn đã hoàn thành tất cả các mục tiêu ôn tập của ngày hôm nay.</p>
+        </div>
+    </div>
+</body>
+</html>
