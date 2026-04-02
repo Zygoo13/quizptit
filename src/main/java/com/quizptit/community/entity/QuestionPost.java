@@ -3,7 +3,7 @@ package com.quizptit.community.entity;
 import com.quizptit.common.base.BaseEntity;
 import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
-import lombok.*;
+        import lombok.*;
 
 @Entity
 @Table(name = "question_posts")

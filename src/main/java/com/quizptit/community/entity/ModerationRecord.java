@@ -2,8 +2,8 @@ package com.quizptit.community.entity;
 
 import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
+        import lombok.*;
+        import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "moderation_records")
