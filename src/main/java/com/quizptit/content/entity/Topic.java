@@ -1,36 +1,43 @@
 package com.quizptit.content.entity;
 
-import java.util.List;
-
-import com.quizptit.quiz.entity.Quiz;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "topic")
+@Getter
+@Setter
+@NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Topic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "topic_id")
     private Long topicId;
 
-    @Column(name = "topic_name")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
+
+    @Column(name = "topic_name", nullable = false, length = 150)
     private String topicName;
 
-    @OneToMany(mappedBy = "topic")
-    private List<Quiz> quizzes;
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "order_no", nullable = false)
+    private Integer orderNo;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }
