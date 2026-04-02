@@ -17,58 +17,55 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
+        private final UserDetailsService userDetailsService;
+        private final PasswordEncoder passwordEncoder;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/bootstrap/**",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/webjars/**",
-                                "/favicon.ico",
-                                "/auth/login",
-                                "/auth/register",
-                                "/access-denied"
-                        ).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/", "/profile", "/profile/change-password").authenticated()
-                        .anyRequest().authenticated()
-                )
-                .formLogin(form -> form
-                        .loginPage("/auth/login")
-                        .loginProcessingUrl("/auth/login")
-                        .usernameParameter("email")
-                        .passwordParameter("password")
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/auth/login?error")
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/auth/logout")
-                        .logoutSuccessUrl("/auth/login?logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .permitAll()
-                )
-                .exceptionHandling(exception -> exception
-                        .accessDeniedPage("/access-denied")
-                )
-                .authenticationProvider(authenticationProvider())
-                .csrf(Customizer.withDefaults());
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                "/bootstrap/**",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/images/**",
+                                                                "/webjars/**",
+                                                                "/favicon.ico",
+                                                                "/auth/login",
+                                                                "/auth/register",
+                                                                "/access-denied")
+                                                .permitAll()
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/", "/profile", "/profile/change-password")
+                                                .authenticated()
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/auth/login")
+                                                .loginProcessingUrl("/auth/login")
+                                                .usernameParameter("email")
+                                                .passwordParameter("password")
+                                                .defaultSuccessUrl("/", true)
+                                                .failureUrl("/auth/login?error")
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/auth/logout")
+                                                .logoutSuccessUrl("/auth/login?logout")
+                                                .invalidateHttpSession(true)
+                                                .deleteCookies("JSESSIONID")
+                                                .permitAll())
+                                .exceptionHandling(exception -> exception
+                                                .accessDeniedPage("/access-denied"))
+                                .authenticationProvider(authenticationProvider())
+                                .csrf(Customizer.withDefaults());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return provider;
-    }
+        @Bean
+        public AuthenticationProvider authenticationProvider() {
+                DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+                provider.setUserDetailsService(userDetailsService);
+                provider.setPasswordEncoder(passwordEncoder);
+                return provider;
+        }
 }
