@@ -32,8 +32,12 @@ public class ModerationRecord {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_post_id", nullable = false)
+    private QuestionPost questionPost;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "moderator_id", nullable = false)
-    private User moderator;
+    private User user;
 
     public Long getModerationId() {
         return moderationId;
@@ -83,11 +87,19 @@ public class ModerationRecord {
         this.createdAt = createdAt;
     }
 
-    public User getModerator() {
-        return moderator;
+    public User getUser() {
+        return user;
     }
 
     public void setModerator(User moderator) {
-        this.moderator = moderator;
+        this.user = moderator;
+    }
+
+    public QuestionPost getQuestionPost() {
+        return questionPost;
+    }
+
+    public void setQuestionPost(QuestionPost questionPost) {
+        this.questionPost = questionPost;
     }
 }
