@@ -34,4 +34,60 @@ public class ModerationRecord {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "moderator_id", nullable = false)
     private User moderator;
+
+    public Long getModerationId() {
+        return moderationId;
+    }
+
+    public void setModerationId(Long moderationId) {
+        this.moderationId = moderationId;
+    }
+
+    public String getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    public Long getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public User getModerator() {
+        return moderator;
+    }
+
+    public void setModerator(User moderator) {
+        this.moderator = moderator;
+    }
 }
