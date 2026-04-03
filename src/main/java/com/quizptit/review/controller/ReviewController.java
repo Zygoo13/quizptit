@@ -1,8 +1,16 @@
 package com.quizptit.review.controller;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.quizptit.auth.security.CustomUserDetails;
 import com.quizptit.common.util.CurrentUserUtils;
+import com.quizptit.review.dto.ReviewSubmissionDTO;
 import com.quizptit.review.dto.ReviewSuggestionDTO;
+import com.quizptit.review.dto.ReviewQuestionDTO;
 import com.quizptit.review.service.ReviewService;
+import com.quizptit.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,25 +41,20 @@ public class ReviewController {
         return "review/suggestions";
     }
 
-    // Mở trang làm bài ôn tập
-    @GetMapping("/session/start")
-    public String startReviewSession(@RequestParam Long questionId, Model model) {
-        ReviewQuestionDTO question = reviewService.getQuestionForReview(questionId);
-        model.addAttribute("question", question);
-        model.addAttribute("submission", new ReviewSubmissionDTO());
-        return "review/review-session"; // Tên file HTML sẽ tạo ở bước 3.3
-    }
-
     // Xử lý nộp bài
     @PostMapping("/session/submit")
-    public String submitReview(@ModelAttribute ReviewSubmissionDTO submission) {
-        // 1. Lấy thông tin User đang đăng nhập
-        User user = currentUserUtils.getCurrentUser();
+    public String submitReview(@ModelAttribute ReviewSubmissionDTO submission, Authentication authentication) {
+        // 1. Lấy UserDetails từ authentication
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId(); // Lấy ID thay vì ép kiểu cả Object
 
-        // 2. Xử lý logic đúng/sai và cập nhật trí nhớ
-        reviewService.processReviewResponse(user, submission);
+        // 2. Gọi Service với đúng các tham số Long, Long, Long
+        reviewService.processReviewResponse(
+            userId, 
+            submission.getQuestionId(), 
+            submission.getSelectedOptionId()
+        );
 
-        // 3. Chuyển hướng về trang danh sách gợi ý kèm thông báo thành công
         return "redirect:/review/suggestions?success";
     }
 
