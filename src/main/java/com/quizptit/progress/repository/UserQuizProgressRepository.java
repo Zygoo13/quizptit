@@ -15,4 +15,6 @@ public interface UserQuizProgressRepository extends JpaRepository<UserQuizProgre
 
     // Lấy toàn bộ danh sách tiến độ các Quiz mà người dùng đã từng làm
     List<UserQuizProgress> findAllByUserUserId(Long userId);
+
+    List<UserQuizProgress> findByUserUserId(Long userId);
 }
