@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "comments")
+@Table(name = "comment")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class Comment extends BaseEntity {

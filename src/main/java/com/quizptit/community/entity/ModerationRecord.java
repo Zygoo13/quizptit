@@ -6,7 +6,7 @@ import jakarta.persistence.*;
         import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "moderation_records")
+@Table(name = "moderation_record")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class ModerationRecord {

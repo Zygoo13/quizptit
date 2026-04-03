@@ -23,48 +23,40 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
-                        // 1. Tắt CSRF cho các endpoint API để Postman có thể gọi được
-                        .csrf(csrf -> csrf
-                                .ignoringRequestMatchers("/api/**")
-                        )
-                        .authorizeHttpRequests(auth -> auth
-                                // Các tài nguyên tĩnh và trang auth
-                                .requestMatchers(
-                                        "/bootstrap/**", "/css/**", "/js/**", "/images/**",
-                                        "/webjars/**", "/favicon.ico", "/auth/login",
-                                        "/auth/register", "/access-denied"
-                                ).permitAll()
-
-                                // 2. Cấu hình cho API Community (Dành cho Postman)
-                                // Tạm thời permitAll để bạn test cho chạy đã, sau này thêm .hasAnyRole("USER", "ADMIN") sau
-                                .requestMatchers("/api/community/**").permitAll()
-
-                                .requestMatchers("/admin/**").hasRole("ADMIN")
-                                .requestMatchers("/", "/profile", "/profile/change-password").authenticated()
-                                .anyRequest().authenticated()
-                        )
-                        .formLogin(form -> form
-                                .loginPage("/auth/login")
-                                .loginProcessingUrl("/auth/login")
-                                .usernameParameter("email")
-                                .passwordParameter("password")
-                                .defaultSuccessUrl("/", true)
-                                .failureUrl("/auth/login?error")
-                                .permitAll()
-                        )
-                        .logout(logout -> logout
-                                .logoutUrl("/auth/logout")
-                                .logoutSuccessUrl("/auth/login?logout")
-                                .invalidateHttpSession(true)
-                                .deleteCookies("JSESSIONID")
-                                .permitAll()
-                        )
-                        .exceptionHandling(exception -> exception
-                                .accessDeniedPage("/access-denied")
-                        )
-                        // 3. Thêm Basic Auth để Postman có thể gửi kèm User/Pass nếu cần
-                        .httpBasic(Customizer.withDefaults())
-                        .authenticationProvider(authenticationProvider());
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                "/bootstrap/**",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/images/**",
+                                                                "/webjars/**",
+                                                                "/favicon.ico",
+                                                                "/auth/login",
+                                                                "/auth/register",
+                                                                "/access-denied")
+                                                .permitAll()
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/", "/profile", "/profile/change-password")
+                                                .authenticated()
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/auth/login")
+                                                .loginProcessingUrl("/auth/login")
+                                                .usernameParameter("email")
+                                                .passwordParameter("password")
+                                                .defaultSuccessUrl("/", true)
+                                                .failureUrl("/auth/login?error")
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/auth/logout")
+                                                .logoutSuccessUrl("/auth/login?logout")
+                                                .invalidateHttpSession(true)
+                                                .deleteCookies("JSESSIONID")
+                                                .permitAll())
+                                .exceptionHandling(exception -> exception
+                                                .accessDeniedPage("/access-denied"))
+                                .authenticationProvider(authenticationProvider())
+                                .csrf(Customizer.withDefaults());
 
                 return http.build();
         }
@@ -76,5 +68,4 @@ public class SecurityConfig {
                 provider.setPasswordEncoder(passwordEncoder);
                 return provider;
         }
-
 }

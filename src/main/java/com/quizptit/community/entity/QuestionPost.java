@@ -6,7 +6,7 @@ import jakarta.persistence.*;
         import lombok.*;
 
 @Entity
-@Table(name = "question_posts")
+@Table(name = "question_post")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class QuestionPost extends BaseEntity {
