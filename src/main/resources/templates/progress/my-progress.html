@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My progress - QuizPTIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div th:replace="~{fragments/navbar::navbar}"></div>
+    
+    <div class="container py-5">
+        <h2 class="mb-4 text-primary">Tiến độ học tập</h2>
+        
+        <div class="row">
+            <div th:each="quiz : ${quizzes}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${quiz.quizTitle}">Tên bài tập</h5>
+                        <h6 class="card-subtitle mb-2 text-muted" th:text="${quiz.topicName}">Chủ đề</h6>
+                        
+                        <div class="mt-3">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Điểm cao nhất:</span>
+                                <strong th:text="${#numbers.formatDecimal(quiz.highestScore.multiply(100), 1, 0) + '%'}">80%</strong>
+                            </label>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     th:style="'width: ' + ${quiz.highestScore.multiply(100)} + '%'"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 small text-muted">
+                            <p class="mb-1">Lần làm cuối: <span th:text="${#temporals.format(quiz.lastAttemptAt, 'dd/MM/yyyy HH:mm')}">--</span></p>
+                            <p class="mb-0">Số lần đã làm: <span th:text="${quiz.totalAttempts}">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div th:if="${#lists.isEmpty(quizzes)}" class="col-12 text-center py-5">
+                <p class="text-muted">Bạn chưa làm bài trắc nghiệm nào. Hãy bắt đầu học ngay!</p>
+                <a href="/subjects" class="btn btn-primary">Khám phá khóa học</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

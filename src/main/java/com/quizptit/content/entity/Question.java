@@ -5,15 +5,17 @@ import com.quizptit.common.constant.DifficultyLevel;
 import com.quizptit.common.constant.QuestionStatus;
 import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "question")
 @Getter
 @Setter
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Question extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,4 +44,7 @@ public class Question extends BaseEntity {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<AnswerOption> options = new ArrayList<>();
 }
