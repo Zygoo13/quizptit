@@ -3,25 +3,26 @@ package com.quizptit.review.service;
 import com.quizptit.content.entity.Question;
 import com.quizptit.content.repository.QuestionRepository;
 import com.quizptit.common.exception.ResourceNotFoundException;
-import com.quizptit.review.dto.ReviewSuggestionDTO;
+import com.quizptit.review.dto.*;
 import com.quizptit.review.entity.UserQuestionMemory;
 import com.quizptit.review.repository.UserQuestionMemoryRepository;
 import com.quizptit.user.entity.User;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.quizptit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
     private final UserQuestionMemoryRepository memoryRepository;
     private final QuestionRepository questionRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public void updateQuestionMemory(User user, Question question, boolean isCorrect) {
@@ -75,6 +76,14 @@ public class ReviewService {
         memoryRepository.save(memory);
     }
 
+    @Transactional
+    public void updateMultipleQuestionMemories(User user, List<ReviewItemResult> results) {
+        for (ReviewItemResult res : results) {
+                // Tận dụng lại hàm updateQuestionMemory đơn lẻ mà bạn đã viết rất tốt trước đó
+                this.updateQuestionMemory(user, res.getQuestion(), res.isCorrect());
+        }
+    }
+
     public List<ReviewSuggestionDTO> getReviewSuggestions(Long userId) {
         return memoryRepository.findQuestionsToReview(userId, LocalDateTime.now()).stream()
                 .map(this::mapToSuggestionDTO)
@@ -115,16 +124,19 @@ public class ReviewService {
 
     @Transactional
     public void processReviewResponse(Long userId, Long questionId, Long chosenOptionId) {
-        // 1. Lấy thông tin câu hỏi kèm danh sách đáp án
-        Question question = questionRepository.findById(submission.getQuestionId())
+        // 1. Tìm Question
+        Question question = questionRepository.findById(questionId) // Dùng questionId từ tham số
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy câu hỏi"));
 
-        // 2. Kiểm tra xem optionId người dùng chọn có đúng không
-        // Duyệt qua list options của câu hỏi, tìm option có ID khớp và check trường isCorrect
-        boolean isCorrect = question.getOptions().stream()
-                .anyMatch(opt -> opt.getOptionId().equals(submission.getSelectedOptionId()) && opt.isCorrect());
+        // 2. Tìm User (Cần tiêm UserRepository vào Service này nếu chưa có)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
 
-        // 3. Gọi hàm updateQuestionMemory đã có sẵn của bạn để tính toán SRS
+        // 3. Kiểm tra đúng/sai
+        boolean isCorrect = question.getOptions().stream()
+                .anyMatch(opt -> opt.getOptionId().equals(chosenOptionId) && opt.getIsCorrect());
+
+        // 4. Cập nhật trí nhớ
         this.updateQuestionMemory(user, question, isCorrect);
     }
 }
