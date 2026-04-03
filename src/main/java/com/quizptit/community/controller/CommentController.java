@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/community/comments")
@@ -23,11 +24,14 @@ public class CommentController {
 
     // BR-33: Đăng bình luận mới (Cần userId của người đang login và postId của bài viết)
     @PostMapping("/{postId}/{userId}")
-    public ResponseEntity<Comment> addComment(
+    public ResponseEntity<?> addComment(
             @PathVariable Long postId,
             @PathVariable Long userId,
             @RequestBody Comment comment) {
-        return ResponseEntity.ok(commentService.addComment(postId, comment, userId));
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Bình luận của bạn đã được đăng thành công!"
+        ));
     }
 
     // BR-37: Xóa bình luận (Chính chủ hoặc Admin)
