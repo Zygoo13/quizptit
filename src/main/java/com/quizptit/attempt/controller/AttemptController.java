@@ -76,4 +76,24 @@ public class AttemptController {
 
         return ResponseEntity.ok(responses);
     }
+
+    // 5. Xem chi tiết kết quả 1 lần làm bài cụ thể
+    @GetMapping("/{attemptId}")
+    public ResponseEntity<AttemptResultResponse> getAttemptDetail(@PathVariable Long attemptId) {
+        Long userId = CurrentUserUtils.getCurrentUserId();
+        Attempt attempt = attemptService.getAttemptResultDetail(attemptId, userId);
+
+        AttemptResultResponse response = AttemptResultResponse.builder()
+                .attemptId(attempt.getAttemptId())
+                .quizTitle(attempt.getQuiz().getTitle())
+                .startedAt(attempt.getStartedAt())
+                .submittedAt(attempt.getSubmittedAt())
+                .totalScore(attempt.getTotalScore())
+                .correctCount(attempt.getCorrectCount())
+                .durationSeconds(attempt.getDurationSeconds())
+                .status(attempt.getStatus().name())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 }

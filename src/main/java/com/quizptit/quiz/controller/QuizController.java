@@ -36,11 +36,23 @@ public class QuizController {
     @PostMapping("/random")
     public ResponseEntity<?> createRandomQuiz(@RequestBody RandomQuizRequest request) {
         Long creatorId = CurrentUserUtils.getCurrentUserId();
+        Quiz quiz;
 
-        Quiz quiz = quizService.createRandomQuiz(
-                request.getSubjectId(), creatorId, request.getTitle(),
-                request.getDurationMinutes(), request.getRequiredQuestions());
-        return ResponseEntity.ok("Tạo đề ngẫu nhiên thành công, ID: " + quiz.getQuizId());
+        if (request.getTopicId() != null) {
+            // Ưu tiên tạo theo Chủ đề nếu topicId được truyền vào
+            quiz = quizService.createRandomQuizByTopic(
+                    request.getTopicId(), creatorId, request.getTitle(),
+                    request.getDurationMinutes(), request.getRequiredQuestions());
+            return ResponseEntity.ok("Tạo đề ngẫu nhiên theo chủ đề thành công, ID: " + quiz.getQuizId());
+        } else if (request.getSubjectId() != null) {
+            // Tạo theo Môn học nếu chỉ có subjectId
+            quiz = quizService.createRandomQuiz(
+                    request.getSubjectId(), creatorId, request.getTitle(),
+                    request.getDurationMinutes(), request.getRequiredQuestions());
+            return ResponseEntity.ok("Tạo đề ngẫu nhiên theo môn học thành công, ID: " + quiz.getQuizId());
+        } else {
+            return ResponseEntity.badRequest().body("Phải truyền vào subjectId hoặc topicId");
+        }
     }
 
     // --- API CHO SINH VIÊN ---
@@ -63,5 +75,19 @@ public class QuizController {
                 .toList();
 
         return ResponseEntity.ok(responses);
+    }
+
+    // Xem chi tiết 1 bài luyện (sinh viên xem trước khi bấm Bắt đầu)
+    @GetMapping("/{quizId}")
+    public ResponseEntity<QuizResponse> getQuizDetail(@PathVariable Long quizId) {
+        Quiz quiz = quizService.getQuizDetail(quizId);
+        QuizResponse response = QuizResponse.builder()
+                .quizId(quiz.getQuizId())
+                .title(quiz.getTitle())
+                .durationMinutes(quiz.getDurationMinutes())
+                .totalQuestions(quiz.getTotalQuestions())
+                .createdAt(quiz.getCreatedAt())
+                .build();
+        return ResponseEntity.ok(response);
     }
 }

@@ -44,6 +44,12 @@ public class AttemptService {
         public Attempt startAttempt(Long quizId, Long userId) {
                 Quiz quiz = quizRepository.findById(quizId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
+
+                // Kiểm tra quiz đã được publish chưa
+                if (!quiz.getIsPublished()) {
+                        throw new RuntimeException("Bài Quiz này chưa được mở, không thể bắt đầu làm bài");
+                }
+
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy User"));
 
@@ -59,10 +65,14 @@ public class AttemptService {
 
                 Attempt savedAttempt = attemptRepository.save(attempt);
 
-                // 2. Lấy danh sách câu hỏi gốc từ Quiz (nhớ query order by orderNo để giữ đúng
-                // thứ tự đề)
+                // 2. Lấy danh sách câu hỏi gốc từ Quiz
                 List<QuizQuestion> originalQuestions = quizQuestionRepository
                                 .findByQuiz_QuizIdOrderByOrderNoAsc(quizId);
+
+                // Kiểm tra quiz có câu hỏi chưa
+                if (originalQuestions.isEmpty()) {
+                        throw new RuntimeException("Bài Quiz này chưa có câu hỏi nào, không thể bắt đầu làm bài");
+                }
 
                 // 3. Snapshot câu hỏi sang AttemptQuestion kèm order_no
                 AtomicInteger orderCounter = new AtomicInteger(1);
@@ -97,7 +107,15 @@ public class AttemptService {
                 AnswerOption selectedOption = null;
                 if (optionId != null) {
                         selectedOption = answerOptionRepository.findById(optionId)
-                                        .orElseThrow(() -> new RuntimeException("Đáp án không tồn tại"));
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Đáp án không tồn tại (option_id = " + optionId + ")"));
+
+                        // Kiểm tra đáp án có thuộc đúng câu hỏi này không
+                        Long expectedQuestionId = attemptQuestion.getQuestion().getQuestionId();
+                        Long actualQuestionId = selectedOption.getQuestion().getQuestionId();
+                        if (!actualQuestionId.equals(expectedQuestionId)) {
+                                throw new RuntimeException("Đáp án không hợp lệ");
+                        }
                 }
 
                 // Tìm xem đã trả lời câu này chưa (Cập nhật hoặc Tạo mới)
@@ -116,7 +134,9 @@ public class AttemptService {
         // 2. Nộp bài và chấm điểm tự động
         @Transactional
         public Attempt submitAttempt(Long attemptId) {
-                Attempt attempt = attemptRepository.findById(attemptId)
+                // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
+                // LazyInitializationException
+                Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
 
                 if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
@@ -180,7 +200,8 @@ public class AttemptService {
         // 2. Xem chi tiết kết quả một lần làm bài cụ thể
         @Transactional(readOnly = true)
         public Attempt getAttemptResultDetail(Long attemptId, Long currentUserId) {
-                Attempt attempt = attemptRepository.findById(attemptId)
+                // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query
+                Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
 
                 // Validate bảo mật: Chặn không cho sinh viên A xem điểm của sinh viên B

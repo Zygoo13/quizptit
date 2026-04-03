@@ -20,10 +20,17 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     Page<Question> searchQuestions(Long topicId, QuestionStatus status, DifficultyLevel difficulty, String keyword,
             Pageable pageable);
 
-    @Query(value = "SELECT * FROM question q WHERE q.subject_id = :subjectId ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    // Kéo ngẫu nhiên N câu hỏi theo Môn học (JOIN qua bảng topic)
+    @Query(value = "SELECT q.* FROM question q " +
+            "INNER JOIN topic t ON q.topic_id = t.topic_id " +
+            "WHERE t.subject_id = :subjectId " +
+            "ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Question> findRandomQuestionsBySubjectId(@Param("subjectId") Long subjectId, @Param("limit") int limit);
 
-    // Nếu muốn mở rộng: Lấy ngẫu nhiên theo cả chủ đề (topic)
-    @Query(value = "SELECT * FROM question q WHERE q.topic_id = :topicId ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    // Tiện thể làm luôn hàm: Kéo ngẫu nhiên N câu hỏi theo Chủ đề cụ thể
+    // (Cái này không cần JOIN vì bảng question có sẵn topic_id)
+    @Query(value = "SELECT * FROM question q " +
+            "WHERE q.topic_id = :topicId " +
+            "ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Question> findRandomQuestionsByTopicId(@Param("topicId") Long topicId, @Param("limit") int limit);
 }

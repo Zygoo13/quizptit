@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.quizptit.attempt.entity.Attempt;
 import com.quizptit.quiz.entity.Quiz;
 
 public interface QuizRepository extends JpaRepository<Quiz, Long> {

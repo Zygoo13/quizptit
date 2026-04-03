@@ -57,6 +57,7 @@ public class SecurityConfig {
                                                 .accessDeniedPage("/access-denied"))
                                 .authenticationProvider(authenticationProvider())
                                 .csrf(Customizer.withDefaults());
+                // .csrf(csrf -> csrf.disable());
 
                 return http.build();
         }
