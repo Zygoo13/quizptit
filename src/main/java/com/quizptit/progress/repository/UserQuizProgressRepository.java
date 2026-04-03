@@ -1,9 +1,12 @@
 package com.quizptit.progress.repository;
 
+import com.quizptit.content.entity.Topic;
 import com.quizptit.progress.entity.UserQuizProgress;
+import com.quizptit.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +20,9 @@ public interface UserQuizProgressRepository extends JpaRepository<UserQuizProgre
     List<UserQuizProgress> findAllByUserUserId(Long userId);
 
     List<UserQuizProgress> findByUserUserId(Long userId);
+
+    // Đếm số bài quiz đã đạt yêu cầu trong một topic của một user
+    long countByUserAndQuizTopicAndHighestScoreGreaterThanEqual(User user, Topic topic, BigDecimal threshold);
+
+    List<UserQuizProgress> findAllByUserUserIdAndTopicTopicId(Long userId, Long topicId);
 }

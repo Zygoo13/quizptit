@@ -1,4 +1,5 @@
 package com.quizptit.progress.entity;
+
 import com.quizptit.user.entity.User;
 import com.quizptit.content.entity.Topic;
 import jakarta.persistence.*;
@@ -8,7 +9,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "learning_progress")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter 
+@Setter 
+@NoArgsConstructor 
+@AllArgsConstructor
+@Builder
 public class LearningProgress {
 
     @Id
@@ -26,6 +31,17 @@ public class LearningProgress {
 
     @Column(name = "total_attempts", nullable = false)
     private int totalAttempts;
+    
+    @Column(name = "total_quizzes", nullable = false)
+    private int totalQuizzes;
+
+    @Column(name = "completed_quizzes", nullable = false)
+    private int completedQuizzes;
+
+    @Column(name = "progress_percentage", nullable = false)
+    private BigDecimal progressPercentage;
+
+    // ------------------------------------------------------
 
     @Column(name = "correct_rate", nullable = false)
     private BigDecimal correctRate;
