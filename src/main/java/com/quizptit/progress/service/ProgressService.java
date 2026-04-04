@@ -13,6 +13,8 @@ import com.quizptit.progress.repository.LearningProgressRepository;
 import com.quizptit.progress.repository.UserQuizProgressRepository;
 import com.quizptit.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -179,5 +181,22 @@ public class ProgressService {
                 .totalAttempts(entity.getTotalAttempts())
                 .lastAttemptAt(entity.getLastAttemptAt())
                 .build();
+    }
+
+    public Page<AdminProgressDTO> getAdminProgressData(Long subjectId, String keyword, Pageable pageable) {
+        Page<AdminProgressDTO> page = learningProgressRepository.findAdminProgressSummary(subjectId, keyword, pageable);
+
+        page.forEach(dto -> {
+            // Lấy tổng số chương thực tế của môn học
+            int total = topicRepository.countBySubjectSubjectId(dto.getSubjectId());
+            dto.setTotalTopics(total);
+
+            // Phân loại trạng thái dựa trên điểm
+            double score = dto.getAverageScore() != null ? dto.getAverageScore().doubleValue() : 0;
+            if (score >= 8.0) dto.setStatus("Xuất sắc");
+            else if (score >= 5.0) dto.setStatus("Đạt");
+            else dto.setStatus("Cảnh báo");
+        });
+        return page;
     }
 }
