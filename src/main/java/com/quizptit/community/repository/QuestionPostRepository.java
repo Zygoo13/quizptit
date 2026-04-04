@@ -7,6 +7,16 @@ import java.util.List;
 
 @Repository
 public interface QuestionPostRepository extends JpaRepository<QuestionPost, Long> {
-    // BR-40: Tìm các bài viết có trạng thái hiển thị là VISIBLE
+    // Lấy danh sách bài đăng của một User cụ thể
+    List<QuestionPost> findByUserUserId(Long userId);
+
+    // Tìm các bài đăng theo trạng thái (VISIBLE/HIDDEN)
     List<QuestionPost> findByStatus(String status);
+
+    // Tìm bài đăng theo Topic VÀ phải là VISIBLE (Dùng cho BR-40)
+    List<QuestionPost> findByTopicIdAndStatus(Long topicId, String status);
+
+
+    // Tìm bài đăng theo Topic
+    List<QuestionPost> findByTopicId(Long topicId);
 }

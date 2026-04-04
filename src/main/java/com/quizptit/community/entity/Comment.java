@@ -8,6 +8,7 @@ import lombok.*;
 @Entity
 @Table(name = "comment")
 @Getter @Setter
+@Builder
 @NoArgsConstructor @AllArgsConstructor
 public class Comment extends BaseEntity {
 

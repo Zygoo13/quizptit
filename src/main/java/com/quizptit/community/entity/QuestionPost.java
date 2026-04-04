@@ -1,14 +1,16 @@
 package com.quizptit.community.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.quizptit.common.base.BaseEntity;
 import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
-        import lombok.*;
+import lombok.*;
 
 @Entity
 @Table(name = "question_post")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+@Builder
 public class QuestionPost extends BaseEntity {
 
     @Id
@@ -22,17 +24,18 @@ public class QuestionPost extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "view_count")
+    @Column(name = "view_count", nullable = false)
     private Integer viewCount = 0;
 
     @Column(nullable = false, length = 20)
-    private String status = "VISIBLE"; // VISIBLE, HIDDEN
+    private String status = "VISIBLE";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
-    @Column(name = "topic_id")
+    @Column(name = "topic_id", nullable = false)
     private Long topicId;
 
     public Long getQuestionPostId() {
