@@ -37,9 +37,11 @@ public class Attempt {
     private LocalDateTime submittedAt;
 
     @Column(name = "total_score", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal totalScore = BigDecimal.ZERO;
 
     @Column(name = "correct_count", nullable = false)
+    @Builder.Default
     private Integer correctCount = 0;
 
     @Enumerated(EnumType.STRING)
@@ -47,5 +49,6 @@ public class Attempt {
     private AttemptStatus status; // IN_PROGRESS, SUBMITTED, GRADED
 
     @Column(name = "duration_seconds", nullable = false)
+    @Builder.Default
     private Integer durationSeconds = 0;
 }
