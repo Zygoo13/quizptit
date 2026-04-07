@@ -46,7 +46,6 @@ public class StudentQuizWebController {
     // 2. VÀO PHÒNG THI (Đang làm bài)
     @GetMapping("/attempts/{attemptId}/take")
     public String takeQuiz(@PathVariable Long attemptId, Model model) {
-        // Tạm giả sử bạn có hàm lấy Attempt theo ID trong AttemptService
         Attempt attempt = attemptService.getAttemptById(attemptId);
         if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
             return "redirect:/quizzes/attempts/" + attemptId + "/result";
@@ -61,13 +60,8 @@ public class StudentQuizWebController {
             @RequestParam(required = false) Long subjectId,
             Model model) {
 
-        // 1. Lấy danh sách các đề thi ĐÃ XUẤT BẢN (có thể lọc theo môn học)
         List<Quiz> availableQuizzes = quizService.getAvailableQuizzes(subjectId);
-
-        // 2. Ném vào hộp "quizzes" cho Thymeleaf in ra
         model.addAttribute("quizzes", availableQuizzes);
-
-        // 3. Trả về file HTML của sinh viên
         return "quiz/student/quiz-list";
     }
 }
