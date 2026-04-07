@@ -74,28 +74,18 @@ public class QuestionPostServiceImpl implements QuestionPostService {
         return mapToResponse(questionPostRepository.save(post));
     }
 
-    @Override
     @Transactional
     public void deletePost(Long postId, Long userId, String userRole) {
-        // 1. Tìm bài viết
         QuestionPost post = questionPostRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết!"));
 
-        // 2. Logic Check quyền (BR-37 & BR-38)
-        boolean isOwner = post.getUser().getUserId().equals(userId);
-        boolean isAdmin = "ADMIN".equals(userRole);
-
-        // Nếu KHÔNG PHẢI chủ bài viết VÀ CŨNG KHÔNG PHẢI Admin thì chặn
-        if (!isOwner && !isAdmin) {
-            throw new SecurityException("Bạn không có quyền xóa bài viết này!");
+        // Kiểm tra: Nếu là Admin HOẶC là chủ bài viết (userId trùng nhau) thì mới được xóa
+        if (userRole.equals("ADMIN") || post.getUser().getUserId().equals(userId)) {
+            post.setStatus("DELETED");
+            questionPostRepository.save(post);
+        } else {
+            throw new RuntimeException("Bạn không có quyền xóa bài này!");
         }
-
-        // 3. THỰC HIỆN XÓA MỀM (SOFT DELETE)
-        // Thay vì questionPostRepository.delete(post);
-        post.setStatus("DELETED");
-        questionPostRepository.save(post);
-
-        // Gợi ý: Bạn có thể lưu thêm log vào bảng ModerationRecord ở đây nếu muốn Admin biết ai đã xóa
     }
 
     @Override
@@ -115,16 +105,15 @@ public class QuestionPostServiceImpl implements QuestionPostService {
     @Override
     @Transactional(readOnly = true)
     public QuestionPostResponse getPostById(Long postId, Long currentUserId, String role) {
-        // 1. Tìm bài viết trong DB
         QuestionPost post = questionPostRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết hoặc bài viết đã bị gỡ bỏ."));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết ID: " + postId));
 
-        // 2. Kiểm tra điều kiện hiển thị
+        // 2. Kiểm tra điều kiện hiển thị (Thêm check null cho currentUserId)
         boolean isAdmin = "ADMIN".equals(role);
-        boolean isOwner = post.getUser().getUserId().equals(currentUserId);
+        boolean isOwner = (currentUserId != null) && post.getUser().getUserId().equals(currentUserId);
         boolean isVisible = "VISIBLE".equals(post.getStatus());
 
-        // LOGIC CHẶN: Nếu không phải Admin, không phải chủ bài, mà bài lại đang bị Ẩn/Xóa -> Chặn luôn
+        // LOGIC CHẶN: Nếu không phải Admin, không phải chủ bài, mà bài lại đang bị Ẩn/Xóa -> Chặn
         if (!isAdmin && !isOwner && !isVisible) {
             throw new ResourceNotFoundException("Bài viết này hiện không khả dụng.");
         }
@@ -153,6 +142,7 @@ public class QuestionPostServiceImpl implements QuestionPostService {
                 .topicId(post.getTopicId())
                 .userId(post.getUser().getUserId())
                 .fullName(post.getUser().getFullName())
+                .email(post.getUser().getEmail())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();

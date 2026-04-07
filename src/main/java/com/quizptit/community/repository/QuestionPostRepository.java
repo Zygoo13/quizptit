@@ -2,6 +2,7 @@ package com.quizptit.community.repository;
 
 import com.quizptit.community.entity.QuestionPost;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -19,4 +20,7 @@ public interface QuestionPostRepository extends JpaRepository<QuestionPost, Long
 
     // Tìm bài đăng theo Topic
     List<QuestionPost> findByTopicId(Long topicId);
+
+    @Query("SELECT q FROM QuestionPost q WHERE q.status != 'DELETED' ORDER BY q.createdAt DESC")
+    List<QuestionPost> findAllActivePosts();
 }

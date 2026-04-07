@@ -17,6 +17,7 @@ public class QuestionPostResponse {
     // Thông tin User rút gọn
     private Long userId;
     private String fullName;
+    private String email;
 
     // Thời gian từ BaseEntity
     private LocalDateTime createdAt;
