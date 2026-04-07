@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.quizptit.content.entity.Subject;
 import com.quizptit.content.entity.Topic;
@@ -22,6 +24,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -66,8 +69,13 @@ public class Quiz {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy; // Liên kết tới bảng users
 
+    @Builder.Default
     @Column(name = "is_published", nullable = false)
     private Boolean isPublished = false;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "quiz")
+    private List<QuizQuestion> quizQuestions = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

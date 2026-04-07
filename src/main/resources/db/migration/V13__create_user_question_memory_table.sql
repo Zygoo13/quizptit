@@ -9,6 +9,7 @@ CREATE TABLE user_question_memory (
     memory_score DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     last_reviewed_at DATETIME NULL,
     next_review_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT pk_user_question_memory PRIMARY KEY (memory_id),

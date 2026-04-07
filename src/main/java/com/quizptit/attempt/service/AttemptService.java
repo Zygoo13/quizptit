@@ -12,6 +12,9 @@ import com.quizptit.attempt.repository.AttemptQuestionRepository;
 import com.quizptit.attempt.repository.AttemptRepository;
 import com.quizptit.content.entity.AnswerOption;
 import com.quizptit.content.repository.AnswerOptionRepository;
+import com.quizptit.progress.service.ProgressService;
+import com.quizptit.review.dto.ReviewItemResult;
+import com.quizptit.review.service.ReviewService;
 import com.quizptit.quiz.entity.Quiz;
 import com.quizptit.quiz.entity.QuizQuestion;
 import com.quizptit.quiz.repository.QuizQuestionRepository;
@@ -39,6 +42,8 @@ public class AttemptService {
         private final AttemptQuestionRepository attemptQuestionRepository;
         private final AttemptAnswerRepository attemptAnswerRepository;
         private final AnswerOptionRepository answerOptionRepository;
+        private final ProgressService progressService;
+        private final ReviewService reviewService;
 
         @Transactional
         public Attempt startAttempt(Long quizId, Long userId) {
@@ -134,6 +139,7 @@ public class AttemptService {
         // 2. Nộp bài và chấm điểm tự động
         @Transactional
         public Attempt submitAttempt(Long attemptId) {
+                List<ReviewItemResult> reviewResults = new ArrayList<>();
                 // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
                 // LazyInitializationException
                 Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
@@ -173,6 +179,7 @@ public class AttemptService {
                                         answer.setScoreObtained(BigDecimal.ZERO);
                                 }
                                 attemptAnswerRepository.save(answer);
+                                reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
                         }
                 }
 
@@ -184,9 +191,9 @@ public class AttemptService {
                 // Lưu kết quả bài làm
                 Attempt gradedAttempt = attemptRepository.save(attempt);
 
-                // TODO: Tại đây, bạn sẽ gọi Interface/Event để thông báo cho Người 4 (Progress
-                // + Review)
-                // progressService.updateLearningProgress(gradedAttempt);
+                progressService.updateQuizProgress(gradedAttempt.getUser(), gradedAttempt.getQuiz(), gradedAttempt.getTotalScore());
+
+                reviewService.updateMultipleQuestionMemories(attempt.getUser(), reviewResults);
 
                 return gradedAttempt;
         }

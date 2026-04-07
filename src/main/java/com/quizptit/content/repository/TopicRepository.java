@@ -22,4 +22,7 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
 
     @Query("SELECT t FROM Topic t WHERE (:subjectId IS NULL OR t.subject.subjectId = :subjectId) AND (:keyword IS NULL OR :keyword = '' OR LOWER(t.topicName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND (:isActive IS NULL OR t.isActive = :isActive)")
     Page<Topic> searchTopics(Long subjectId, String keyword, Boolean isActive, Pageable pageable);
+
+    List<Topic> findBySubjectSubjectId(Long subjectId); 
+    int countBySubjectSubjectId(Long subjectId);
 }
