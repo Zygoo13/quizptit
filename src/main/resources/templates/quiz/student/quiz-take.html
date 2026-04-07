@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/student-layout :: layout(pageTitle='Đang Làm Bài', content=~{::content}, script=~{::script})}">
+
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+</head>
+
+<body>
+
+    <div th:fragment="content" class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4" th:each="aq, stt : ${attempt.attemptQuestions}">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <span th:text="'Câu ' + ${stt.count} + ': '">Câu 1:</span>
+                            <span class="text-dark" th:text="${aq.question.content}">Nội dung câu hỏi</span>
+                        </h6>
+
+                        <div class="options-container ps-3">
+                            <div class="form-check mb-2" th:each="opt : ${aq.question.options}">
+                                <input class="form-check-input answer-radio" type="radio"
+                                    th:name="'question_' + ${aq.attemptQuestionId}" th:id="'opt_' + ${opt.optionId}"
+                                    th:value="${opt.optionId}" th:data-aq-id="${aq.attemptQuestionId}">
+                                <label class="form-check-label w-100" th:for="'opt_' + ${opt.optionId}"
+                                    th:text="${opt.content}">
+                                    Đáp án A
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                    <div class="card-body text-center">
+                        <p class="text-muted fw-bold mb-1 small">THỜI GIAN CÒN LẠI</p>
+                        <h1 class="fw-bold text-danger mb-3 display-6" id="countdown-timer">00:00</h1>
+                        <hr>
+                        <button id="btn-submit" class="btn btn-primary w-100 fw-bold btn-lg shadow-sm"
+                            th:data-attempt-id="${attempt.attemptId}">
+                            <i class="bi bi-send-check me-2"></i> NỘP BÀI THI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:fragment="script" th:inline="javascript">
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        function performSubmit() {
+            let submitBtn = document.getElementById('btn-submit');
+            let attemptId = submitBtn.getAttribute('data-attempt-id');
+
+            // Hiển thị trạng thái đang nộp
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang nộp bài...';
+            submitBtn.disabled = true;
+
+            fetch(`/api/attempts/submit/${attemptId}`, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            })
+                .then(res => res.json())
+                .then(result => {
+                    let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
+                    window.location.replace(resultUrl);
+                })
+                .catch(err => {
+                    alert("Lỗi khi nộp bài!");
+                    submitBtn.innerHTML = '<i class="bi bi-send-check me-2"></i> NỘP BÀI THI';
+                    submitBtn.disabled = false;
+                });
+        }
+
+        // 1. TỰ ĐỘNG LƯU NHÁP KHI CLICK CHỌN ĐÁP ÁN
+        document.querySelectorAll('.answer-radio').forEach(radio => {
+            radio.addEventListener('change', function () {
+                let attemptQuestionId = this.getAttribute('data-aq-id');
+                let optionId = this.value;
+
+                fetch('/api/attempts/save-answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        "attemptQuestionId": parseInt(attemptQuestionId),
+                        "optionId": parseInt(optionId)
+                    })
+                }).then(res => {
+                    if (!res.ok) console.error("Lỗi không lưu được nháp câu " + attemptQuestionId);
+                });
+            });
+        });
+
+        // 2. XỬ LÝ NỘP BÀI
+        document.getElementById('btn-submit').addEventListener('click', function (e) {
+            e.preventDefault();
+            // Chỉ khi tự bấm mới hỏi xác nhận
+            if (confirm("Bạn có chắc chắn muốn nộp bài không?")) {
+                performSubmit();
+            }
+        });
+
+        // --- LOGIC ĐỒNG HỒ ĐẾM NGƯỢC (Đã sửa lại để nhận data thật) ---
+
+        // Lấy thời gian từ Backend qua Thymeleaf (mặc định 1 phút nếu null để tránh lỗi)
+        let totalTimeInSeconds = /*[[${remainingSeconds != null ? remainingSeconds : (attempt.quiz.durationMinutes * 60)}]]*/ 60;
+        const timerElement = document.getElementById("countdown-timer");
+
+        function updateTimer() {
+            if (totalTimeInSeconds <= 0) {
+                clearInterval(timerInterval);
+                timerElement.innerText = "00:00";
+                performSubmit();
+                return;
+            }
+
+            let minutes = Math.floor(totalTimeInSeconds / 60);
+            let seconds = totalTimeInSeconds % 60;
+            timerElement.innerText = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+            if (totalTimeInSeconds <= 60) {
+                timerElement.classList.add("animate__animated", "animate__flash", "animate__infinite");
+            }
+            totalTimeInSeconds--;
+        }
+
+        let timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
+
+</body>
+
+</html>

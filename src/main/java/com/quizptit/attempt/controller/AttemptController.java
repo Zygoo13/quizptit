@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import com.quizptit.attempt.dto.request.SaveAnswerRequest;
 import com.quizptit.attempt.dto.response.AttemptResultResponse;
 import com.quizptit.attempt.entity.Attempt;
-import com.quizptit.attempt.service.AttemptService;
+import com.quizptit.attempt.service.impl.AttemptServiceImpl;
 import com.quizptit.common.util.CurrentUserUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AttemptController {
 
-    private final AttemptService attemptService;
+    private final AttemptServiceImpl attemptService;
 
     // 1. Sinh viên bấm "Bắt đầu làm bài"
     @PostMapping("/start/{quizId}")
@@ -27,7 +27,8 @@ public class AttemptController {
 
         // Thực tế ở đây bạn nên trả về một DTO chứa chi tiết các câu hỏi
         // (đã bị ẩn đáp án đúng) để Frontend render giao diện làm bài.
-        return ResponseEntity.ok("Đã bắt đầu làm bài. Attempt ID: " + attempt.getAttemptId());
+        // Thay vì trả về String, hãy trả về 1 Object JSON chứa ID
+        return ResponseEntity.ok(java.util.Map.of("attemptId", attempt.getAttemptId()));
     }
 
     // 2. Lưu nháp đáp án khi sinh viên click chọn

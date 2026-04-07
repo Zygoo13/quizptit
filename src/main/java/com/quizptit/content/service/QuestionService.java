@@ -3,6 +3,9 @@ package com.quizptit.content.service;
 import com.quizptit.content.entity.Question;
 import com.quizptit.common.constant.QuestionStatus;
 import com.quizptit.common.constant.DifficultyLevel;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,4 +20,6 @@ public interface QuestionService {
     Question updateQuestion(Long questionId, Question questionDetails);
 
     void changeStatus(Long questionId, QuestionStatus newStatus);
+
+    List<Question> getAllQuestions();
 }

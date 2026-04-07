@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/student-layout :: layout(pageTitle='Kết Quả Làm Bài', content=~{::content})}">
+
+<head></head>
+
+<body>
+
+    <div th:fragment="content" class="container mt-5" style="max-width: 650px;">
+        <div class="card shadow-lg border-0 rounded-4 text-center overflow-hidden">
+
+            <div class="bg-success text-white py-5">
+                <i class="bi bi-trophy-fill text-warning mb-3"
+                    style="font-size: 5rem; filter: drop-shadow(0 0 15px rgba(255,215,0,0.5));"></i>
+                <h2 class="fw-bold text-uppercase">NỘP BÀI THÀNH CÔNG!</h2>
+                <p class="mb-0 fs-5" th:text="${attempt.quiz.title}">Đề thi môn Java</p>
+            </div>
+
+            <div class="card-body p-4 bg-white">
+                <div class="row text-center mb-4 align-items-center">
+                    <div class="col-4 border-end">
+                        <h1 class="display-4 fw-bold text-primary" th:text="${attempt.totalScore}">0.00</h1>
+                        <p class="text-muted fw-bold mb-0">Tổng Điểm</p>
+                    </div>
+
+                    <div class="col-4 border-end">
+                        <h1 class="display-4 fw-bold text-success"
+                            th:text="${attempt.correctCount} + '/' + ${attempt.quiz.totalQuestions}">
+                            0/0
+                        </h1>
+                        <p class="text-muted fw-bold mb-0">Số Câu Đúng</p>
+                    </div>
+
+                    <div class="col-4">
+                        <h1 class="display-4 fw-bold text-info"
+                            th:text="${attempt.durationSeconds / 60} + ':' + ${#numbers.formatInteger(attempt.durationSeconds % 60, 2)}">
+                            0:00
+                        </h1>
+                        <p class="text-muted fw-bold mb-0">Thời Gian Làm Bài</p>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25 mb-4">
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a th:href="@{/quizzes}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 py-2">
+                        <i class="bi bi-house-door me-2"></i> Trở về Danh sách
+                    </a>
+                    <button class="btn btn-primary fw-bold rounded-pill px-4 py-2"
+                        onclick="alert('Tính năng xem chi tiết đáp án đang được phát triển!')">
+                        <i class="bi bi-card-checklist me-2"></i> Xem Lại Đáp Án
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

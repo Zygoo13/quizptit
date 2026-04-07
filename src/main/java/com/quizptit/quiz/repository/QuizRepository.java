@@ -17,5 +17,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     long countByTopic(Topic topic);
 
     int countByTopicTopicId(Long topicId);
+
     List<Quiz> findByTopicTopicId(Long topicId);
 }
