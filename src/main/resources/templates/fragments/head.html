@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title}">QuizPTIT</title>
-    
+
+    <!-- Meta CSRF for AJAX requests -->
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+
     <!-- CHUẨN HÓA: Thay thế Webjars bằng đường dẫn static thực tế của bạn -->
     <link rel="stylesheet" th:href="@{/bootstrap/5.3.8/css/bootstrap.min.css}">
-    
+
     <!-- Tích hợp thêm Bootstrap Icons để các Sidebar và Button có icon đẹp -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+
     <style>
         :root {
             --ptit-blue: #0d6efd;
@@ -73,7 +78,8 @@
         }
 
         /* Tinh chỉnh các input form cho đẹp hơn */
-        .form-control:focus, .form-select:focus {
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--ptit-blue);
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
         }
@@ -85,4 +91,5 @@
         }
     </style>
 </head>
+
 </html>
