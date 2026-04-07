@@ -123,31 +123,39 @@ public class AttemptService {
                         }
                 }
 
-                // Tìm xem đã trả lời câu này chưa (Cập nhật hoặc Tạo mới)
-                AttemptAnswer answer = attemptAnswerRepository
-                                .findByAttemptQuestion_AttemptQuestionId(attemptQuestionId)
-                                .orElse(AttemptAnswer.builder()
-                                                .attemptQuestion(attemptQuestion)
-                                                .build());
+    // 2. Nộp bài và chấm điểm tự động
+    @Transactional
+    public Attempt submitAttempt(Long attemptId) {
+        List<ReviewItemResult> reviewResults = new ArrayList<>();
+        // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
+        // LazyInitializationException
+        Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
 
-                answer.setSelectedOption(selectedOption);
-                answer.setAnsweredAt(LocalDateTime.now());
-
-                attemptAnswerRepository.save(answer);
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            throw new RuntimeException("Bài làm này đã được nộp trước đó");
         }
 
-        // 2. Nộp bài và chấm điểm tự động
-        @Transactional
-        public Attempt submitAttempt(Long attemptId) {
-                List<ReviewItemResult> reviewResults = new ArrayList<>();
-                // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
-                // LazyInitializationException
-                Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
+        LocalDateTime now = LocalDateTime.now();
+        attempt.setSubmittedAt(now);
+        attempt.setStatus(AttemptStatus.SUBMITTED);
+        attempt.setDurationSeconds((int) Duration.between(attempt.getStartedAt(), now).getSeconds());
 
-                if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
-                        throw new RuntimeException("Bài làm này đã được nộp trước đó");
-                }
+        // Chấm điểm
+        List<AttemptQuestion> questions = attemptQuestionRepository.findByAttempt_AttemptId(attemptId);
+        int correctCount = 0;
+        BigDecimal totalScore = BigDecimal.ZERO;
+
+        for (AttemptQuestion aq : questions) {
+            // Lấy câu trả lời của sinh viên cho câu hỏi này
+            AttemptAnswer answer = attemptAnswerRepository
+                .findByAttemptQuestion_AttemptQuestionId(aq.getAttemptQuestionId())
+                .orElse(null);
+
+            if (answer != null && answer.getSelectedOption() != null) {
+                // Giả sử bảng AnswerOption có trường isCorrect() kiểu boolean
+                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+                answer.setIsCorrect(isCorrect);
 
                 LocalDateTime now = LocalDateTime.now();
                 attempt.setSubmittedAt(now);
@@ -182,11 +190,10 @@ public class AttemptService {
                                 reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
                         }
                 }
-
-                // Cập nhật tổng điểm vào bảng Attempt
-                attempt.setCorrectCount(correctCount);
-                attempt.setTotalScore(totalScore);
-                attempt.setStatus(AttemptStatus.GRADED); // Chuyển sang trạng thái đã chấm điểm
+                attemptAnswerRepository.save(answer);
+                reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
+            }
+        }
 
                 // Lưu kết quả bài làm
                 Attempt gradedAttempt = attemptRepository.save(attempt);
@@ -204,23 +211,29 @@ public class AttemptService {
                 return attemptRepository.findByUser_UserIdOrderByStartedAtDesc(userId);
         }
 
-        // 2. Xem chi tiết kết quả một lần làm bài cụ thể
-        @Transactional(readOnly = true)
-        public Attempt getAttemptResultDetail(Long attemptId, Long currentUserId) {
-                // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query
-                Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
+    // 1. Xem lịch sử làm bài của bản thân
+    @Transactional(readOnly = true)
+    public List<Attempt> getUserAttemptHistory(Long userId) {
+        return attemptRepository.findByUser_UserIdOrderByStartedAtDesc(userId);
+    }
 
-                // Validate bảo mật: Chặn không cho sinh viên A xem điểm của sinh viên B
-                if (!attempt.getUser().getUserId().equals(currentUserId)) {
-                        throw new RuntimeException("Bạn không có quyền xem kết quả bài làm này");
-                }
+    // 2. Xem chi tiết kết quả một lần làm bài cụ thể
+    @Transactional(readOnly = true)
+    public Attempt getAttemptResultDetail(Long attemptId, Long currentUserId) {
+        // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query
+        Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
 
-                // Chỉ cho phép xem chi tiết khi bài đã nộp hoặc đã chấm điểm
-                if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
-                        throw new RuntimeException("Bài thi đang diễn ra, chưa có kết quả");
-                }
-
-                return attempt;
+        // Validate bảo mật: Chặn không cho sinh viên A xem điểm của sinh viên B
+        if (!attempt.getUser().getUserId().equals(currentUserId)) {
+                throw new RuntimeException("Bạn không có quyền xem kết quả bài làm này");
         }
+
+        // Chỉ cho phép xem chi tiết khi bài đã nộp hoặc đã chấm điểm
+        if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+                throw new RuntimeException("Bài thi đang diễn ra, chưa có kết quả");
+        }
+
+        return attempt;
+    }
 }

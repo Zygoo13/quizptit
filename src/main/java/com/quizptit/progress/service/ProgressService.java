@@ -11,6 +11,8 @@ import com.quizptit.progress.entity.LearningProgress;
 import com.quizptit.progress.entity.UserQuizProgress;
 import com.quizptit.progress.repository.LearningProgressRepository;
 import com.quizptit.progress.repository.UserQuizProgressRepository;
+import com.quizptit.review.repository.UserQuestionMemoryRepository; // 1. Thêm import này
+import com.quizptit.review.dto.ReviewSubjectDTO; // Đảm bảo import đúng gói review.dto
 import com.quizptit.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,18 +30,16 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ProgressService {
-    private final UserQuizProgressRepository progressRepository;
+    private final UserQuizProgressRepository userQuizProgressRepository;
     private final LearningProgressRepository learningProgressRepository;
     private final SubjectRepository subjectRepository;
     private final TopicRepository topicRepository;
     private final QuizRepository quizRepository;
-
-    // --- LOGIC CẬP NHẬT (KHI NỘP BÀI) ---
+    private final UserQuestionMemoryRepository userQuestionMemoryRepository; // 2. Khai báo thêm repository này
 
     @Transactional
     public void updateQuizProgress(User user, Quiz quiz, BigDecimal currentScore) {
-        // 1. Cập nhật tiến độ bài Quiz cụ thể (UserQuizProgress)
-        UserQuizProgress progress = progressRepository.findByUserUserIdAndQuizQuizId(user.getUserId(), quiz.getQuizId())
+        UserQuizProgress progress = userQuizProgressRepository.findByUserUserIdAndQuizQuizId(user.getUserId(), quiz.getQuizId())
                 .orElse(UserQuizProgress.builder()
                         .user(user)
                         .quiz(quiz)
@@ -55,9 +55,7 @@ public class ProgressService {
             progress.setHighestScore(currentScore);
         }
 
-        progressRepository.save(progress);
-
-        // 2. Đồng bộ hóa sang tiến độ Chương (LearningProgress)
+        userQuizProgressRepository.save(progress);
         this.updateTopicMastery(user, quiz.getTopic());
     }
 
@@ -76,20 +74,18 @@ public class ProgressService {
                         .lastPracticedAt(null)
                         .build());
 
-        List<UserQuizProgress> topicProgresses = progressRepository
+        List<UserQuizProgress> topicProgresses = userQuizProgressRepository
                 .findAllByUserUserIdAndTopicTopicId(user.getUserId(), topic.getTopicId());
 
         int totalQuizzesInTopic = quizRepository.countByTopicTopicId(topic.getTopicId());
         int totalAttempts = topicProgresses.stream().mapToInt(UserQuizProgress::getTotalAttempts).sum();
         
-        // Tính điểm trung bình (averageScore) của các quiz đã làm trong topic
         BigDecimal averageScore = topicProgresses.isEmpty() ? BigDecimal.ZERO :
                 topicProgresses.stream()
                         .map(UserQuizProgress::getHighestScore)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(topicProgresses.size()), 2, RoundingMode.HALF_UP);
 
-        // Tính % hoàn thành dựa trên số lượng quiz đã làm / tổng quiz trong hệ thống của topic đó
         double percentage = totalQuizzesInTopic == 0 ? 0 : 
                 ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
 
@@ -103,9 +99,6 @@ public class ProgressService {
         learningProgressRepository.save(learningProgress);
     }
 
-    // --- LOGIC HIỂN THỊ (VIEW DATA) ---
-
-    // Cấp 1: Lấy tất cả Môn học (Subjects)
     @Transactional(readOnly = true)
     public List<SubjectProgressDTO> getAllSubjectProgress(Long userId) {
         return subjectRepository.findAll().stream().map(subject -> {
@@ -127,7 +120,6 @@ public class ProgressService {
         }).collect(Collectors.toList());
     }
 
-    // Cấp 2: Lấy tất cả Chương (Topics) theo Môn học
     @Transactional(readOnly = true)
     public List<TopicProgressDTO> getTopicsBySubject(Long userId, Long subjectId) {
         List<Topic> topics = topicRepository.findBySubjectSubjectId(subjectId);
@@ -146,11 +138,10 @@ public class ProgressService {
         }).collect(Collectors.toList());
     }
 
-    // Cấp 3: Lấy tất cả Quiz theo Chương
     @Transactional(readOnly = true)
     public List<QuizStatusDTO> getQuizzesByTopic(Long userId, Long topicId) {
         List<Quiz> allQuizzes = quizRepository.findByTopicTopicId(topicId);
-        List<UserQuizProgress> userProgresses = progressRepository.findAllByUserUserIdAndTopicTopicId(userId, topicId);
+        List<UserQuizProgress> userProgresses = userQuizProgressRepository.findAllByUserUserIdAndTopicTopicId(userId, topicId);
 
         return allQuizzes.stream().map(quiz -> {
             Optional<UserQuizProgress> up = userProgresses.stream()
@@ -165,9 +156,8 @@ public class ProgressService {
         }).collect(Collectors.toList());
     }
 
-    // Lịch sử làm bài tổng quát
     public List<QuizProgressDTO> getMyProgress(Long userId) {
-        return progressRepository.findByUserUserId(userId).stream()
+        return userQuizProgressRepository.findByUserUserId(userId).stream()
                 .map(this::mapToQuizProgressDTO)
                 .collect(Collectors.toList());
     }
@@ -187,16 +177,22 @@ public class ProgressService {
         Page<AdminProgressDTO> page = learningProgressRepository.findAdminProgressSummary(subjectId, keyword, pageable);
 
         page.forEach(dto -> {
-            // Lấy tổng số chương thực tế của môn học
             int total = topicRepository.countBySubjectSubjectId(dto.getSubjectId());
             dto.setTotalTopics(total);
 
-            // Phân loại trạng thái dựa trên điểm
             double score = dto.getAverageScore() != null ? dto.getAverageScore().doubleValue() : 0;
             if (score >= 8.0) dto.setStatus("Xuất sắc");
             else if (score >= 5.0) dto.setStatus("Đạt");
             else dto.setStatus("Cảnh báo");
         });
         return page;
+    }
+
+    public List<ReviewSubjectDTO> getSubjectsToReview(Long userId) {
+        return userQuestionMemoryRepository.findReviewDashboardData(userId, LocalDateTime.now());
+    }
+
+    public List<QuestionReviewDTO> getSpecificQuestionsToReview(Long userId, Long subjectId) {
+        return userQuestionMemoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
     }
 }
