@@ -35,95 +35,93 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class AttemptService {
 
-    private final AttemptRepository attemptRepository;
-    private final QuizRepository quizRepository;
-    private final UserRepository userRepository;
-    private final QuizQuestionRepository quizQuestionRepository;
-    private final AttemptQuestionRepository attemptQuestionRepository;
-    private final AttemptAnswerRepository attemptAnswerRepository;
-    private final AnswerOptionRepository answerOptionRepository;
-    private final ProgressService progressService;
-    private final ReviewService reviewService;
+        private final AttemptRepository attemptRepository;
+        private final QuizRepository quizRepository;
+        private final UserRepository userRepository;
+        private final QuizQuestionRepository quizQuestionRepository;
+        private final AttemptQuestionRepository attemptQuestionRepository;
+        private final AttemptAnswerRepository attemptAnswerRepository;
+        private final AnswerOptionRepository answerOptionRepository;
+        private final ProgressService progressService;
+        private final ReviewService reviewService;
 
-    @Transactional
-    public Attempt startAttempt(Long quizId, Long userId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
+        @Transactional
+        public Attempt startAttempt(Long quizId, Long userId) {
+                Quiz quiz = quizRepository.findById(quizId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
 
-        if (!quiz.getIsPublished()) {
-            throw new RuntimeException("Bài Quiz này chưa được mở");
+                // Kiểm tra quiz đã được publish chưa
+                if (!quiz.getIsPublished()) {
+                        throw new RuntimeException("Bài Quiz này chưa được mở, không thể bắt đầu làm bài");
+                }
+
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy User"));
+
+                // 1. Tạo bản ghi Attempt mới
+                Attempt attempt = Attempt.builder()
+                                .user(user)
+                                .quiz(quiz)
+                                .startedAt(LocalDateTime.now())
+                                .status(AttemptStatus.IN_PROGRESS)
+                                .correctCount(0)
+                                .durationSeconds(0)
+                                .build();
+
+                Attempt savedAttempt = attemptRepository.save(attempt);
+
+                // 2. Lấy danh sách câu hỏi gốc từ Quiz
+                List<QuizQuestion> originalQuestions = quizQuestionRepository
+                                .findByQuiz_QuizIdOrderByOrderNoAsc(quizId);
+
+                // Kiểm tra quiz có câu hỏi chưa
+                if (originalQuestions.isEmpty()) {
+                        throw new RuntimeException("Bài Quiz này chưa có câu hỏi nào, không thể bắt đầu làm bài");
+                }
+
+                // 3. Snapshot câu hỏi sang AttemptQuestion kèm order_no
+                AtomicInteger orderCounter = new AtomicInteger(1);
+
+                List<AttemptQuestion> attemptQuestions = new ArrayList<>();
+                for (QuizQuestion oq : originalQuestions) {
+                        AttemptQuestion attemptQuestion = AttemptQuestion.builder()
+                                        .attempt(savedAttempt)
+                                        .question(oq.getQuestion())
+                                        .orderNo(orderCounter.getAndIncrement())
+                                        .scoreWeight(oq.getScoreWeight())
+                                        .build();
+                        attemptQuestions.add(attemptQuestion);
+                }
+
+                attemptQuestionRepository.saveAll(attemptQuestions);
+
+                return savedAttempt;
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy User"));
+        // 1. Lưu từng câu trả lời trong lúc làm bài
+        @Transactional
+        public void saveAnswer(Long attemptQuestionId, Long optionId) {
+                AttemptQuestion attemptQuestion = attemptQuestionRepository.findById(attemptQuestionId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy câu hỏi trong đề"));
 
-        Attempt attempt = Attempt.builder()
-                .user(user)
-                .quiz(quiz)
-                .startedAt(LocalDateTime.now())
-                .status(AttemptStatus.IN_PROGRESS)
-                .correctCount(0)
-                .durationSeconds(0)
-                .build();
+                // Kiểm tra xem Attempt còn hạn hay không (thêm logic check status IN_PROGRESS)
+                if (attemptQuestion.getAttempt().getStatus() != AttemptStatus.IN_PROGRESS) {
+                        throw new RuntimeException("Bài thi đã kết thúc, không thể lưu thêm đáp án");
+                }
 
-        Attempt savedAttempt = attemptRepository.save(attempt);
+                AnswerOption selectedOption = null;
+                if (optionId != null) {
+                        selectedOption = answerOptionRepository.findById(optionId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Đáp án không tồn tại (option_id = " + optionId + ")"));
 
-        List<QuizQuestion> originalQuestions =
-                quizQuestionRepository.findByQuiz_QuizIdOrderByOrderNoAsc(quizId);
-
-        if (originalQuestions.isEmpty()) {
-            throw new RuntimeException("Quiz chưa có câu hỏi");
-        }
-
-        AtomicInteger orderCounter = new AtomicInteger(1);
-
-        List<AttemptQuestion> attemptQuestions = new ArrayList<>();
-        for (QuizQuestion oq : originalQuestions) {
-            attemptQuestions.add(
-                    AttemptQuestion.builder()
-                            .attempt(savedAttempt)
-                            .question(oq.getQuestion())
-                            .orderNo(orderCounter.getAndIncrement())
-                            .scoreWeight(oq.getScoreWeight())
-                            .build()
-            );
-        }
-
-        attemptQuestionRepository.saveAll(attemptQuestions);
-        return savedAttempt;
-    }
-
-    @Transactional
-    public void saveAnswer(Long attemptQuestionId, Long optionId) {
-        AttemptQuestion attemptQuestion = attemptQuestionRepository.findById(attemptQuestionId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy câu hỏi"));
-
-        if (attemptQuestion.getAttempt().getStatus() != AttemptStatus.IN_PROGRESS) {
-            throw new RuntimeException("Bài thi đã kết thúc");
-        }
-
-        AnswerOption selectedOption = null;
-        if (optionId != null) {
-            selectedOption = answerOptionRepository.findById(optionId)
-                    .orElseThrow(() -> new RuntimeException("Đáp án không tồn tại"));
-
-            if (!selectedOption.getQuestion().getQuestionId()
-                    .equals(attemptQuestion.getQuestion().getQuestionId())) {
-                throw new RuntimeException("Đáp án không hợp lệ");
-            }
-        }
-
-        AttemptAnswer answer = attemptAnswerRepository
-                .findByAttemptQuestion_AttemptQuestionId(attemptQuestionId)
-                .orElse(AttemptAnswer.builder()
-                        .attemptQuestion(attemptQuestion)
-                        .build());
-
-        answer.setSelectedOption(selectedOption);
-        answer.setAnsweredAt(LocalDateTime.now());
-
-        attemptAnswerRepository.save(answer);
-    }
+                        // Kiểm tra đáp án có thuộc đúng câu hỏi này không
+                        Long expectedQuestionId = attemptQuestion.getQuestion().getQuestionId();
+                        Long actualQuestionId = selectedOption.getQuestion().getQuestionId();
+                        if (!actualQuestionId.equals(expectedQuestionId)) {
+                                throw new RuntimeException("Đáp án không hợp lệ");
+                        }
+                }
 
     // 2. Nộp bài và chấm điểm tự động
     @Transactional
@@ -159,37 +157,59 @@ public class AttemptService {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
                 answer.setIsCorrect(isCorrect);
 
-                if (isCorrect) {
-                    answer.setScoreObtained(aq.getScoreWeight());
-                    correctCount++;
-                    totalScore = totalScore.add(aq.getScoreWeight());
-                } else {
-                    answer.setScoreObtained(BigDecimal.ZERO);
+                LocalDateTime now = LocalDateTime.now();
+                attempt.setSubmittedAt(now);
+                attempt.setStatus(AttemptStatus.SUBMITTED);
+                attempt.setDurationSeconds((int) Duration.between(attempt.getStartedAt(), now).getSeconds());
+
+                // Chấm điểm
+                List<AttemptQuestion> questions = attemptQuestionRepository.findByAttempt_AttemptId(attemptId);
+                int correctCount = 0;
+                BigDecimal totalScore = BigDecimal.ZERO;
+
+                for (AttemptQuestion aq : questions) {
+                        // Lấy câu trả lời của sinh viên cho câu hỏi này
+                        AttemptAnswer answer = attemptAnswerRepository
+                                        .findByAttemptQuestion_AttemptQuestionId(aq.getAttemptQuestionId())
+                                        .orElse(null);
+
+                        if (answer != null && answer.getSelectedOption() != null) {
+                                // Giả sử bảng AnswerOption có trường isCorrect() kiểu boolean
+                                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+                                answer.setIsCorrect(isCorrect);
+
+                                if (isCorrect) {
+                                        answer.setScoreObtained(aq.getScoreWeight()); // Lấy trọng số điểm từ
+                                                                                      // AttemptQuestion
+                                        correctCount++;
+                                        totalScore = totalScore.add(aq.getScoreWeight());
+                                } else {
+                                        answer.setScoreObtained(BigDecimal.ZERO);
+                                }
+                                attemptAnswerRepository.save(answer);
+                                reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
+                        }
                 }
                 attemptAnswerRepository.save(answer);
                 reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
             }
         }
 
-        attempt.setCorrectCount(correctCount);
-        attempt.setTotalScore(totalScore);
-        attempt.setStatus(AttemptStatus.GRADED);
+                // Lưu kết quả bài làm
+                Attempt gradedAttempt = attemptRepository.save(attempt);
 
-        Attempt gradedAttempt = attemptRepository.save(attempt);
+                progressService.updateQuizProgress(gradedAttempt.getUser(), gradedAttempt.getQuiz(), gradedAttempt.getTotalScore());
 
-        progressService.updateQuizProgress(
-                gradedAttempt.getUser(),
-                gradedAttempt.getQuiz(),
-                gradedAttempt.getTotalScore()
-        );
+                reviewService.updateMultipleQuestionMemories(attempt.getUser(), reviewResults);
 
-        reviewService.updateMultipleQuestionMemories(
-                gradedAttempt.getUser(),
-                reviewResults
-        );
+                return gradedAttempt;
+        }
 
-        return gradedAttempt;
-    }
+        // 1. Xem lịch sử làm bài của bản thân
+        @Transactional(readOnly = true)
+        public List<Attempt> getUserAttemptHistory(Long userId) {
+                return attemptRepository.findByUser_UserIdOrderByStartedAtDesc(userId);
+        }
 
     // 1. Xem lịch sử làm bài của bản thân
     @Transactional(readOnly = true)
