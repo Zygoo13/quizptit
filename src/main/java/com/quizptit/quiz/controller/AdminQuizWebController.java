@@ -1,10 +1,15 @@
 package com.quizptit.quiz.controller;
 
 import com.quizptit.content.repository.SubjectRepository;
+import com.quizptit.content.service.QuestionService;
+import com.quizptit.content.service.SubjectService;
+import com.quizptit.content.service.TopicService;
 import com.quizptit.content.repository.QuestionRepository;
 import com.quizptit.quiz.repository.QuizRepository;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Sort;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,17 +17,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/admin/quizzes")
+@RequiredArgsConstructor
 public class AdminQuizWebController {
 
-    // Gọi trực tiếp xuống kho (Repository) thay vì qua Service
-    @Autowired
-    private SubjectRepository subjectRepository;
+    private final SubjectService subjectService;
 
-    @Autowired
-    private QuestionRepository questionRepository;
+    private final QuestionService questionService;
 
-    @Autowired
-    private QuizRepository quizRepository;
+    private final QuizRepository quizRepository;
+
+    private final TopicService topicService;
 
     @GetMapping
     public String showQuizList(Model model) {
@@ -34,8 +38,9 @@ public class AdminQuizWebController {
     public String showCreateQuizPage(Model model) {
 
         // Dùng hàm findAll() có sẵn của JpaRepository để lấy toàn bộ dữ liệu
-        model.addAttribute("subjects", subjectRepository.findAll());
-        model.addAttribute("questions", questionRepository.findAll());
+        model.addAttribute("subjects", subjectService.getAllSubjects());
+        model.addAttribute("topics", topicService.getAllTopics());
+        model.addAttribute("questions", questionService.getAllQuestions());
 
         return "quiz/admin/quiz-create";
     }

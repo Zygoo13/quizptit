@@ -1,14 +1,17 @@
 package com.quizptit.quiz.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import com.quizptit.attempt.entity.Attempt;
+import com.quizptit.attempt.service.impl.AttemptServiceImpl;
 import com.quizptit.common.util.CurrentUserUtils;
 import com.quizptit.quiz.dto.request.ManualQuizRequest;
 import com.quizptit.quiz.dto.request.RandomQuizRequest;
 import com.quizptit.quiz.dto.response.QuizResponse;
 import com.quizptit.quiz.entity.Quiz;
-import com.quizptit.quiz.service.QuizService;
+import com.quizptit.quiz.service.impl.QuizServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -18,18 +21,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class QuizController {
 
-    private final QuizService quizService;
-
-    // --- API CHO ADMIN / GIẢNG VIÊN ---
+    private final QuizServiceImpl quizService;
 
     @PostMapping("/manual")
     public ResponseEntity<?> createManualQuiz(@RequestBody ManualQuizRequest request) {
-        // Lấy ID người tạo từ Security Context (Giả sử bạn có class CurrentUserUtils)
+        // 1. Lấy ID người tạo từ Security Context
         Long creatorId = CurrentUserUtils.getCurrentUserId();
 
-        Quiz quiz = quizService.createManualQuiz(
-                request.getSubjectId(), creatorId, request.getTitle(),
-                request.getDurationMinutes(), request.getQuestionIds());
+        // 2. Truyền NGANG nguyên cả gói hàng 'request' và 'creatorId' xuống cho Service
+        // xử lý
+        Quiz quiz = quizService.createManualQuiz(request, creatorId);
+
+        // 3. Báo cáo thành công
         return ResponseEntity.ok("Tạo đề thủ công thành công, ID: " + quiz.getQuizId());
     }
 

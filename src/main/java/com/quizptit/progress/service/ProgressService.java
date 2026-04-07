@@ -81,22 +81,23 @@ public class ProgressService {
 
         int totalQuizzesInTopic = quizRepository.countByTopicTopicId(topic.getTopicId());
         int totalAttempts = topicProgresses.stream().mapToInt(UserQuizProgress::getTotalAttempts).sum();
-        
+
         // Tính điểm trung bình (averageScore) của các quiz đã làm trong topic
-        BigDecimal averageScore = topicProgresses.isEmpty() ? BigDecimal.ZERO :
-                topicProgresses.stream()
+        BigDecimal averageScore = topicProgresses.isEmpty() ? BigDecimal.ZERO
+                : topicProgresses.stream()
                         .map(UserQuizProgress::getHighestScore)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(topicProgresses.size()), 2, RoundingMode.HALF_UP);
 
-        // Tính % hoàn thành dựa trên số lượng quiz đã làm / tổng quiz trong hệ thống của topic đó
-        double percentage = totalQuizzesInTopic == 0 ? 0 : 
-                ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
+        // Tính % hoàn thành dựa trên số lượng quiz đã làm / tổng quiz trong hệ thống
+        // của topic đó
+        double percentage = totalQuizzesInTopic == 0 ? 0
+                : ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
 
         learningProgress.setTotalAttempts(totalAttempts);
         learningProgress.setTotalQuizzes(totalQuizzesInTopic);
         learningProgress.setCompletedQuizzes(topicProgresses.size());
-        learningProgress.setMasteryScore(averageScore); 
+        learningProgress.setMasteryScore(averageScore);
         learningProgress.setProgressPercentage(BigDecimal.valueOf(percentage));
         learningProgress.setLastPracticedAt(LocalDateTime.now());
 
@@ -114,14 +115,15 @@ public class ProgressService {
 
             int totalQuizzes = lpList.stream().mapToInt(LearningProgress::getTotalQuizzes).sum();
             int completedQuizzes = lpList.stream().mapToInt(LearningProgress::getCompletedQuizzes).sum();
-            
+
             double overallPercent = totalQuizzes == 0 ? 0 : ((double) completedQuizzes / totalQuizzes) * 100;
 
             return SubjectProgressDTO.builder()
                     .subjectId(subject.getSubjectId())
                     .subjectName(subject.getSubjectName())
                     .totalTopics(topicRepository.countBySubjectSubjectId(subject.getSubjectId()))
-                    .completedTopics((int) lpList.stream().filter(lp -> lp.getProgressPercentage().doubleValue() >= 80).count())
+                    .completedTopics(
+                            (int) lpList.stream().filter(lp -> lp.getProgressPercentage().doubleValue() >= 80).count())
                     .overallPercentage(Math.round(overallPercent * 10) / 10.0)
                     .build();
         }).collect(Collectors.toList());
@@ -139,7 +141,8 @@ public class ProgressService {
             return TopicProgressDTO.builder()
                     .topicId(topic.getTopicId())
                     .topicName(topic.getTopicName())
-                    .totalQuizzes(lp.map(LearningProgress::getTotalQuizzes).orElse(quizRepository.countByTopicTopicId(topic.getTopicId())))
+                    .totalQuizzes(lp.map(LearningProgress::getTotalQuizzes)
+                            .orElse(quizRepository.countByTopicTopicId(topic.getTopicId())))
                     .completedQuizzes(lp.map(LearningProgress::getCompletedQuizzes).orElse(0))
                     .averageScore(lp.map(LearningProgress::getMasteryScore).orElse(BigDecimal.ZERO))
                     .build();
@@ -193,9 +196,12 @@ public class ProgressService {
 
             // Phân loại trạng thái dựa trên điểm
             double score = dto.getAverageScore() != null ? dto.getAverageScore().doubleValue() : 0;
-            if (score >= 8.0) dto.setStatus("Xuất sắc");
-            else if (score >= 5.0) dto.setStatus("Đạt");
-            else dto.setStatus("Cảnh báo");
+            if (score >= 8.0)
+                dto.setStatus("Xuất sắc");
+            else if (score >= 5.0)
+                dto.setStatus("Đạt");
+            else
+                dto.setStatus("Cảnh báo");
         });
         return page;
     }

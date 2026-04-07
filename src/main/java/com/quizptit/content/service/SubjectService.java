@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface SubjectService {
     Page<Subject> searchSubjects(String keyword, Boolean isActive, Pageable pageable);
-    
+
     List<Subject> getActiveSubjects();
 
     Subject getSubjectById(Long subjectId);
@@ -18,4 +18,6 @@ public interface SubjectService {
     Subject updateSubject(Long subjectId, Subject subjectDetails);
 
     void toggleStatus(Long subjectId);
+
+    List<Subject> getAllSubjects();
 }
