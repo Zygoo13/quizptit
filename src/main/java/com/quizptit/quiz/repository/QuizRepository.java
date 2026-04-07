@@ -14,6 +14,9 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     // Lấy danh sách bài luyện theo môn học (dùng khi sinh viên lọc theo môn)
     List<Quiz> findBySubject_SubjectIdAndIsPublishedTrueOrderByCreatedAtDesc(Long subjectId);
 
+    // Lấy danh sách bài luyện theo môn học (dùng khi sinh viên lọc theo môn)
+    List<Quiz> findBySubject_SubjectIdAndIsPublishedTrueOrderByCreatedAtDesc(Long subjectId);
+
     long countByTopic(Topic topic);
 
     int countByTopicTopicId(Long topicId);

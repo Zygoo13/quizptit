@@ -139,6 +139,102 @@ public class AttemptService {
         // 2. Nộp bài và chấm điểm tự động
         @Transactional
         public Attempt submitAttempt(Long attemptId) {
+                // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
+                // LazyInitializationException
+                Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy lượt làm bài"));
+
+                if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+                        throw new RuntimeException("Bài làm này đã được nộp trước đó");
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+                attempt.setSubmittedAt(now);
+                attempt.setStatus(AttemptStatus.SUBMITTED);
+                attempt.setDurationSeconds((int) Duration.between(attempt.getStartedAt(), now).getSeconds());
+
+                // Chấm điểm
+                List<AttemptQuestion> questions = attemptQuestionRepository.findByAttempt_AttemptId(attemptId);
+                int correctCount = 0;
+                BigDecimal totalScore = BigDecimal.ZERO;
+
+                for (AttemptQuestion aq : questions) {
+                        // Lấy câu trả lời của sinh viên cho câu hỏi này
+                        AttemptAnswer answer = attemptAnswerRepository
+                                        .findByAttemptQuestion_AttemptQuestionId(aq.getAttemptQuestionId())
+                                        .orElse(null);
+
+                        if (answer != null && answer.getSelectedOption() != null) {
+                                // Giả sử bảng AnswerOption có trường isCorrect() kiểu boolean
+                                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+                                answer.setIsCorrect(isCorrect);
+
+                                if (isCorrect) {
+                                        answer.setScoreObtained(aq.getScoreWeight()); // Lấy trọng số điểm từ
+                                                                                      // AttemptQuestion
+                                        correctCount++;
+                                        totalScore = totalScore.add(aq.getScoreWeight());
+                                } else {
+                                        answer.setScoreObtained(BigDecimal.ZERO);
+                                }
+                                attemptAnswerRepository.save(answer);
+                        }
+                }
+
+                // Cập nhật tổng điểm vào bảng Attempt
+                attempt.setCorrectCount(correctCount);
+                attempt.setTotalScore(totalScore);
+                attempt.setStatus(AttemptStatus.GRADED); // Chuyển sang trạng thái đã chấm điểm
+
+                // Lưu kết quả bài làm
+                Attempt gradedAttempt = attemptRepository.save(attempt);
+
+                // TODO: Tại đây, bạn sẽ gọi Interface/Event để thông báo cho Người 4 (Progress
+                // + Review)
+                // progressService.updateLearningProgress(gradedAttempt);
+        }
+
+        // 1. Lưu từng câu trả lời trong lúc làm bài
+        @Transactional
+        public void saveAnswer(Long attemptQuestionId, Long optionId) {
+                AttemptQuestion attemptQuestion = attemptQuestionRepository.findById(attemptQuestionId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy câu hỏi trong đề"));
+
+                // Kiểm tra xem Attempt còn hạn hay không (thêm logic check status IN_PROGRESS)
+                if (attemptQuestion.getAttempt().getStatus() != AttemptStatus.IN_PROGRESS) {
+                        throw new RuntimeException("Bài thi đã kết thúc, không thể lưu thêm đáp án");
+                }
+
+                AnswerOption selectedOption = null;
+                if (optionId != null) {
+                        selectedOption = answerOptionRepository.findById(optionId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Đáp án không tồn tại (option_id = " + optionId + ")"));
+
+                        // Kiểm tra đáp án có thuộc đúng câu hỏi này không
+                        Long expectedQuestionId = attemptQuestion.getQuestion().getQuestionId();
+                        Long actualQuestionId = selectedOption.getQuestion().getQuestionId();
+                        if (!actualQuestionId.equals(expectedQuestionId)) {
+                                throw new RuntimeException("Đáp án không hợp lệ");
+                        }
+                }
+
+                // Tìm xem đã trả lời câu này chưa (Cập nhật hoặc Tạo mới)
+                AttemptAnswer answer = attemptAnswerRepository
+                                .findByAttemptQuestion_AttemptQuestionId(attemptQuestionId)
+                                .orElse(AttemptAnswer.builder()
+                                                .attemptQuestion(attemptQuestion)
+                                                .build());
+
+                answer.setSelectedOption(selectedOption);
+                answer.setAnsweredAt(LocalDateTime.now());
+
+                attemptAnswerRepository.save(answer);
+        }
+
+        // 2. Nộp bài và chấm điểm tự động
+        @Transactional
+        public Attempt submitAttempt(Long attemptId) {
                 List<ReviewItemResult> reviewResults = new ArrayList<>();
                 // Dùng findByIdWithQuiz để load Quiz trong cùng 1 query, tránh
                 // LazyInitializationException
