@@ -11,16 +11,16 @@ import java.util.List;
 
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
-    
+
     boolean existsBySubjectName(String subjectName);
-    
+
     boolean existsBySubjectNameAndSubjectIdNot(String subjectName, Long subjectId);
-    
+
     @Query("SELECT s FROM Subject s WHERE LOWER(s.subjectName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(s.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Subject> searchSubjects(String keyword, Pageable pageable);
 
     Page<Subject> findByIsActive(Boolean isActive, Pageable pageable);
-    
+
     @Query("SELECT s FROM Subject s WHERE (:keyword IS NULL OR :keyword = '' OR LOWER(s.subjectName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(s.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND (:isActive IS NULL OR s.isActive = :isActive)")
     Page<Subject> searchSubjectsWithStatus(String keyword, Boolean isActive, Pageable pageable);
 
