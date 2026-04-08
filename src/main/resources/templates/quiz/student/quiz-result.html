@@ -46,10 +46,9 @@
                     <a th:href="@{/quizzes}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 py-2">
                         <i class="bi bi-house-door me-2"></i> Trở về Danh sách
                     </a>
-                    <button class="btn btn-primary fw-bold rounded-pill px-4 py-2"
-                        onclick="alert('Tính năng xem chi tiết đáp án đang được phát triển!')">
+                    <a th:href="@{/quizzes/attempts/{id}/review(id=${attempt.attemptId})}" class="btn btn-primary fw-bold rounded-pill px-4 py-2">
                         <i class="bi bi-card-checklist me-2"></i> Xem Lại Đáp Án
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

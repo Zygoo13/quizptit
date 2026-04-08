@@ -2,10 +2,9 @@ package com.quizptit.quiz.controller;
 
 import com.quizptit.attempt.entity.Attempt;
 import com.quizptit.attempt.entity.enums.AttemptStatus;
-import com.quizptit.attempt.service.impl.AttemptServiceImpl;
 import com.quizptit.common.util.CurrentUserUtils;
+import com.quizptit.content.entity.Subject;
 import com.quizptit.quiz.entity.Quiz;
-import com.quizptit.quiz.service.impl.QuizServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -22,8 +21,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StudentQuizWebController {
 
-    private final QuizServiceImpl quizService;
-    private final AttemptServiceImpl attemptService;
+    private final com.quizptit.quiz.service.QuizService quizService;
+    private final com.quizptit.attempt.service.AttemptService attemptService;
+    private final com.quizptit.content.service.SubjectService subjectService;
 
     @GetMapping("/attempts/{attemptId}/result")
     public String showQuizResult(@PathVariable Long attemptId, Model model) {
@@ -36,11 +36,30 @@ public class StudentQuizWebController {
         return "quiz/student/quiz-result";
     }
 
+    @GetMapping("/attempts/{attemptId}/review")
+    public String reviewQuizAttempt(@PathVariable Long attemptId, Model model) {
+        Long userId = CurrentUserUtils.getCurrentUserId();
+
+        Attempt attempt = attemptService.getAttemptResultDetail(attemptId, userId);
+        java.util.Map<Long, com.quizptit.attempt.entity.AttemptAnswer> answerMap = attemptService.getAnswersMapForAttempt(attemptId);
+
+        model.addAttribute("attempt", attempt);
+        model.addAttribute("answerMap", answerMap);
+        return "quiz/student/quiz-review";
+    }
+
     @GetMapping("/{quizId}")
     public String showQuizDetail(@PathVariable Long quizId, Model model) {
         Quiz quiz = quizService.getQuizDetail(quizId);
         model.addAttribute("quiz", quiz);
         return "quiz/student/quiz-detail";
+    }
+
+    @GetMapping("/random")
+    public String showRandomQuizPage(Model model) {
+        List<Subject> subjects = subjectService.getActiveSubjects();
+        model.addAttribute("subjects", subjects);
+        return "quiz/student/quiz-random";
     }
 
     // 2. VÀO PHÒNG THI (Đang làm bài)
@@ -53,6 +72,11 @@ public class StudentQuizWebController {
         model.addAttribute("remainingSeconds", attemptService.getRemainingSeconds(attempt));
         model.addAttribute("attempt", attempt);
         return "quiz/student/quiz-take";
+    }
+
+    @GetMapping("/history")
+    public String showQuizHistoryPage() {
+        return "quiz/student/quiz-history";
     }
 
     @GetMapping

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/student-layout :: layout(pageTitle='Tạo Bài Luyện Ngẫu Nhiên', content=~{::content}, script=~{::script})}">
+
+<head></head>
+
+<body>
+
+    <div th:fragment="content" class="container mt-4" style="max-width: 800px;">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="bg-success bg-gradient text-white text-center py-4 rounded-top-4">
+                <i class="bi bi-shuffle fs-1"></i>
+                <h3 class="fw-bold mt-2">Luyện Tập Ngẫu Nhiên</h3>
+                <p class="mb-0 text-white-50">Tạo đề thi dựa trên ngân hàng câu hỏi ngay lập tức</p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form id="random-quiz-form">
+                    
+                    <!-- Môn Học -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="bi bi-book text-primary me-2"></i>Chọn Môn Học <span class="text-danger">*</span></label>
+                        <select id="subjectId" class="form-select border-primary shadow-sm" required>
+                            <option value="">-- Vui lòng chọn môn học --</option>
+                            <option th:each="subject : ${subjects}" 
+                                    th:value="${subject.subjectId}" 
+                                    th:text="${subject.subjectName}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Chủ Đề -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="bi bi-bookmark-star text-warning me-2"></i>Chọn Chủ Đề (Tùy chọn)</label>
+                        <select id="topicId" class="form-select shadow-sm" disabled>
+                            <option value="">-- Vui lòng chọn môn học trước --</option>
+                        </select>
+                        <small class="text-muted mt-1 d-block"><i class="bi bi-info-circle me-1"></i>Nếu không chọn, hệ thống sẽ lấy câu hỏi ngẫu nhiên trong toàn bộ môn học.</small>
+                    </div>
+                    
+                    <div class="row gx-4 mb-4">
+                        <!-- Số lượng câu hỏi -->
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-bold"><i class="bi bi-question-square text-success me-2"></i>Số lượng câu hỏi <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm">
+                                <input type="number" id="requiredQuestions" class="form-control text-center" value="20" min="5" max="100" required>
+                                <span class="input-group-text bg-light text-dark">câu</span>
+                            </div>
+                        </div>
+
+                        <!-- Thời gian -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bi bi-clock-history text-danger me-2"></i>Thời gian làm bài <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm">
+                                <input type="number" id="durationMinutes" class="form-control text-center" value="30" min="5" max="180" required>
+                                <span class="input-group-text bg-light text-dark">phút</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút Bắt Đầu -->
+                    <div class="mt-5 text-center">
+                        <button type="submit" id="btn-create-start" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow">
+                            <i class="bi bi-lightning-charge-fill me-2"></i> TẠO ĐỀ & VÀO THI NGAY
+                        </button>
+                    </div>
+                    
+                    <!-- Alert chứa thông báo lỗi nếu có -->
+                    <div id="error-alert" class="alert alert-danger mt-4 d-none mb-0 rounded-3 shadow-sm border-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="error-message"></span>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script th:fragment="script" th:inline="javascript">
+        // Danh sách subject để lấy tên cho tiêu đề
+        const subjectsList = /*[[${subjects}]]*/ [];
+        
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        const subjectSelect = document.getElementById('subjectId');
+        const topicSelect = document.getElementById('topicId');
+        const submitBtn = document.getElementById('btn-create-start');
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessage = document.getElementById('error-message');
+
+        // Hàm hiển thị lỗi
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorAlert.classList.remove('d-none');
+            
+            // Xóa hiệu ứng loading
+            submitBtn.innerHTML = '<i class="bi bi-lightning-charge-fill me-2"></i> TẠO ĐỀ & VÀO THI NGAY';
+            submitBtn.disabled = false;
+        }
+
+        // Tải danh sách topic khi chọn Môn học
+        subjectSelect.addEventListener('change', function() {
+            const subjId = this.value;
+            if (!subjId) {
+                topicSelect.innerHTML = '<option value="">-- Vui lòng chọn môn học trước --</option>';
+                topicSelect.disabled = true;
+                return;
+            }
+
+            topicSelect.innerHTML = '<option value="">Đang tải chủ đề...</option>';
+            topicSelect.disabled = true;
+
+            fetch(`/api/quiz-data/topics?subjectId=${subjId}`)
+                .then(res => res.json())
+                .then(topics => {
+                    if (topics.length === 0) {
+                        topicSelect.innerHTML = '<option value="">Môn học này chưa có chủ đề</option>';
+                    } else {
+                        let html = '<option value="">-- Tất cả chủ đề --</option>';
+                        topics.forEach(t => {
+                            html += `<option value="${t.topicId}">${t.topicName}</option>`;
+                        });
+                        topicSelect.innerHTML = html;
+                        topicSelect.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    topicSelect.innerHTML = '<option value="">Lỗi tải chủ đề</option>';
+                });
+        });
+
+        // Xử lý submit
+        document.getElementById('random-quiz-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            errorAlert.classList.add('d-none');
+
+            const subjectId = subjectSelect.value;
+            const topicId = topicSelect.value || null;
+            const requiredQuestions = document.getElementById('requiredQuestions').value;
+            const durationMinutes = document.getElementById('durationMinutes').value;
+
+            if (!subjectId) {
+                showError("Vui lòng chọn môn học.");
+                return;
+            }
+
+            // Tìm tên subject để đặt làm title
+            let subjectName = "Tổng hợp";
+            const selectedSubj = subjectsList.find(s => s.subjectId == subjectId);
+            if (selectedSubj) {
+                subjectName = selectedSubj.subjectName;
+            }
+            const title = "Bài luyện tập ngẫu nhiên - " + subjectName;
+
+            // Hiệu ứng Loading
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo đề thi...';
+            submitBtn.disabled = true;
+
+            try {
+                // 1. Tạo Quiz Ngẫu Nhiên
+                const createRes = await fetch('/api/quizzes/random', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        subjectId: subjectId,
+                        topicId: topicId,
+                        title: title,
+                        requiredQuestions: parseInt(requiredQuestions),
+                        durationMinutes: parseInt(durationMinutes)
+                    })
+                });
+
+                if (!createRes.ok) {
+                    const errorData = await createRes.json().catch(() => null);
+                    throw new Error(errorData && errorData.message ? errorData.message : `Lỗi tạo đề (Mã ${createRes.status}). Vui lòng kiểm tra lại ngân hàng câu hỏi.`);
+                }
+
+                const createData = await createRes.json();
+                if (!createData.quizId) {
+                    throw new Error("Không nhận được mã đề thi sau khi tạo.");
+                }
+
+                const quizId = createData.quizId;
+
+                // Cập nhật text loading
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang chuẩn bị phòng thi...';
+
+                // 2. Chuyển đề thành Attempt (Xin vào phòng thi)
+                const startRes = await fetch(`/api/attempts/start/${quizId}`, {
+                    method: 'POST',
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                });
+
+                if (!startRes.ok) {
+                    throw new Error("Lỗi tham gia làm bài.");
+                }
+
+                const startData = await startRes.json();
+                if (startData.attemptId) {
+                    // 3. Vào giao diện làm bài
+                    window.location.href = `/quizzes/attempts/${startData.attemptId}/take`;
+                } else {
+                    throw new Error("Không nhận được mã phiên làm bài.");
+                }
+
+            } catch (error) {
+                console.error(error);
+                showError(error.message);
+            }
+        });
+    </script>
+</body>
+</html>
