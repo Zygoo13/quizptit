@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.quizptit.content.entity.Topic;
 import com.quizptit.quiz.entity.Quiz;
+import com.quizptit.quiz.entity.enums.QuizType;
 
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
     // Lấy danh sách bài luyện đã được publish, sắp xếp mới nhất lên đầu
@@ -19,4 +20,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     int countByTopicTopicId(Long topicId);
 
     List<Quiz> findByTopicTopicId(Long topicId);
+
+    List<Quiz> findByQuizTypeOrderByCreatedAtDesc(QuizType quizType);
 }

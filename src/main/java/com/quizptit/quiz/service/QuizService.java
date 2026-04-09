@@ -28,3 +28,6 @@ public interface QuizService {
     @Transactional(readOnly = true)
     List<Quiz> getAllAdminQuizzes();
 }
+    @Transactional
+    void deleteQuiz(Long quizId);
+}

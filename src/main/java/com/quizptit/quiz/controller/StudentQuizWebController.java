@@ -85,7 +85,10 @@ public class StudentQuizWebController {
             Model model) {
 
         List<Quiz> availableQuizzes = quizService.getAvailableQuizzes(subjectId);
+        List<Subject> subjects = subjectService.getActiveSubjects();
         model.addAttribute("quizzes", availableQuizzes);
+        model.addAttribute("subjects", subjects);
+        model.addAttribute("selectedSubjectId", subjectId);
         return "quiz/student/quiz-list";
     }
 }

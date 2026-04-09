@@ -25,7 +25,8 @@ public class AdminQuizWebController {
     @GetMapping("/create")
     public String showCreateQuizPage(Model model) {
 
-        // Chỉ nạp danh sách Môn học. Chủ đề và Câu hỏi sẽ được gọi ẩn qua AJAX (fetch) Javascript
+        // Chỉ nạp danh sách Môn học. Chủ đề và Câu hỏi sẽ được gọi ẩn qua AJAX (fetch)
+        // Javascript
         model.addAttribute("subjects", subjectService.getAllSubjects());
 
         return "quiz/admin/quiz-create";

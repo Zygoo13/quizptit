@@ -58,7 +58,8 @@ public class QuizController {
                     "message", "Tạo đề ngẫu nhiên theo môn học thành công",
                     "quizId", quiz.getQuizId()));
         } else {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Phải truyền vào subjectId hoặc topicId"));
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("message", "Phải truyền vào subjectId hoặc topicId"));
         }
     }
 
@@ -96,5 +97,14 @@ public class QuizController {
                 .createdAt(quiz.getCreatedAt())
                 .build();
         return ResponseEntity.ok(response);
-    }
-}
+    }}
+
+    Quiz quiz = quizService.getQuizDetail(quizId);
+    QuizResponse response = QuizResponse.builder()
+                .quizId(quiz.getQuizId())
+                .title(quiz.getTitle())
+                .durationMinutes(quiz.getDurationMinutes())
+                .totalQuestions(quiz.getTotalQuestions())
+                .createdAt(quiz.getCreatedAt())
+                .build();return ResponseEntity.ok(response);
+}}

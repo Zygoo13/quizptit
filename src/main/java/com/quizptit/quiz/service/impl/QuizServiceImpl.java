@@ -41,13 +41,11 @@ public class QuizServiceImpl implements QuizService {
                 Subject subject = subjectRepository.findById(request.getSubjectId())
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Môn học"));
 
-                // ===== THÊM ĐOẠN TÌM TOPIC NÀY =====
                 Topic topic = null;
                 if (request.getTopicId() != null) {
                         topic = topicRepository.findById(request.getTopicId())
                                         .orElseThrow(() -> new RuntimeException("Không tìm thấy Chủ đề"));
                 }
-                // ===================================
 
                 User creator = userRepository.findById(creatorId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Người tạo"));
@@ -55,7 +53,7 @@ public class QuizServiceImpl implements QuizService {
                 Quiz quiz = Quiz.builder()
                                 .title(request.getTitle())
                                 .subject(subject)
-                                .topic(topic) // <--- NHÉT TOPIC VÀO ĐÂY
+                                .topic(topic)
                                 .quizType(QuizType.MANUAL)
                                 .durationMinutes(request.getDurationMinutes())
                                 .totalQuestions(request.getQuestionIds().size())
@@ -90,21 +88,18 @@ public class QuizServiceImpl implements QuizService {
                 User creator = userRepository.findById(creatorId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-                // 1. Kéo ngẫu nhiên danh sách câu hỏi từ DB
                 List<Question> randomQuestions = questionRepository.findRandomQuestionsBySubjectId(subjectId,
                                 requiredQuestions);
 
-                // 2. Validate cực kỳ quan trọng: Kiểm tra kho có đủ số lượng không
                 if (randomQuestions.size() < requiredQuestions) {
                         throw new RuntimeException("Ngân hàng câu hỏi không đủ! Yêu cầu: "
                                         + requiredQuestions + ", Hiện có: " + randomQuestions.size());
                 }
 
-                // 3. Khởi tạo và lưu Quiz (Lưu ý: quizType lúc này là RANDOM)
                 Quiz quiz = Quiz.builder()
                                 .subject(subject)
                                 .title(title)
-                                .quizType(QuizType.RANDOM) // Enum đánh dấu đây là đề random
+                                .quizType(QuizType.RANDOM)
                                 .durationMinutes(durationMinutes)
                                 .totalQuestions(requiredQuestions)
                                 .createdBy(creator)
@@ -130,9 +125,8 @@ public class QuizServiceImpl implements QuizService {
                 return savedQuiz;
         }
 
-        // 1. Sinh viên xem danh sách bài luyện
         @Override
-        @Transactional(readOnly = true) // readOnly = true giúp tối ưu performance cho truy vấn đọc
+        @Transactional(readOnly = true)
         public List<Quiz> getAvailableQuizzes(Long subjectId) {
                 if (subjectId != null) {
                         return quizRepository.findBySubject_SubjectIdAndIsPublishedTrueOrderByCreatedAtDesc(subjectId);
@@ -140,7 +134,6 @@ public class QuizServiceImpl implements QuizService {
                 return quizRepository.findByIsPublishedTrueOrderByCreatedAtDesc();
         }
 
-        // 2. Sinh viên xem chi tiết một bài luyện (trước khi bấm Bắt đầu)
         @Override
         @Transactional(readOnly = true)
         public Quiz getQuizDetail(Long quizId) {
@@ -157,10 +150,9 @@ public class QuizServiceImpl implements QuizService {
         @Override
         @Transactional(readOnly = true)
         public java.util.List<Quiz> getAllAdminQuizzes() {
-                return quizRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+                return quizRepository.findByQuizTypeOrderByCreatedAtDesc(QuizType.MANUAL);
         }
 
-        // 3. Tạo bài kiểm tra ngẫu nhiên theo Chủ đề (Topic)
         @Override
         @Transactional
         public Quiz createRandomQuizByTopic(Long topicId, Long creatorId, String title,
@@ -171,11 +163,9 @@ public class QuizServiceImpl implements QuizService {
                 User creator = userRepository.findById(creatorId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-                // 1. Kéo ngẫu nhiên câu hỏi theo chủ đề
                 List<Question> randomQuestions = questionRepository.findRandomQuestionsByTopicId(topicId,
                                 requiredQuestions);
 
-                // 2. Kiểm tra kho có đủ câu hỏi không
                 if (randomQuestions.size() < requiredQuestions) {
                         throw new RuntimeException(
                                         "Ngân hàng câu hỏi không đủ! Yêu cầu: " + requiredQuestions
@@ -183,7 +173,6 @@ public class QuizServiceImpl implements QuizService {
                                                         + " (Chủ đề: " + topic.getTopicName() + ")");
                 }
 
-                // 3. Lưu Quiz gắn với cả subject (lấy từ topic) và topic
                 Quiz quiz = Quiz.builder()
                                 .subject(topic.getSubject())
                                 .topic(topic)
@@ -197,7 +186,6 @@ public class QuizServiceImpl implements QuizService {
 
                 Quiz savedQuiz = quizRepository.save(quiz);
 
-                // 4. Lưu danh sách câu hỏi vào QuizQuestion
                 List<QuizQuestion> quizQuestions = new ArrayList<>();
                 for (int i = 0; i < randomQuestions.size(); i++) {
                         Question question = new Question();
