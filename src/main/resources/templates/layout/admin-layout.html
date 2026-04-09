@@ -1,8 +1,9 @@
 <html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content, script)">
+
 <head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}">
     <!-- Meta tags for AJAX CSRF -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 </head>
 
 <style>
