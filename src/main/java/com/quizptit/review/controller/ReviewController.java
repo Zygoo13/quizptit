@@ -1,27 +1,34 @@
 package com.quizptit.review.controller;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+// 1. DTOs và Services nội bộ
 import com.quizptit.auth.security.CustomUserDetails;
 import com.quizptit.common.util.CurrentUserUtils;
 import com.quizptit.content.service.SubjectService;
 import com.quizptit.progress.dto.QuestionReviewDTO;
 import com.quizptit.progress.service.ProgressService;
-import com.quizptit.review.dto.ReviewSubjectDTO;
-import com.quizptit.review.dto.ReviewSubmissionDTO;
-import com.quizptit.review.dto.ReviewSuggestionDTO;
-import com.quizptit.review.dto.ReviewQuestionDTO;
+import com.quizptit.review.dto.*;
 import com.quizptit.review.service.ReviewService;
 import com.quizptit.user.entity.User;
+import com.quizptit.user.repository.UserRepository;
+
+// 2. Exception (Rất quan trọng cho đoạn xử lý API)
+import com.quizptit.common.exception.ResourceNotFoundException;
+
+// 3. Lombok
 import lombok.RequiredArgsConstructor;
+
+// 4. Spring Framework & Web
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
+// 5. Spring Security
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+
+// 6. Java Utility
 import java.util.List;
 import java.security.Principal;
 
@@ -34,6 +41,7 @@ public class ReviewController {
     private final CurrentUserUtils currentUserUtils;
     private final ProgressService progressService;
     private final SubjectService subjectService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public String showReviewDashboard(Model model) {
@@ -58,7 +66,7 @@ public class ReviewController {
     }
 
     // Xử lý nộp bài
-   @PostMapping("/session/submit")
+    @PostMapping("/session/submit")
     public String submitReview(@ModelAttribute ReviewSubmissionDTO submission, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         
@@ -95,6 +103,24 @@ public class ReviewController {
         model.addAttribute("questions", questions);
         model.addAttribute("subjectName", subjectName);
         return "review/question-list";
+    }
+
+    @PostMapping("/api/submit")
+    @ResponseBody
+    public ResponseEntity<ReviewResultResponse> submitReview(
+            @RequestBody ReviewRequest request, 
+            @AuthenticationPrincipal CustomUserDetails currentUser) { // Đổi UserDetails thành CustomUserDetails
+        
+        // Lấy trực tiếp userId từ session, không cần findByEmail nữa
+        Long userId = currentUser.getUserId(); 
+
+        ReviewResultResponse response = reviewService.processReviewResponse(
+                userId, 
+                request.getQuestionId(), 
+                request.getOptionId()
+        );
+        
+        return ResponseEntity.ok(response);
     }
 
     private Long getUserIdFromPrincipal(Principal principal) {

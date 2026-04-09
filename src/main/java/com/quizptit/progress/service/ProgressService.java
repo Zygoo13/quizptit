@@ -105,20 +105,40 @@ public class ProgressService {
     @Transactional(readOnly = true)
     public List<SubjectProgressDTO> getAllSubjectProgress(Long userId) {
         return subjectRepository.findAll().stream().map(subject -> {
-            List<LearningProgress> lpList = learningProgressRepository
-                    .findAllByUserUserIdAndTopicSubjectSubjectId(userId, subject.getSubjectId());
+            List<Topic> topics = topicRepository.findBySubjectSubjectId(subject.getSubjectId());
+            
+            int totalTopics = topics.size();
+            int completedTopicsCount = 0;
+            int totalQuizzesInSubject = 0;
+            int totalPassedQuizzesInSubject = 0;
 
-            int totalQuizzes = lpList.stream().mapToInt(LearningProgress::getTotalQuizzes).sum();
-            int completedQuizzes = lpList.stream().mapToInt(LearningProgress::getCompletedQuizzes).sum();
+            for (Topic topic : topics) {
+                int quizzesInTopic = quizRepository.countByTopicTopicId(topic.getTopicId());
+                totalQuizzesInSubject += quizzesInTopic;
 
-            double overallPercent = totalQuizzes == 0 ? 0 : ((double) completedQuizzes / totalQuizzes) * 100;
+                // Đếm số bài trong chương đạt điểm >= 0.4
+                long passedInTopic = userQuizProgressRepository
+                        .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
+                        .stream()
+                        .filter(p -> p.getHighestScore().doubleValue() >= 0.4)
+                        .count();
+                
+                totalPassedQuizzesInSubject += passedInTopic;
+
+                // Chương hoàn thành khi số bài đạt mốc >= số bài hiện có
+                if (quizzesInTopic > 0 && passedInTopic >= quizzesInTopic) {
+                    completedTopicsCount++;
+                }
+            }
+
+            double overallPercent = totalQuizzesInSubject == 0 ? 0 : 
+                    ((double) totalPassedQuizzesInSubject / totalQuizzesInSubject) * 100;
 
             return SubjectProgressDTO.builder()
                     .subjectId(subject.getSubjectId())
                     .subjectName(subject.getSubjectName())
-                    .totalTopics(topicRepository.countBySubjectSubjectId(subject.getSubjectId()))
-                    .completedTopics(
-                            (int) lpList.stream().filter(lp -> lp.getProgressPercentage().doubleValue() >= 80).count())
+                    .totalTopics(totalTopics)
+                    .completedTopics(completedTopicsCount)
                     .overallPercentage(Math.round(overallPercent * 10) / 10.0)
                     .build();
         }).collect(Collectors.toList());
@@ -129,18 +149,27 @@ public class ProgressService {
         List<Topic> topics = topicRepository.findBySubjectSubjectId(subjectId);
 
         return topics.stream().map(topic -> {
-            Optional<LearningProgress> lp = learningProgressRepository
-                    .findByUserUserIdAndTopicTopicId(userId, topic.getTopicId());
+            int actualTotalQuizzes = quizRepository.countByTopicTopicId(topic.getTopicId());
 
+            List<UserQuizProgress> userProgresses = userQuizProgressRepository
+                    .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId());
+            
+            long passedQuizzes = userProgresses.stream()
+                    .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4)
+                    .count();
+
+            double percent = actualTotalQuizzes == 0 ? 0 : ((double) passedQuizzes / actualTotalQuizzes) * 100;
+
+            // Builder phải kết thúc bằng .build()
             return TopicProgressDTO.builder()
                     .topicId(topic.getTopicId())
                     .topicName(topic.getTopicName())
-                    .totalQuizzes(lp.map(LearningProgress::getTotalQuizzes)
-                            .orElse(quizRepository.countByTopicTopicId(topic.getTopicId())))
-                    .completedQuizzes(lp.map(LearningProgress::getCompletedQuizzes).orElse(0))
-                    .averageScore(lp.map(LearningProgress::getMasteryScore).orElse(BigDecimal.ZERO))
+                    .totalQuizzes(actualTotalQuizzes)
+                    .completedQuizzes((int) passedQuizzes)
+                    .averageScore(calculateAverage(userProgresses)) // Gọi hàm phụ ở đây
+                    .progressPercentage(BigDecimal.valueOf(Math.round(percent * 10) / 10.0))
                     .build();
-        }).collect(Collectors.toList());
+        }).collect(Collectors.toList()); // Dòng 175 sẽ hết lỗi khi Builder bên trên chuẩn xác
     }
 
     @Transactional(readOnly = true)
@@ -202,5 +231,16 @@ public class ProgressService {
 
     public List<QuestionReviewDTO> getSpecificQuestionsToReview(Long userId, Long subjectId) {
         return userQuestionMemoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+    }
+
+    private BigDecimal calculateAverage(List<UserQuizProgress> progresses) {
+        if (progresses == null || progresses.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return progresses.stream()
+                .map(UserQuizProgress::getHighestScore)
+                .filter(score -> score != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(progresses.size()), 2, java.math.RoundingMode.HALF_UP);
     }
 }

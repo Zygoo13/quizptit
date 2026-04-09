@@ -1,5 +1,6 @@
 package com.quizptit.review.service;
 
+import com.quizptit.content.entity.AnswerOption;
 import com.quizptit.content.entity.Question;
 import com.quizptit.content.repository.QuestionRepository;
 import com.quizptit.common.exception.ResourceNotFoundException;
@@ -13,9 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,53 +29,35 @@ public class ReviewService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void updateQuestionMemory(User user, Question question, boolean isCorrect) {
-        // 1. Tìm bản ghi cũ hoặc khởi tạo đối tượng mới (dùng Builder)
-        UserQuestionMemory memory = memoryRepository.findByUserUserIdAndQuestionQuestionId(user.getUserId(), question.getQuestionId())
-                .orElse(UserQuestionMemory.builder()
-                        .user(user)
+    public void updateQuestionMemory(Long userId, Question question, boolean isCorrect) {
+        UserQuestionMemory memory = memoryRepository.findByUserUserIdAndQuestionQuestionId(userId, question.getQuestionId())
+                .orElseGet(() -> UserQuestionMemory.builder()
+                        .user(userRepository.getReferenceById(userId))
                         .question(question)
                         .correctStreak(0)
-                        .wrongStreak(0)
-                        .reviewCount(0) // Khởi tạo để tránh NPE
                         .memoryScore(BigDecimal.valueOf(0.1))
-                        .nextReviewAt(LocalDateTime.now().plusDays(1))
                         .build());
 
-        // 2. Cập nhật các chỉ số cơ bản
         memory.setLastResult(isCorrect);
-        memory.setReviewCount(memory.getReviewCount() + 1);
         memory.setLastReviewedAt(LocalDateTime.now());
 
         if (isCorrect) {
-            // Logic khi trả lời ĐÚNG
             memory.setCorrectStreak(memory.getCorrectStreak() + 1);
-            memory.setWrongStreak(0);
             
-            // Tính toán memory_score: Tăng dần dựa trên chuỗi đúng
-            BigDecimal increment = BigDecimal.valueOf(0.1)
-                    .add(BigDecimal.valueOf(0.05).multiply(BigDecimal.valueOf(memory.getCorrectStreak())));
+            // Công thức Spaced Repetition
+            BigDecimal increment = BigDecimal.valueOf(0.1).add(BigDecimal.valueOf(0.05).multiply(BigDecimal.valueOf(memory.getCorrectStreak())));
             BigDecimal newScore = memory.getMemoryScore().add(increment);
-            
-            // Giới hạn tối đa của memory_score là 1.0 (Hoàn toàn ghi nhớ)
             if (newScore.compareTo(BigDecimal.ONE) > 0) newScore = BigDecimal.ONE;
             memory.setMemoryScore(newScore);
 
-            // Tính ngày ôn tập tiếp theo (Sử dụng hàm mũ để giãn cách ngày ôn)
+            // Tính ngày: $$daysToAdd = \text{round}(2^{\text{streak}-1} \times (1 + \text{score}))$$
             long daysToAdd = Math.round(Math.pow(2, memory.getCorrectStreak() - 1) * (1 + memory.getMemoryScore().doubleValue()));
-            memory.setNextReviewAt(LocalDateTime.now().plusDays(daysToAdd));
+            memory.setNextReviewAt(LocalDateTime.now().plusDays(daysToAdd).truncatedTo(ChronoUnit.DAYS));
         } else {
-            // Logic khi trả lời SAI
             memory.setCorrectStreak(0);
-            memory.setWrongStreak(memory.getWrongStreak() + 1);
-            
-            // Phạt memory_score: Giảm đi một nửa
             memory.setMemoryScore(memory.getMemoryScore().multiply(BigDecimal.valueOf(0.5)));
-
-            // Buộc ôn lại ngay vào ngày mai
-            memory.setNextReviewAt(LocalDateTime.now().plusDays(1));
+            memory.setNextReviewAt(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS));
         }
-
         memoryRepository.save(memory);
     }
 
@@ -80,7 +65,8 @@ public class ReviewService {
     public void updateMultipleQuestionMemories(User user, List<ReviewItemResult> results) {
         if (results != null) {
             for (ReviewItemResult res : results) {
-                this.updateQuestionMemory(user, res.getQuestion(), res.isCorrect());
+                // Truyền user.getUserId() để khớp với kiểu Long của hàm trên
+                this.updateQuestionMemory(user.getUserId(), res.getQuestion(), res.isCorrect());
             }
         }
     }
@@ -136,17 +122,27 @@ public class ReviewService {
     }
 
     @Transactional
-    public void processReviewResponse(Long userId, Long questionId, Long chosenOptionId) {
+    public ReviewResultResponse processReviewResponse(Long userId, Long questionId, Long chosenOptionId) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy câu hỏi"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        AnswerOption correctOpt = question.getOptions().stream()
+                .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Câu hỏi thiếu đáp án đúng"));
 
-        // Kiểm tra đúng/sai: Sử dụng phương thức getter chuẩn của Lombok cho kiểu boolean (isCorrect())
-        boolean isCorrect = question.getOptions().stream()
-                .anyMatch(opt -> opt.getOptionId().equals(chosenOptionId) && opt.getIsCorrect());
+        // Đảm bảo so sánh chính xác ID (ép kiểu về Long nếu cần)
+        boolean isCorrect = Objects.equals(correctOpt.getOptionId(), chosenOptionId);
 
-        this.updateQuestionMemory(user, question, isCorrect);
+        // Cập nhật trí nhớ
+        this.updateQuestionMemory(userId, question, isCorrect);
+
+        // QUAN TRỌNG: Kiểm tra kỹ thứ tự gán isCorrect ở đây
+        return ReviewResultResponse.builder()
+                .isCorrect(isCorrect) // Biến này phải đúng là true/false
+                .correctOptionId(correctOpt.getOptionId())
+                .correctContent(correctOpt.getContent())
+                .feedbackMessage(isCorrect ? "Chính xác! Bạn ghi nhớ rất tốt." : "Rất tiếc! Đáp án đúng phải là: " + correctOpt.getContent())
+                .build();
     }
 }

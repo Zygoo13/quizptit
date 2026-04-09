@@ -22,5 +22,7 @@ public interface UserQuizProgressRepository extends JpaRepository<UserQuizProgre
 	long countByUserAndQuizTopicAndHighestScoreGreaterThanEqual(User user, Topic topic, BigDecimal threshold);
 
 	List<UserQuizProgress> findAllByUserUserIdAndTopicTopicId(Long userId, Long topicId);
+
+	List<UserQuizProgress> findAllByUserUserIdAndTopicSubjectSubjectId(Long userId, Long subjectId);
     
 }
