@@ -97,14 +97,5 @@ public class QuizController {
                 .createdAt(quiz.getCreatedAt())
                 .build();
         return ResponseEntity.ok(response);
-    }}
-
-    Quiz quiz = quizService.getQuizDetail(quizId);
-    QuizResponse response = QuizResponse.builder()
-                .quizId(quiz.getQuizId())
-                .title(quiz.getTitle())
-                .durationMinutes(quiz.getDurationMinutes())
-                .totalQuestions(quiz.getTotalQuestions())
-                .createdAt(quiz.getCreatedAt())
-                .build();return ResponseEntity.ok(response);
-}}
+    }
+}
