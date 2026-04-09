@@ -22,4 +22,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByTopicTopicId(Long topicId);
 
     List<Quiz> findByQuizTypeOrderByCreatedAtDesc(QuizType quizType);
+
+    int countByTopicTopicIdAndQuizType(Long topicId, QuizType quizType);
 }

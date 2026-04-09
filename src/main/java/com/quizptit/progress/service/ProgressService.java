@@ -80,9 +80,12 @@ public class ProgressService {
                         .build());
 
         List<UserQuizProgress> topicProgresses = userQuizProgressRepository
-                .findAllByUserUserIdAndTopicTopicId(user.getUserId(), topic.getTopicId());
+            .findAllByUserUserIdAndTopicTopicId(user.getUserId(), topic.getTopicId())
+            .stream()
+            .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL)
+            .collect(Collectors.toList());
 
-        int totalQuizzesInTopic = quizRepository.countByTopicTopicId(topic.getTopicId());
+        int totalQuizzesInTopic = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
         int totalAttempts = topicProgresses.stream().mapToInt(UserQuizProgress::getTotalAttempts).sum();
 
         // Tính điểm trung bình (averageScore) của các quiz đã làm trong topic
@@ -117,14 +120,14 @@ public class ProgressService {
             int totalPassedQuizzesInSubject = 0;
 
             for (Topic topic : topics) {
-                int quizzesInTopic = quizRepository.countByTopicTopicId(topic.getTopicId());
+                int quizzesInTopic = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
                 totalQuizzesInSubject += quizzesInTopic;
 
                 // Đếm số bài trong chương đạt điểm >= 0.4
                 long passedInTopic = userQuizProgressRepository
                     .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
                     .stream()
-                    .filter(p -> p.getHighestScore().doubleValue() >= 0.4)
+                    .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL && p.getHighestScore().doubleValue() >= 0.4)
                     .count();
                 
                 totalPassedQuizzesInSubject += passedInTopic;
@@ -152,10 +155,13 @@ public class ProgressService {
         List<Topic> topics = topicRepository.findBySubjectSubjectId(subjectId);
 
         return topics.stream().map(topic -> {
-            int actualTotalQuizzes = quizRepository.countByTopicTopicId(topic.getTopicId());
+            int actualTotalQuizzes = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
 
             List<UserQuizProgress> userProgresses = userQuizProgressRepository
-                .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId());
+                .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
+                .stream()
+                .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL)
+                .collect(Collectors.toList());
             
             long passedQuizzes = userProgresses.stream()
                 .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4)
