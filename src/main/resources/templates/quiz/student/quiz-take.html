@@ -59,7 +59,6 @@
             let submitBtn = document.getElementById('btn-submit');
             let attemptId = submitBtn.getAttribute('data-attempt-id');
 
-            // Hiển thị trạng thái đang nộp
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang nộp bài...';
             submitBtn.disabled = true;
 
@@ -81,7 +80,6 @@
                 });
         }
 
-        // 1. TỰ ĐỘNG LƯU NHÁP KHI CLICK CHỌN ĐÁP ÁN
         document.querySelectorAll('.answer-radio').forEach(radio => {
             radio.addEventListener('change', function () {
                 let attemptQuestionId = this.getAttribute('data-aq-id');
@@ -103,18 +101,13 @@
             });
         });
 
-        // 2. XỬ LÝ NỘP BÀI
         document.getElementById('btn-submit').addEventListener('click', function (e) {
             e.preventDefault();
-            // Chỉ khi tự bấm mới hỏi xác nhận
             if (confirm("Bạn có chắc chắn muốn nộp bài không?")) {
                 performSubmit();
             }
         });
 
-        // --- LOGIC ĐỒNG HỒ ĐẾM NGƯỢC (Đã sửa lại để nhận data thật) ---
-
-        // Lấy thời gian từ Backend qua Thymeleaf (mặc định 1 phút nếu null để tránh lỗi)
         let totalTimeInSeconds = /*[[${remainingSeconds != null ? remainingSeconds : (attempt.quiz.durationMinutes * 60)}]]*/ 60;
         const timerElement = document.getElementById("countdown-timer");
 

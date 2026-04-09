@@ -41,11 +41,10 @@
             const csrfToken = document.querySelector('meta[name="_csrf"]').content;
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
-            // Trạng thái loading
+
             this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo đề...';
             this.disabled = true;
 
-            // Gọi API xin phép bắt đầu làm bài
             fetch(`/api/attempts/start/${quizId}`, {
                 method: 'POST',
                 headers: {
@@ -55,7 +54,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.attemptId) {
-                        // Nhận được Thẻ vào phòng thi -> Chuyển hướng sang trang thi
+
                         window.location.href = `/quizzes/attempts/${data.attemptId}/take`;
                     }
                 })

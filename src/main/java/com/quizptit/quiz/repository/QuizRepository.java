@@ -9,10 +9,8 @@ import com.quizptit.quiz.entity.Quiz;
 import com.quizptit.quiz.entity.enums.QuizType;
 
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
-    // Lấy danh sách bài luyện đã được publish, sắp xếp mới nhất lên đầu
     List<Quiz> findByIsPublishedTrueOrderByCreatedAtDesc();
 
-    // Lấy danh sách bài luyện theo môn học (dùng khi sinh viên lọc theo môn)
     List<Quiz> findBySubject_SubjectIdAndIsPublishedTrueOrderByCreatedAtDesc(Long subjectId);
 
     long countByTopic(Topic topic);
