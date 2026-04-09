@@ -98,7 +98,7 @@
             fetch(`/api/quiz-data/questions?topicId=${topicId}`)
                 .then(res => res.json())
                 .then(questions => {
-                    questionContainer.innerHTML = '';
+                    questionContainer.innerHTML = ''; 
 
                     if (questions.length === 0) {
                         questionContainer.innerHTML = '<div class="text-danger fw-bold text-center py-3"><i class="bi bi-x-circle"></i> Chủ đề này hiện chưa có câu hỏi nào!</div>';
@@ -127,7 +127,7 @@
 
         if (btnSubmit) {
             btnSubmit.addEventListener('click', function (event) {
-                event.preventDefault();
+                event.preventDefault(); 
 
                 try {
                     const csrfMeta = document.querySelector('meta[name="_csrf"]');

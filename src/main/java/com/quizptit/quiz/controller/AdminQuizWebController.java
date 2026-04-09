@@ -1,8 +1,6 @@
 package com.quizptit.quiz.controller;
 
 import com.quizptit.content.service.SubjectService;
-import com.quizptit.quiz.service.QuizService;
-
 import org.springframework.stereotype.Controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
@@ -16,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AdminQuizWebController {
 
     private final SubjectService subjectService;
-    private final QuizService quizService;
+    private final com.quizptit.quiz.service.QuizService quizService;
 
     @GetMapping
     public String showQuizList(Model model) {

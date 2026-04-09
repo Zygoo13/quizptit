@@ -87,24 +87,23 @@
                                 <td class="text-end pe-4">
                                     <div class="btn-group btn-group-sm">
                                         <a th:if="${quiz.quizType.name() == 'MANUAL'}"
-                                            th:href="@{/admin/quizzes/{id}/edit(id=${quiz.quizId})}"
-                                            class="btn btn-outline-primary" title="Sửa đề thi">
+                                           th:href="@{/admin/quizzes/{id}/edit(id=${quiz.quizId})}"
+                                           class="btn btn-outline-primary" title="Sửa đề thi">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
-                                        <button th:unless="${quiz.quizType.name() == 'MANUAL'}" type="button"
-                                            class="btn btn-outline-secondary"
-                                            title="Đề ngẫu nhiên không hỗ trợ sửa thủ công" disabled>
+                                        <button th:unless="${quiz.quizType.name() == 'MANUAL'}"
+                                                type="button" class="btn btn-outline-secondary" title="Đề ngẫu nhiên không hỗ trợ sửa thủ công" disabled>
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
 
-                                        <a th:href="@{/quizzes/{id}(id=${quiz.quizId})}" class="btn btn-outline-info"
-                                            title="Xem/Làm thử đề thi">
+                                        <a th:href="@{/quizzes/{id}(id=${quiz.quizId})}"
+                                           class="btn btn-outline-info" title="Xem/Làm thử đề thi">
                                             <i class="bi bi-search"></i>
                                         </a>
 
-                                        <button type="button" class="btn btn-outline-warning btn-toggle-status"
-                                            th:title="${quiz.isPublished ? 'Tạm ẩn đề thi' : 'Xuất bản đề thi'}"
-                                            th:data-id="${quiz.quizId}">
+                                        <button type="button" class="btn btn-outline-warning btn-toggle-status" 
+                                                th:title="${quiz.isPublished ? 'Tạm ẩn đề thi' : 'Xuất bản đề thi'}"
+                                                th:data-id="${quiz.quizId}">
                                             <i th:class="${quiz.isPublished ? 'bi bi-eye-slash' : 'bi bi-eye'}"></i>
                                         </button>
                                     </div>
@@ -124,9 +123,9 @@
     </div>
 
     <script th:fragment="script">
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.btn-toggle-status').forEach(btn => {
-                btn.addEventListener('click', async function () {
+                btn.addEventListener('click', async function() {
                     const quizId = this.dataset.id;
                     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
                     const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
