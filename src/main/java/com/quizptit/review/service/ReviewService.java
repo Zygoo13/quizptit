@@ -43,6 +43,7 @@ public class ReviewService {
 
         if (isCorrect) {
             memory.setCorrectStreak(memory.getCorrectStreak() + 1);
+            memory.setWrongStreak(0);
             
             // Công thức Spaced Repetition
             BigDecimal increment = BigDecimal.valueOf(0.1).add(BigDecimal.valueOf(0.05).multiply(BigDecimal.valueOf(memory.getCorrectStreak())));
