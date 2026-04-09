@@ -44,13 +44,26 @@ public class ReviewController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public String showReviewDashboard(Model model) {
-        Long userId = CurrentUserUtils.getCurrentUserId();
-        if (userId == null) return "redirect:/auth/login";
+    public String showReviewDashboard(Model model, Authentication authentication) {
+        // 1. Kiểm tra đăng nhập
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            return "redirect:/auth/login";
+        }
 
-        List<ReviewSubjectDTO> subjects = reviewService.getSubjectsReviewStatus(userId);
-        model.addAttribute("subjects", subjects);
-        return "review/dashboard";
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        // 2. Log để debug (Xem ở console IntelliJ)
+        System.out.println("User " + userId + " đang truy cập dashboard");
+
+        try {
+            List<ReviewSubjectDTO> subjects = reviewService.getSubjectsReviewStatus(userId);
+            model.addAttribute("subjects", subjects);
+            return "review/dashboard";
+        } catch (Exception e) {
+            e.printStackTrace(); // In lỗi chi tiết ra console để biết dòng nào hỏng
+            return "error/500";
+        }
     }
 
     @GetMapping("/suggestions")
@@ -81,15 +94,28 @@ public class ReviewController {
     }
 
     @GetMapping("/session/start")
-    public String startReviewSession(@RequestParam Long questionId, Model model) {
-        // Lấy DTO để hiển thị lên giao diện
-        ReviewQuestionDTO questionDTO = reviewService.getQuestionForReview(questionId);
-        model.addAttribute("question", questionDTO);
-        
-        // Tạo object rỗng để hứng dữ liệu khi người dùng chọn đáp án và submit
-        model.addAttribute("submission", new ReviewSubmissionDTO());
-        
+    public String showReviewSession(@RequestParam Long questionId, 
+                                @RequestParam(required = false) Long subjectId, 
+                                Model model) {
+        ReviewQuestionDTO question = reviewService.getQuestionForReview(questionId);
+        model.addAttribute("question", question);
+        model.addAttribute("subjectId", subjectId); // Truyền xuống HTML
         return "review/review-session"; 
+    }
+
+    @GetMapping("/session/next")
+    public String getNextQuestion(@RequestParam Long subjectId) {
+        Long userId = CurrentUserUtils.getCurrentUserId();
+        // Lấy lại danh sách các câu cần ôn của môn này
+        List<QuestionReviewDTO> remainingQuestions = reviewService.getQuestionsBySubject(userId, subjectId);
+        
+        if (remainingQuestions.isEmpty()) {
+            // Nếu hết sạch câu rồi thì về trang danh sách môn
+            return "redirect:/review/subject/" + subjectId + "?status=completed";
+        }
+        
+        // Nếu còn, lấy ID của câu đầu tiên trong danh sách còn lại
+        return "redirect:/review/session/start?questionId=" + remainingQuestions.get(0).getQuestionId() + "&subjectId=" + subjectId;
     }
     
     @GetMapping("/subject/{subjectId}")
@@ -103,6 +129,17 @@ public class ReviewController {
         model.addAttribute("questions", questions);
         model.addAttribute("subjectName", subjectName);
         return "review/question-list";
+    }
+
+    @GetMapping("/subject/{subjectId}/all")
+    public String startReviewAll(@PathVariable Long subjectId) {
+        Long userId = CurrentUserUtils.getCurrentUserId();
+        List<QuestionReviewDTO> questions = reviewService.getQuestionsBySubject(userId, subjectId);
+        
+        if (questions.isEmpty()) return "redirect:/review/subject/" + subjectId;
+
+        // Truyền thêm subjectId để trang Session biết là đang làm theo mạch môn học
+        return "redirect:/review/session/start?questionId=" + questions.get(0).getQuestionId() + "&subjectId=" + subjectId;
     }
 
     @PostMapping("/api/submit")

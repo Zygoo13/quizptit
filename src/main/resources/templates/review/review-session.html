@@ -2,125 +2,157 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>Phiên Ôn Tập - QuizPTIT</title>
+    <title>Phiên Ôn Tập | QuizPTIT</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <style>
         :root {
             --primary-soft: #e7f1ff;
             --success-soft: #d1e7dd;
             --danger-soft: #f8d7da;
+            --ptit-red: #c0392b;
         }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .review-card { border: none; border-radius: 20px; overflow: hidden; }
+        
         .option-box {
             cursor: pointer;
-            transition: all 0.25s ease;
-            border: 2px solid #dee2e6 !important;
+            transition: all 0.2s ease;
+            border: 2px solid #edf2f7 !important;
             background-color: #fff;
-            position: relative;
             display: flex;
             align-items: center;
-            min-height: 65px;
+            min-height: 70px;
+            margin-bottom: 12px;
         }
         .option-box:hover:not(.disabled) {
-            border-color: #0d6efd !important;
+            border-color: #3182ce !important;
             background-color: var(--primary-soft);
-            transform: translateX(5px);
+            transform: translateY(-2px);
         }
         .option-box.selected {
-            border-color: #0d6efd !important;
+            border-color: #3182ce !important;
             background-color: var(--primary-soft);
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.1);
         }
-        /* Trạng thái đúng */
         .option-box.correct {
-            border-color: #198754 !important;
+            border-color: #38a169 !important;
             background-color: var(--success-soft) !important;
-            color: #0a3622;
+            color: #1a4731;
         }
-        /* Trạng thái sai */
         .option-box.wrong {
-            border-color: #dc3545 !important;
+            border-color: #e53e3e !important;
             background-color: var(--danger-soft) !important;
-            color: #58151c;
+            color: #742a2a;
         }
-        .disabled { 
-            pointer-events: none; 
-            opacity: 0.8;
+        .option-prefix {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; background: #f1f5f9;
+            font-weight: 700; color: #64748b;
         }
-        .status-icon {
-            font-size: 1.25rem;
-            margin-left: auto;
-        }
-        #feedback-area {
-            border-radius: 12px;
-            font-weight: 500;
-        }
+        .disabled { pointer-events: none; }
+        .status-icon { font-size: 1.4rem; margin-left: auto; }
+        
+        #feedback-area { border-radius: 15px; border: none; }
+        .btn-action { padding: 12px 35px; border-radius: 12px; font-weight: 600; transition: 0.3s; }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <div th:replace="~{fragments/navbar::navbar}"></div>
 
     <div class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-md-9 col-lg-7">
-                <div class="card shadow-lg border-0 rounded-4">
-                    <div class="card-header bg-white border-0 pt-4 px-4">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="/review" class="text-decoration-none">Review</a></li>
-                                <li class="breadcrumb-item active">Ôn tập câu hỏi</li>
-                            </ol>
-                        </nav>
-                    </div>
+            <div class="col-md-10 col-lg-8">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/review" class="text-decoration-none text-muted">Dashboard</a></li>
+                            <li th:if="${subjectId != null}" class="breadcrumb-item">
+                                <a th:href="@{/review/subject/{id}(id=${subjectId})}" class="text-decoration-none text-muted">Môn học</a>
+                            </li>
+                            <li class="breadcrumb-item active fw-bold text-primary">Đang ôn tập</li>
+                        </ol>
+                    </nav>
+                    <span th:if="${subjectId != null}" class="badge bg-success rounded-pill px-3 py-2">
+                        <i class="fas fa-layer-group me-1"></i> Chế độ: Ôn tất cả
+                    </span>
+                </div>
 
-                    <div class="card-body p-4">
-                        <div class="mb-4">
-                            <span class="badge bg-primary mb-2 px-3 py-2 rounded-pill">Câu hỏi</span>
-                            <h4 class="fw-bold text-dark lh-base" th:text="${question.content}">Nội dung câu hỏi?</h4>
+                <div class="card review-card shadow-sm animate__animated animate__fadeInUp">
+                    <div class="card-body p-4 p-lg-5">
+                        
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+                                    CÂU HỎI ID: #<span th:text="${question.questionId}">000</span>
+                                </span>
+                            </div>
+                            <h3 class="fw-bold text-dark lh-base" th:text="${question.content}">Nội dung câu hỏi?</h3>
                         </div>
                         
-                        <div id="options-container" class="d-grid gap-3">
+                        <div id="options-container">
                             <div th:each="opt, iterStat : ${question.options}" 
-                                 class="option-box p-3 rounded-3 shadow-sm"
+                                 class="option-box p-3 rounded-4 shadow-sm"
                                  th:onclick="|selectOption(this, ${opt.optionId})|"
                                  th:id="'opt-' + ${opt.optionId}">
                                 
                                 <div class="d-flex align-items-center w-100">
-                                    <div class="me-3 fw-bold text-primary" 
-                                         th:text="${#strings.arraySplit('A,B,C,D', ',')[iterStat.index]} + '.'"></div>
+                                    <div class="option-prefix me-3" 
+                                         th:text="${#strings.arraySplit('A,B,C,D,E,F', ',')[iterStat.index]}">A</div>
                                     
-                                    <div class="option-text pe-4" th:text="${opt.content}">Nội dung đáp án</div>
+                                    <div class="option-text flex-grow-1 pe-3" th:text="${opt.content}">Nội dung đáp án</div>
                                     
-                                    <i class="fas status-icon d-none"></i>
+                                    <i class="status-icon d-none"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="feedback-area" class="alert mt-4 d-none animate__animated animate__fadeIn">
+                        <div id="feedback-area" class="alert mt-5 d-none animate__animated animate__bounceIn">
                             <div class="d-flex align-items-center">
-                                <i id="feedback-icon" class="fas fa-2x me-3"></i>
-                                <div id="feedback-msg"></div>
+                                <div id="feedback-icon-wrapper" class="me-3"></div>
+                                <div>
+                                    <h5 id="feedback-title" class="alert-heading mb-1 fw-bold"></h5>
+                                    <div id="feedback-msg"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card-footer bg-white border-0 pb-4 px-4">
+                    <div class="card-footer bg-light border-0 py-4 px-4 px-lg-5">
                         <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-light text-secondary" onclick="history.back()">
-                                <i class="fas fa-chevron-left me-2"></i> Quay lại
-                            </button>
+                            <a th:href="${subjectId != null ? '/review/subject/' + subjectId : '/review'}" 
+                               class="btn btn-link text-decoration-none text-secondary fw-semibold">
+                                <i class="fas fa-times me-2"></i> Thoát phiên
+                            </a>
                             
                             <div class="action-buttons">
-                                <button id="submit-btn" class="btn btn-primary btn-lg px-5 rounded-pill shadow" 
-                                        onclick="handlePreviewSubmit()" disabled>
+                                <button id="submit-btn" class="btn btn-primary btn-action shadow" 
+                                        onclick="handleReviewSubmit()" disabled>
                                     Nộp bài <i class="fas fa-paper-plane ms-2"></i>
                                 </button>
-                                <button id="next-btn" class="btn btn-success btn-lg px-5 rounded-pill shadow d-none" 
-                                        onclick="window.location.href='/review/suggestions'">
-                                    Câu tiếp theo <i class="fas fa-arrow-right ms-2"></i>
-                                </button>
+
+                                <div id="post-submit-actions" class="d-none">
+                                    <a th:if="${subjectId != null}" 
+                                       th:href="@{/review/session/next(subjectId=${subjectId})}" 
+                                       class="btn btn-success btn-action shadow">
+                                        Câu tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                                    </a>
+
+                                    <a th:if="${subjectId == null}" 
+                                       href="/review" 
+                                       class="btn btn-primary btn-action shadow">
+                                        Hoàn thành <i class="fas fa-check-double ms-2"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -134,19 +166,13 @@
         const questionId = [[${question.questionId}]];
 
         function selectOption(element, id) {
-            // Xóa trạng thái các ô cũ
             document.querySelectorAll('.option-box').forEach(el => el.classList.remove('selected'));
-            
-            // Đánh dấu ô mới
             element.classList.add('selected');
             selectedId = id;
-            
-            // Kích hoạt nút nộp bài
             document.getElementById('submit-btn').disabled = false;
         }
 
-        function handlePreviewSubmit() {
-            // Lấy CSRF Token
+        function handleReviewSubmit() {
             const token = document.querySelector("meta[name='_csrf']").getAttribute("content");
             const header = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
 
@@ -154,40 +180,40 @@
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    [header]: token // Gửi kèm CSRF Token ở đây
+                    [header]: token 
                 },
                 body: JSON.stringify({ questionId: questionId, optionId: selectedId })
             })
-            .then(res => {
-                if (!res.ok) throw new Error('Server error: ' + res.status);
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                showResult(data);
+                renderResult(data);
             })
             .catch(err => {
-                console.error("Lỗi chi tiết:", err);
-                alert("Lỗi: " + err.message);
+                console.error("Error:", err);
+                alert("Đã có lỗi xảy ra khi nộp bài.");
             });
         }
 
-        function showResult(data) {
+        function renderResult(data) {
             const feedbackArea = document.getElementById('feedback-area');
+            const feedbackTitle = document.getElementById('feedback-title');
             const feedbackMsg = document.getElementById('feedback-msg');
+            const iconWrapper = document.getElementById('feedback-icon-wrapper');
 
-            // Xóa sạch các class màu sắc cũ để tránh bị đè màu
-            feedbackArea.classList.remove('d-none', 'alert-success', 'alert-danger');
-            
-            // Gán class mới dựa trên dữ liệu thật từ Server
+            // 1. Hiển thị vùng thông báo
+            feedbackArea.classList.remove('d-none');
             if (data.isCorrect) {
                 feedbackArea.classList.add('alert-success');
-                feedbackMsg.innerHTML = `<h5 class="alert-heading mb-1">Tuyệt vời!</h5><span>${data.feedbackMessage}</span>`;
+                feedbackTitle.innerText = "Chính xác!";
+                iconWrapper.innerHTML = '<i class="fas fa-check-circle fa-3x text-success"></i>';
             } else {
                 feedbackArea.classList.add('alert-danger');
-                feedbackMsg.innerHTML = `<h5 class="alert-heading mb-1">Cố gắng lên!</h5><span>${data.feedbackMessage}</span>`;
+                feedbackTitle.innerText = "Chưa chính xác!";
+                iconWrapper.innerHTML = '<i class="fas fa-times-circle fa-3x text-danger"></i>';
             }
+            feedbackMsg.innerHTML = data.feedbackMessage;
 
-            // Highlight các ô đáp án
+            // 2. Highlight đáp án
             document.querySelectorAll('.option-box').forEach(el => {
                 const optId = parseInt(el.id.replace('opt-', ''));
                 el.classList.add('disabled');
@@ -195,17 +221,18 @@
                 
                 if (optId === data.correctOptionId) {
                     el.classList.add('correct');
-                    icon.className = 'fas fa-check-circle status-icon';
+                    icon.className = 'fas fa-check-circle status-icon text-success';
                     icon.classList.remove('d-none');
                 } else if (optId === selectedId && !data.isCorrect) {
                     el.classList.add('wrong');
-                    icon.className = 'fas fa-times-circle status-icon';
+                    icon.className = 'fas fa-times-circle status-icon text-danger';
                     icon.classList.remove('d-none');
                 }
             });
 
+            // 3. Đổi nút bấm (Dùng logic ẩn/hiện)
             document.getElementById('submit-btn').classList.add('d-none');
-            document.getElementById('next-btn').classList.remove('d-none');
+            document.getElementById('post-submit-actions').classList.remove('d-none');
         }
     </script>
 </body>

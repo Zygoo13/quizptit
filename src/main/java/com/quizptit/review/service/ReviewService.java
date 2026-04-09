@@ -7,7 +7,7 @@ import com.quizptit.common.exception.ResourceNotFoundException;
 import com.quizptit.review.dto.*;
 import com.quizptit.review.entity.UserQuestionMemory;
 import com.quizptit.review.repository.UserQuestionMemoryRepository;
-import com.quizptit.progress.dto.QuestionReviewDTO;
+import com.quizptit.progress.dto.*;
 import com.quizptit.user.entity.User;
 import com.quizptit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -97,7 +97,11 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<QuestionReviewDTO> getQuestionsBySubject(Long userId, Long subjectId) {
-        return memoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+        List<UserQuestionMemory> memories = memoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+        
+        return memories.stream()
+                .map(this::mapToQuestionReviewDTO)
+                .collect(Collectors.toList());
     }
 
     private ReviewSuggestionDTO mapToSuggestionDTO(UserQuestionMemory entity) {
@@ -108,6 +112,19 @@ public class ReviewService {
                 .memoryScore(entity.getMemoryScore() != null ? entity.getMemoryScore().doubleValue() : 0.0)
                 .nextReviewAt(entity.getNextReviewAt())
                 .isOverdue(entity.getNextReviewAt().isBefore(LocalDateTime.now()))
+                .build();
+    }
+
+    private QuestionReviewDTO mapToQuestionReviewDTO(UserQuestionMemory entity) {
+        return QuestionReviewDTO.builder()
+                .questionId(entity.getQuestion().getQuestionId())
+                .content(entity.getQuestion().getContent())
+                // Lấy tên môn học thông qua Topic -> Subject
+                .subjectName(entity.getQuestion().getTopic().getSubject().getSubjectName())
+                // Các thông tin bổ trợ từ bản ghi bộ nhớ
+                .memoryScore(entity.getMemoryScore() != null ? entity.getMemoryScore().doubleValue() : 0.0)
+                .nextReviewAt(entity.getNextReviewAt())
+                .correctStreak(entity.getCorrectStreak())
                 .build();
     }
 
@@ -147,7 +164,7 @@ public class ReviewService {
         boolean isCorrect = Objects.equals(correctOpt.getOptionId(), chosenOptionId);
 
         // Cập nhật trí nhớ
-        this.updateQuestionMemory(userId, question, isCorrect);
+        this.updateQuestionMemory(userRepository.getReferenceById(userId), question, isCorrect);
 
         // QUAN TRỌNG: Kiểm tra kỹ thứ tự gán isCorrect ở đây
         return ReviewResultResponse.builder()

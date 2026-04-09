@@ -10,6 +10,20 @@
         .progress { border-radius: 10px; background-color: #e9ecef; }
         .table thead th { background-color: #f8f9fa; border-top: none; color: #6c757d; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
         .status-badge { padding: 0.5em 1em; border-radius: 50px; font-weight: 500; font-size: 0.85rem; }
+        .table-fixed { table-layout: fixed; width: 100%; }
+        .text-truncate-custom { 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            max-width: 100%; 
+            display: block;
+        }
+        .status-badge { 
+            white-space: nowrap; 
+            display: inline-block; 
+            min-width: 100px; 
+            text-align: center;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -66,14 +80,14 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-4" style="width: 80px;">ID</th>
-                            <th>Email</th>
-                            <th>Họ tên</th>
-                            <th>Môn học</th>
-                            <th>Tiến độ chương</th>
-                            <th>GPA Mastery</th>
-                            <th>Trạng thái</th>
-                            <th class="text-end pe-4">Thao tác</th>
+                            <th class="ps-4" style="width: 70px;">ID</th>
+                            <th style="width: 200px;">EMAIL</th>
+                            <th style="width: 160px;">HỌ TÊN</th>
+                            <th style="width: 180px;">MÔN HỌC</th>
+                            <th style="width: 220px;">TIẾN ĐỘ CHƯƠNG</th>
+                            <th style="width: 100px;" class="text-center">GPA</th>
+                            <th style="width: 130px;" class="text-center">TRẠNG THÁI</th>
+                            <th class="text-end pe-4" style="width: 120px;">THAO TÁC</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,33 +100,37 @@
 
                         <tr th:each="p : ${progressPage.content}">
                             <td class="ps-4 text-muted small">#[[${p.userId}]]</td>
-                            <td class="fw-bold" th:text="${p.email}">student@email.com</td>
-                            <td class="fw-semibold" th:text="${p.fullName}">Nguyễn Văn A</td>
+                            <td>
+                                <span class="fw-bold text-truncate-custom" th:text="${p.email}" th:title="${p.email}">student@email.com</span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-truncate-custom" th:text="${p.fullName}">Nguyễn Văn A</span>
+                            </td>
                             <td th:text="${p.subjectName}">Tên môn học</td>
-                            <td style="min-width: 200px;">
+                            <td>
                                 <div class="d-flex align-items-center">
                                     <div class="progress flex-grow-1 me-2" style="height: 8px;">
                                         <div class="progress-bar" role="progressbar" 
-                                             th:style="'width: ' + ${p.progressPercentage} + '%;'"
-                                             th:classappend="${p.progressPercentage < 50} ? 'bg-warning' : 'bg-success'"></div>
+                                            th:style="'width: ' + ${p.progressPercentage} + '%;'"
+                                            th:classappend="${p.progressPercentage < 40} ? 'bg-danger' : (${p.progressPercentage < 75} ? 'bg-warning' : 'bg-success')"></div>
                                     </div>
-                                    <small class="fw-bold text-secondary" th:text="${p.completedTopics} + '/' + ${p.totalTopics}"></small>
+                                    <small class="fw-bold text-secondary" style="min-width: 45px;" th:text="${p.completedTopics} + '/' + ${p.totalTopics}"></small>
                                 </div>
                             </td>
                             <td class="text-center">
                                 <span class="fs-6 fw-bold" 
-                                      th:classappend="${p.averageScore != null && p.averageScore.doubleValue() < 5.0} ? 'text-danger' : 'text-dark'"
-                                      th:text="${p.averageScore != null ? p.averageScore : '0.0'}">0.0</span>
+                                    th:classappend="${p.averageScore != null && p.averageScore.doubleValue() < 5.0} ? 'text-danger' : 'text-primary'"
+                                    th:text="${p.averageScore != null ? #numbers.formatDecimal(p.averageScore, 1, 2) : '0.00'}">0.00</span>
                             </td>
-                            <td>
-                                <span class="status-badge" 
-                                      th:classappend="${p.status == 'Xuất sắc' ? 'bg-success-subtle text-success' : 
-                                                     (p.status == 'Cảnh báo' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info')}"
-                                      th:text="${p.status}">Đạt</span>
+                            <td class="text-center">
+                                <span class="status-badge shadow-sm" 
+                                    th:classappend="${p.status == 'Xuất sắc' ? 'bg-success text-white' : 
+                                                    (p.status == 'Cảnh báo' ? 'bg-danger text-white' : 'bg-info text-dark')}"
+                                    th:text="${p.status}">Đạt</span>
                             </td>
                             <td class="text-end pe-4">
-                                <a th:href="@{/admin/progress/user/{id}(id=${p.userId})}" class="btn btn-sm btn-light border">
-                                    <i class="bi bi-eye"></i> Chi tiết
+                                <a th:href="@{/admin/progress/user/{id}(id=${p.userId})}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                    <i class="bi bi-search"></i> Xem
                                 </a>
                             </td>
                         </tr>

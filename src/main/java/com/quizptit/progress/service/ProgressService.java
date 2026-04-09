@@ -5,6 +5,7 @@ import com.quizptit.content.entity.Topic;
 import com.quizptit.content.repository.SubjectRepository;
 import com.quizptit.content.repository.TopicRepository;
 import com.quizptit.quiz.entity.Quiz;
+import com.quizptit.quiz.entity.enums.QuizType;
 import com.quizptit.quiz.repository.QuizRepository;
 import com.quizptit.progress.dto.*;
 import com.quizptit.progress.entity.LearningProgress;
@@ -39,6 +40,10 @@ public class ProgressService {
 
     @Transactional
     public void updateQuizProgress(User user, Quiz quiz, BigDecimal currentScore) {
+        if (quiz.getQuizType() == QuizType.RANDOM) {
+            return; 
+        }
+        
         UserQuizProgress progress = userQuizProgressRepository.findByUserUserIdAndQuizQuizId(user.getUserId(), quiz.getQuizId())
                 .orElse(UserQuizProgress.builder()
                         .user(user)
@@ -89,8 +94,7 @@ public class ProgressService {
 
         // Tính % hoàn thành dựa trên số lượng quiz đã làm / tổng quiz trong hệ thống
         // của topic đó
-        double percentage = totalQuizzesInTopic == 0 ? 0
-                : ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
+        double percentage = totalQuizzesInTopic == 0 ? 0 : ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
 
         learningProgress.setTotalAttempts(totalAttempts);
         learningProgress.setTotalQuizzes(totalQuizzesInTopic);
@@ -118,10 +122,10 @@ public class ProgressService {
 
                 // Đếm số bài trong chương đạt điểm >= 0.4
                 long passedInTopic = userQuizProgressRepository
-                        .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
-                        .stream()
-                        .filter(p -> p.getHighestScore().doubleValue() >= 0.4)
-                        .count();
+                    .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
+                    .stream()
+                    .filter(p -> p.getHighestScore().doubleValue() >= 0.4)
+                    .count();
                 
                 totalPassedQuizzesInSubject += passedInTopic;
 
@@ -131,16 +135,15 @@ public class ProgressService {
                 }
             }
 
-            double overallPercent = totalQuizzesInSubject == 0 ? 0 : 
-                    ((double) totalPassedQuizzesInSubject / totalQuizzesInSubject) * 100;
+            double overallPercent = totalQuizzesInSubject == 0 ? 0 : ((double) totalPassedQuizzesInSubject / totalQuizzesInSubject) * 100;
 
             return SubjectProgressDTO.builder()
-                    .subjectId(subject.getSubjectId())
-                    .subjectName(subject.getSubjectName())
-                    .totalTopics(totalTopics)
-                    .completedTopics(completedTopicsCount)
-                    .overallPercentage(Math.round(overallPercent * 10) / 10.0)
-                    .build();
+                .subjectId(subject.getSubjectId())
+                .subjectName(subject.getSubjectName())
+                .totalTopics(totalTopics)
+                .completedTopics(completedTopicsCount)
+                .overallPercentage(Math.round(overallPercent * 10) / 10.0)
+                .build();
         }).collect(Collectors.toList());
     }
 
@@ -152,23 +155,23 @@ public class ProgressService {
             int actualTotalQuizzes = quizRepository.countByTopicTopicId(topic.getTopicId());
 
             List<UserQuizProgress> userProgresses = userQuizProgressRepository
-                    .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId());
+                .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId());
             
             long passedQuizzes = userProgresses.stream()
-                    .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4)
-                    .count();
+                .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4)
+                .count();
 
             double percent = actualTotalQuizzes == 0 ? 0 : ((double) passedQuizzes / actualTotalQuizzes) * 100;
 
             // Builder phải kết thúc bằng .build()
             return TopicProgressDTO.builder()
-                    .topicId(topic.getTopicId())
-                    .topicName(topic.getTopicName())
-                    .totalQuizzes(actualTotalQuizzes)
-                    .completedQuizzes((int) passedQuizzes)
-                    .averageScore(calculateAverage(userProgresses)) // Gọi hàm phụ ở đây
-                    .progressPercentage(BigDecimal.valueOf(Math.round(percent * 10) / 10.0))
-                    .build();
+                .topicId(topic.getTopicId())
+                .topicName(topic.getTopicName())
+                .totalQuizzes(actualTotalQuizzes)
+                .completedQuizzes((int) passedQuizzes)
+                .averageScore(calculateAverage(userProgresses)) // Gọi hàm phụ ở đây
+                .progressPercentage(BigDecimal.valueOf(Math.round(percent * 10) / 10.0))
+                .build();
         }).collect(Collectors.toList()); // Dòng 175 sẽ hết lỗi khi Builder bên trên chuẩn xác
     }
 
@@ -179,32 +182,32 @@ public class ProgressService {
 
         return allQuizzes.stream().map(quiz -> {
             Optional<UserQuizProgress> up = userProgresses.stream()
-                    .filter(p -> p.getQuiz().getQuizId().equals(quiz.getQuizId())).findFirst();
+                .filter(p -> p.getQuiz().getQuizId().equals(quiz.getQuizId())).findFirst();
 
             return QuizStatusDTO.builder()
-                    .quizId(quiz.getQuizId())
-                    .title(quiz.getTitle())
-                    .highestScore(up.map(UserQuizProgress::getHighestScore).orElse(BigDecimal.ZERO))
-                    .isCompleted(up.map(p -> p.getHighestScore().doubleValue() >= 5.0).orElse(false))
-                    .build();
+                .quizId(quiz.getQuizId())
+                .title(quiz.getTitle())
+                .highestScore(up.map(UserQuizProgress::getHighestScore).orElse(BigDecimal.ZERO))
+                .isCompleted(up.map(p -> p.getHighestScore().doubleValue() >= 5.0).orElse(false))
+                .build();
         }).collect(Collectors.toList());
     }
 
     public List<QuizProgressDTO> getMyProgress(Long userId) {
         return userQuizProgressRepository.findByUserUserId(userId).stream()
-                .map(this::mapToQuizProgressDTO)
-                .collect(Collectors.toList());
+            .map(this::mapToQuizProgressDTO)
+            .collect(Collectors.toList());
     }
 
     private QuizProgressDTO mapToQuizProgressDTO(UserQuizProgress entity) {
         return QuizProgressDTO.builder()
-                .quizId(entity.getQuiz().getQuizId())
-                .quizTitle(entity.getQuiz().getTitle())
-                .topicName(entity.getTopic().getTopicName())
-                .highestScore(entity.getHighestScore())
-                .totalAttempts(entity.getTotalAttempts())
-                .lastAttemptAt(entity.getLastAttemptAt())
-                .build();
+            .quizId(entity.getQuiz().getQuizId())
+            .quizTitle(entity.getQuiz().getTitle())
+            .topicName(entity.getTopic().getTopicName())
+            .highestScore(entity.getHighestScore())
+            .totalAttempts(entity.getTotalAttempts())
+            .lastAttemptAt(entity.getLastAttemptAt())
+            .build();
     }
 
     public Page<AdminProgressDTO> getAdminProgressData(Long subjectId, String keyword, Pageable pageable) {
@@ -215,9 +218,9 @@ public class ProgressService {
             dto.setTotalTopics(total);
 
             double score = dto.getAverageScore() != null ? dto.getAverageScore().doubleValue() : 0;
-            if (score >= 8.0)
+            if (score >= 0.8)
                 dto.setStatus("Xuất sắc");
-            else if (score >= 5.0)
+            else if (score >= 0.5)
                 dto.setStatus("Đạt");
             else
                 dto.setStatus("Cảnh báo");
@@ -229,8 +232,23 @@ public class ProgressService {
         return userQuestionMemoryRepository.findReviewDashboardData(userId, LocalDateTime.now());
     }
 
+    // Dòng 230
     public List<QuestionReviewDTO> getSpecificQuestionsToReview(Long userId, Long subjectId) {
-        return userQuestionMemoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+        // 1. Lấy "nguyên liệu thô" (Entity) từ DB
+        List<com.quizptit.review.entity.UserQuestionMemory> entities = 
+                userQuestionMemoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+
+        // 2. "Chế biến" sang DTO để trả về đúng kiểu dữ liệu đã khai báo ở đầu hàm
+        return entities.stream()
+                .map(entity -> QuestionReviewDTO.builder()
+                        .questionId(entity.getQuestion().getQuestionId())
+                        .content(entity.getQuestion().getContent())
+                        .subjectName(entity.getQuestion().getTopic().getSubject().getSubjectName())
+                        .memoryScore(entity.getMemoryScore() != null ? entity.getMemoryScore().doubleValue() : 0.0)
+                        .nextReviewAt(entity.getNextReviewAt())
+                        .correctStreak(entity.getCorrectStreak())
+                        .build())
+                .collect(Collectors.toList()); 
     }
 
     private BigDecimal calculateAverage(List<UserQuizProgress> progresses) {
@@ -238,9 +256,9 @@ public class ProgressService {
             return BigDecimal.ZERO;
         }
         return progresses.stream()
-                .map(UserQuizProgress::getHighestScore)
-                .filter(score -> score != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(progresses.size()), 2, java.math.RoundingMode.HALF_UP);
+            .map(UserQuizProgress::getHighestScore)
+            .filter(score -> score != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(progresses.size()), 2, java.math.RoundingMode.HALF_UP);
     }
 }
