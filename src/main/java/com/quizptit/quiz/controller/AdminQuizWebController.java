@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AdminQuizWebController {
 
     private final SubjectService subjectService;
-
     private final com.quizptit.quiz.service.QuizService quizService;
 
     @GetMapping
@@ -24,10 +24,14 @@ public class AdminQuizWebController {
 
     @GetMapping("/create")
     public String showCreateQuizPage(Model model) {
-
-        // Chỉ nạp danh sách Môn học. Chủ đề và Câu hỏi sẽ được gọi ẩn qua AJAX (fetch) Javascript
         model.addAttribute("subjects", subjectService.getAllSubjects());
-
         return "quiz/admin/quiz-create";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String showEditQuizPage(@PathVariable Long id, Model model) {
+        model.addAttribute("subjects", subjectService.getAllSubjects());
+        model.addAttribute("quizId", id);
+        return "quiz/admin/quiz-edit";
     }
 }

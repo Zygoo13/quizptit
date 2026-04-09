@@ -25,7 +25,6 @@ public class QuizDataApiController {
     public ResponseEntity<?> getTopicsBySubject(@RequestParam Long subjectId) {
         List<Topic> topics = topicRepository.findBySubject_SubjectId(subjectId);
 
-        // Đóng gói lại thành Map đơn giản để chống lỗi vòng lặp JSON
         List<Map<String, Object>> response = topics.stream().map(t -> {
             Map<String, Object> map = new HashMap<>();
             map.put("topicId", t.getTopicId());
@@ -40,7 +39,6 @@ public class QuizDataApiController {
     public ResponseEntity<?> getQuestionsByTopic(@RequestParam Long topicId) {
         List<Question> questions = questionRepository.findByTopic_TopicId(topicId);
 
-        // Đóng gói lại thành Map đơn giản để chống lỗi vòng lặp JSON
         List<Map<String, Object>> response = questions.stream().map(q -> {
             Map<String, Object> map = new HashMap<>();
             map.put("questionId", q.getQuestionId());

@@ -11,29 +11,48 @@ import com.quizptit.quiz.dto.request.ManualQuizRequest;
 import com.quizptit.quiz.dto.request.RandomQuizRequest;
 import com.quizptit.quiz.dto.response.QuizResponse;
 import com.quizptit.quiz.entity.Quiz;
+import com.quizptit.quiz.service.QuizService;
 import com.quizptit.quiz.service.impl.QuizServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/quizzes")
 @RequiredArgsConstructor
 public class QuizController {
 
-    private final QuizServiceImpl quizService;
+    private final QuizService quizService;
 
     @PostMapping("/manual")
     public ResponseEntity<?> createManualQuiz(@RequestBody ManualQuizRequest request) {
-        // 1. Lấy ID người tạo từ Security Context
         Long creatorId = CurrentUserUtils.getCurrentUserId();
-
-        // 2. Truyền NGANG nguyên cả gói hàng 'request' và 'creatorId' xuống cho Service
-        // xử lý
         Quiz quiz = quizService.createManualQuiz(request, creatorId);
-
-        // 3. Báo cáo thành công
         return ResponseEntity.ok("Tạo đề thủ công thành công, ID: " + quiz.getQuizId());
+    }
+
+    @GetMapping("/{quizId}/edit-data")
+    public ResponseEntity<?> getManualQuizEditData(@PathVariable Long quizId) {
+        Map<String, Object> data = quizService.getManualQuizEditData(quizId);
+        return ResponseEntity.ok(data);
+    }
+
+    @PutMapping("/{quizId}/manual")
+    public ResponseEntity<?> updateManualQuiz(@PathVariable Long quizId,
+            @RequestBody ManualQuizRequest request) {
+        Quiz quiz = quizService.updateManualQuiz(quizId, request);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Cập nhật đề thi thành công",
+                "quizId", quiz.getQuizId()));
+    }
+
+    @PatchMapping("/{quizId}/toggle-status")
+    public ResponseEntity<?> toggleQuizStatus(@PathVariable Long quizId) {
+        Quiz quiz = quizService.toggleQuizPublishStatus(quizId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", quiz.getIsPublished() ? "Đã mở đề thi (Published)" : "Đã tạm ẩn đề thi (Draft)",
+                "isPublished", quiz.getIsPublished()));
     }
 
     @PostMapping("/random")
@@ -58,11 +77,10 @@ public class QuizController {
                     "message", "Tạo đề ngẫu nhiên theo môn học thành công",
                     "quizId", quiz.getQuizId()));
         } else {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Phải truyền vào subjectId hoặc topicId"));
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("message", "Phải truyền vào subjectId hoặc topicId"));
         }
     }
-
-    // --- API CHO SINH VIÊN ---
 
     @GetMapping
     public ResponseEntity<List<QuizResponse>> getAvailableQuizzes(
@@ -84,7 +102,6 @@ public class QuizController {
         return ResponseEntity.ok(responses);
     }
 
-    // Xem chi tiết 1 bài luyện (sinh viên xem trước khi bấm Bắt đầu)
     @GetMapping("/{quizId}")
     public ResponseEntity<QuizResponse> getQuizDetail(@PathVariable Long quizId) {
         Quiz quiz = quizService.getQuizDetail(quizId);

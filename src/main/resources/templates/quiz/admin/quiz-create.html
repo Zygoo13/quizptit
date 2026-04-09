@@ -61,22 +61,17 @@
     </div>
 
     <script th:fragment="script">
-        // ========================================================
-        // 1. SỰ KIỆN KHI ĐỔI MÔN HỌC (Chỉ load Chủ đề, dọn sạch Câu hỏi)
-        // ========================================================
         document.getElementById('subjectId').addEventListener('change', function () {
             let subjectId = this.value;
             let topicSelect = document.getElementById('topicId');
             let questionContainer = document.getElementById('question-container');
 
-            // Nếu quay lại ô "-- Chọn môn học --"
             if (!subjectId) {
                 topicSelect.innerHTML = '<option value="">-- Vui lòng chọn môn học trước --</option>';
                 questionContainer.innerHTML = '<div class="text-muted text-center py-3">Vui lòng chọn môn học và chủ đề để hiển thị câu hỏi...</div>';
                 return;
             }
 
-            // Gọi API lấy danh sách Topic của Môn học này
             fetch(`/api/quiz-data/topics?subjectId=${subjectId}`)
                 .then(res => res.json())
                 .then(topics => {
@@ -86,43 +81,36 @@
                     });
                 });
 
-            // Dọn sạch câu hỏi cũ và yêu cầu chọn Topic
             questionContainer.innerHTML = '<div class="text-warning text-center py-3"><i class="bi bi-arrow-up-circle"></i> Vui lòng chọn 1 Chủ đề ở trên để hiển thị câu hỏi...</div>';
         });
 
-        // ========================================================
-        // 2. SỰ KIỆN KHI ĐỔI CHỦ ĐỀ (Load Câu hỏi của Chủ đề đó)
-        // ========================================================
         document.getElementById('topicId').addEventListener('change', function () {
             let topicId = this.value;
             let questionContainer = document.getElementById('question-container');
 
-            // Nếu quay lại chọn "-- Vui lòng chọn chủ đề --"
             if (!topicId) {
                 questionContainer.innerHTML = '<div class="text-warning text-center py-3"><i class="bi bi-arrow-up-circle"></i> Vui lòng chọn Chủ đề để hiển thị câu hỏi...</div>';
                 return;
             }
 
-            // Bật hiệu ứng tải
             questionContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Đang tải ngân hàng câu hỏi...</div>';
 
-            // Gọi API xin câu hỏi của RIÊNG Topic này
             fetch(`/api/quiz-data/questions?topicId=${topicId}`)
                 .then(res => res.json())
                 .then(questions => {
-                    questionContainer.innerHTML = ''; // Xóa chữ loading
+                    questionContainer.innerHTML = ''; 
 
                     if (questions.length === 0) {
                         questionContainer.innerHTML = '<div class="text-danger fw-bold text-center py-3"><i class="bi bi-x-circle"></i> Chủ đề này hiện chưa có câu hỏi nào!</div>';
                         return;
                     }
 
-                    // In từng câu hỏi ra màn hình
                     questions.forEach(q => {
+                        const qCheckId = `q-check-${q.questionId}`;
                         questionContainer.innerHTML += `
                             <div class="form-check border-bottom py-2">
-                                <input class="form-check-input question-checkbox" type="checkbox" value="${q.questionId}">
-                                <label class="form-check-label">
+                                <input class="form-check-input question-checkbox" type="checkbox" id="${qCheckId}" value="${q.questionId}">
+                                <label class="form-check-label w-100" for="${qCheckId}" style="cursor: pointer;">
                                     <strong class="text-primary">Câu ${q.questionId}:</strong>
                                     <span>${q.content}</span>
                                 </label>
@@ -136,14 +124,11 @@
                 });
         });
 
-        // ========================================================
-        // 3. XỬ LÝ KHI BẤM NÚT TẠO ĐỀ THI
-        // ========================================================
         const btnSubmit = document.getElementById('btn-tao-de');
 
         if (btnSubmit) {
             btnSubmit.addEventListener('click', function (event) {
-                event.preventDefault(); // Chặn hành vi load lại trang mặc định của Form
+                event.preventDefault(); 
 
                 try {
                     const csrfMeta = document.querySelector('meta[name="_csrf"]');
@@ -157,7 +142,6 @@
                     const csrfToken = csrfMeta.content;
                     const csrfHeader = csrfHeaderMeta.content;
 
-                    // Thu thập dữ liệu
                     let subjectId = parseInt(document.getElementById('subjectId').value);
                     let topicId = parseInt(document.getElementById('topicId').value);
                     let title = document.getElementById('title').value;
@@ -168,8 +152,6 @@
                     checkedBoxes.forEach(function (checkbox) {
                         questionIds.push(parseInt(checkbox.value));
                     });
-
-                    // KIỂM TRA DỮ LIỆU ĐẦU VÀO (VALIDATION)
                     if (!subjectId || isNaN(subjectId)) {
                         alert("Vui lòng chọn Môn học!");
                         return;
@@ -191,11 +173,9 @@
                         return;
                     }
 
-                    // Khóa nút bấm để chống bấm 2 lần
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo...';
 
-                    // GÓI HÀNG GỬI XUỐNG API (Gửi cả subjectId và topicId)
                     fetch('/api/quizzes/manual', {
                         method: 'POST',
                         headers: {

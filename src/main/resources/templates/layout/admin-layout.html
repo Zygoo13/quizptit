@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content)">
-
-<!-- Tái sử dụng Fragment Head (đã chứa Bootstrap 5.3.8 và Icons) -->
-
-<head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}"></head>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content, script)">
+<head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}">
+    <!-- Meta tags for AJAX CSRF -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
 
 <style>
     :root {
@@ -19,10 +19,18 @@
         background: #ffffff;
         border-right: 1px solid #e0e0e0;
         height: 100vh;
-        position: sticky;
-        top: 0;
-        padding: 1.5rem 1rem;
         overflow-y: auto;
+        --bs-offcanvas-width: var(--sidebar-width);
+    }
+
+    @media (min-width: 992px) {
+        .admin-sidebar {
+            position: sticky;
+            top: 0;
+            padding: 1.5rem 1rem;
+            z-index: 1020;
+            width: var(--sidebar-width) !important;
+        }
     }
 
     .sidebar-title {
@@ -87,71 +95,89 @@
         <div class="d-flex">
 
             <!-- SIDEBAR -->
-            <aside class="admin-sidebar d-none d-lg-block flex-shrink-0" style="width: var(--sidebar-width);">
-                <div class="d-flex align-items-center mb-4 px-2">
-                    <i class="bi bi-shield-lock-fill text-primary fs-3 me-2"></i>
-                    <span class="fw-bold fs-5">QuizPTIT Admin</span>
+            <aside class="admin-sidebar offcanvas-lg offcanvas-start flex-shrink-0" tabindex="-1" id="adminSidebar"
+                aria-labelledby="adminSidebarLabel">
+                <div class="offcanvas-header d-lg-none mt-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-shield-lock-fill text-primary fs-3 me-2"></i>
+                        <span class="fw-bold fs-5" id="adminSidebarLabel">QuizPTIT Admin</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar"
+                        aria-label="Close"></button>
                 </div>
 
-                <nav class="nav flex-column">
-                    <a class="nav-link-admin" th:href="@{/admin}"
-                        th:classappend="${requestURI == '/admin' ? 'active' : ''}">
-                        <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
+                <div class="offcanvas-body d-flex flex-column px-2 p-lg-0">
+                    <div class="d-none d-lg-flex align-items-center mb-4 px-2">
+                        <i class="bi bi-shield-lock-fill text-primary fs-3 me-2"></i>
+                        <span class="fw-bold fs-5">QuizPTIT Admin</span>
+                    </div>
 
-                    <div class="sidebar-title">Người dùng & Hệ thống</div>
-                    <a class="nav-link-admin" th:href="@{/admin/users}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/users') ? 'active' : ''}">
-                        <i class="bi bi-people"></i> Quản lý User
-                    </a>
+                    <nav class="nav flex-column">
+                        <a class="nav-link-admin" th:href="@{/admin}"
+                            th:classappend="${requestURI == '/admin' ? 'active' : ''}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
 
-                    <div class="sidebar-title">Nội dung học thuật</div>
-                    <a class="nav-link-admin" th:href="@{/admin/subjects}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/subjects') ? 'active' : ''}">
-                        <i class="bi bi-book"></i> Môn học
-                    </a>
-                    <a class="nav-link-admin" th:href="@{/admin/topics}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/topics') ? 'active' : ''}">
-                        <i class="bi bi-tags"></i> Chủ đề
-                    </a>
-                    <a class="nav-link-admin" th:href="@{/admin/questions}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/questions') ? 'active' : ''}">
-                        <i class="bi bi-patch-question"></i> Ngân hàng câu hỏi
-                    </a>
+                        <div class="sidebar-title">Người dùng & Hệ thống</div>
+                        <a class="nav-link-admin" th:href="@{/admin/users}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/users') ? 'active' : ''}">
+                            <i class="bi bi-people"></i> Quản lý User
+                        </a>
 
-                    <div class="sidebar-title">Khảo thí & Kết quả</div>
-                    <a class="nav-link-admin" th:href="@{/admin/quizzes}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/quizzes') ? 'active' : ''}">
-                        <i class="bi bi-journal-check"></i> Quản lý Kỳ thi
-                    </a>
-                    <a class="nav-link-admin" th:href="@{/admin/progress}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/progress') ? 'active' : ''}">
-                        <i class="bi bi-bar-chart-line"></i> Theo dõi Tiến độ
-                    </a>
+                        <div class="sidebar-title">Nội dung học thuật</div>
+                        <a class="nav-link-admin" th:href="@{/admin/subjects}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/subjects') ? 'active' : ''}">
+                            <i class="bi bi-book"></i> Môn học
+                        </a>
+                        <a class="nav-link-admin" th:href="@{/admin/topics}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/topics') ? 'active' : ''}">
+                            <i class="bi bi-tags"></i> Chủ đề
+                        </a>
+                        <a class="nav-link-admin" th:href="@{/admin/questions}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/questions') ? 'active' : ''}">
+                            <i class="bi bi-patch-question"></i> Ngân hàng câu hỏi
+                        </a>
 
-                    <div class="sidebar-title">Cộng đồng & Kiểm duyệt</div>
-                    <a class="nav-link-admin" th:href="@{/admin/community/questions}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/community/questions') ? 'active' : ''}">
-                        <i class="bi bi-chat-dots"></i> Bài đăng cộng đồng
-                    </a>
-                    <a class="nav-link-admin" th:href="@{/admin/community/moderation-records}"
-                        th:classappend="${requestURI != null and requestURI.contains('/admin/moderation') ? 'active' : ''}">
-                        <i class="bi bi-clipboard-check"></i> Nhật ký kiểm duyệt
-                    </a>
+                        <div class="sidebar-title">Khảo thí & Kết quả</div>
+                        <a class="nav-link-admin" th:href="@{/admin/quizzes}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/quizzes') ? 'active' : ''}">
+                            <i class="bi bi-journal-check"></i> Quản lý Kỳ thi
+                        </a>
+                        <a class="nav-link-admin" th:href="@{/admin/progress}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/progress') ? 'active' : ''}">
+                            <i class="bi bi-bar-chart-line"></i> Theo dõi Tiến độ
+                        </a>
 
-                    <hr class="my-4 mx-2 text-muted opacity-25">
-                    <a class="nav-link-admin text-danger" th:href="@{/}">
-                        <i class="bi bi-house-door"></i> Về trang học viên
-                    </a>
-                </nav>
+                        <div class="sidebar-title">Cộng đồng & Kiểm duyệt</div>
+                        <a class="nav-link-admin" th:href="@{/admin/community/questions}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/community/questions') ? 'active' : ''}">
+                            <i class="bi bi-chat-dots"></i> Bài đăng cộng đồng
+                        </a>
+                        <a class="nav-link-admin" th:href="@{/admin/community/moderation-records}"
+                            th:classappend="${requestURI != null and requestURI.contains('/admin/moderation') ? 'active' : ''}">
+                            <i class="bi bi-clipboard-check"></i> Nhật ký kiểm duyệt
+                        </a>
+
+                        <hr class="my-4 mx-2 text-muted opacity-25">
+                        <a class="nav-link-admin text-danger" th:href="@{/}">
+                            <i class="bi bi-house-door"></i> Về trang học viên
+                        </a>
+                    </nav>
+                </div>
             </aside>
 
             <!-- MAIN CONTENT AREA -->
-            <main class="flex-grow-1 overflow-hidden">
+            <main class="flex-grow-1 overflow-hidden" style="min-height: 100vh;">
                 <!-- Top Navbar cho Admin -->
-                <nav class="navbar navbar-expand navbar-light bg-white border-bottom sticky-top px-4 py-3">
-                    <div class="container-fluid p-0">
-                        <h4 class="m-0 fw-bold" th:text="${pageTitle}">Page Title</h4>
+                <nav class="navbar navbar-expand navbar-light bg-white border-bottom sticky-top px-3 px-md-4 py-3">
+                    <div class="container-fluid p-0 mt-1">
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-outline-primary d-lg-none me-2" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar">
+                                <i class="bi bi-list"></i>
+                            </button>
+                            <h5 class="m-0 fw-bold d-none d-sm-block mt-1" th:text="${pageTitle}">Page Title</h5>
+                        </div>
 
                         <div class="ms-auto d-flex align-items-center gap-3">
                             <div class="text-end d-none d-sm-block">
