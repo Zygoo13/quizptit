@@ -106,10 +106,11 @@
                     }
 
                     questions.forEach(q => {
+                        const qCheckId = `q-check-${q.questionId}`;
                         questionContainer.innerHTML += `
                             <div class="form-check border-bottom py-2">
-                                <input class="form-check-input question-checkbox" type="checkbox" value="${q.questionId}">
-                                <label class="form-check-label">
+                                <input class="form-check-input question-checkbox" type="checkbox" id="${qCheckId}" value="${q.questionId}">
+                                <label class="form-check-label w-100" for="${qCheckId}" style="cursor: pointer;">
                                     <strong class="text-primary">Câu ${q.questionId}:</strong>
                                     <span>${q.content}</span>
                                 </label>
@@ -147,6 +148,7 @@
                     let durationMinutes = parseInt(document.getElementById('durationMinutes').value);
 
                     let checkedBoxes = document.querySelectorAll('.question-checkbox:checked');
+                    let questionIds = [];
                     checkedBoxes.forEach(function (checkbox) {
                         questionIds.push(parseInt(checkbox.value));
                     });

@@ -104,7 +104,7 @@ public class QuizServiceImpl implements QuizService {
                                 .durationMinutes(durationMinutes)
                                 .totalQuestions(requiredQuestions)
                                 .createdBy(creator)
-                                .isPublished(true)
+                                .isPublished(false)
                                 .build();
 
                 Quiz savedQuiz = quizRepository.save(quiz);
@@ -130,9 +130,10 @@ public class QuizServiceImpl implements QuizService {
         @Transactional(readOnly = true)
         public List<Quiz> getAvailableQuizzes(Long subjectId) {
                 if (subjectId != null) {
-                        return quizRepository.findBySubject_SubjectIdAndIsPublishedTrueOrderByCreatedAtDesc(subjectId);
+                        return quizRepository.findBySubject_SubjectIdAndIsPublishedTrueAndQuizTypeOrderByCreatedAtDesc(
+                                        subjectId, QuizType.MANUAL);
                 }
-                return quizRepository.findByIsPublishedTrueOrderByCreatedAtDesc();
+                return quizRepository.findByIsPublishedTrueAndQuizTypeOrderByCreatedAtDesc(QuizType.MANUAL);
         }
 
         @Override
@@ -178,7 +179,7 @@ public class QuizServiceImpl implements QuizService {
                                 .durationMinutes(durationMinutes)
                                 .totalQuestions(requiredQuestions)
                                 .createdBy(creator)
-                                .isPublished(true)
+                                .isPublished(false)
                                 .build();
 
                 Quiz savedQuiz = quizRepository.save(quiz);
