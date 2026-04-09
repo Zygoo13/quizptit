@@ -46,15 +46,19 @@ public class QuizController {
             quiz = quizService.createRandomQuizByTopic(
                     request.getTopicId(), creatorId, request.getTitle(),
                     request.getDurationMinutes(), request.getRequiredQuestions());
-            return ResponseEntity.ok("Tạo đề ngẫu nhiên theo chủ đề thành công, ID: " + quiz.getQuizId());
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "Tạo đề ngẫu nhiên theo chủ đề thành công",
+                    "quizId", quiz.getQuizId()));
         } else if (request.getSubjectId() != null) {
             // Tạo theo Môn học nếu chỉ có subjectId
             quiz = quizService.createRandomQuiz(
                     request.getSubjectId(), creatorId, request.getTitle(),
                     request.getDurationMinutes(), request.getRequiredQuestions());
-            return ResponseEntity.ok("Tạo đề ngẫu nhiên theo môn học thành công, ID: " + quiz.getQuizId());
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "Tạo đề ngẫu nhiên theo môn học thành công",
+                    "quizId", quiz.getQuizId()));
         } else {
-            return ResponseEntity.badRequest().body("Phải truyền vào subjectId hoặc topicId");
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Phải truyền vào subjectId hoặc topicId"));
         }
     }
 

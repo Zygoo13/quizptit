@@ -24,4 +24,7 @@ public interface QuizService {
     @Transactional
     Quiz createRandomQuizByTopic(Long topicId, Long creatorId, String title,
             int durationMinutes, int requiredQuestions);
+
+    @Transactional(readOnly = true)
+    List<Quiz> getAllAdminQuizzes();
 }

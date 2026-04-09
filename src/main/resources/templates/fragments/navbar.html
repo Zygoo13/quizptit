@@ -70,7 +70,7 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm" aria-labelledby="learningDropdown">
                         <li>
-                            <a class="dropdown-item" th:href="@{/practice/random}">
+                            <a class="dropdown-item" th:href="@{/quizzes/random}">
                                 <i class="bi bi-shuffle me-2"></i> Luyện tập ngẫu nhiên
                             </a>
                         </li>
@@ -82,6 +82,12 @@
                         <li>
                             <a class="dropdown-item" th:href="@{/review/suggestions}">
                                 <i class="bi bi-lightbulb me-2"></i> Gợi ý ôn tập
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/quizzes/history}">
+                                <i class="bi bi-clock-history me-2"></i> Lịch sử làm bài
                             </a>
                         </li>
                     </ul>

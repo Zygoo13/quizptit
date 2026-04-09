@@ -35,6 +35,7 @@ public class QuizServiceImpl implements QuizService {
         private final QuestionRepository questionRepository;
         private final TopicRepository topicRepository;
 
+        @Override
         @Transactional
         public Quiz createManualQuiz(ManualQuizRequest request, Long creatorId) {
                 Subject subject = subjectRepository.findById(request.getSubjectId())
@@ -79,6 +80,7 @@ public class QuizServiceImpl implements QuizService {
                 return savedQuiz;
         }
 
+        @Override
         @Transactional
         public Quiz createRandomQuiz(Long subjectId, Long creatorId, String title, int durationMinutes,
                         int requiredQuestions) {
@@ -129,6 +131,7 @@ public class QuizServiceImpl implements QuizService {
         }
 
         // 1. Sinh viên xem danh sách bài luyện
+        @Override
         @Transactional(readOnly = true) // readOnly = true giúp tối ưu performance cho truy vấn đọc
         public List<Quiz> getAvailableQuizzes(Long subjectId) {
                 if (subjectId != null) {
@@ -138,6 +141,7 @@ public class QuizServiceImpl implements QuizService {
         }
 
         // 2. Sinh viên xem chi tiết một bài luyện (trước khi bấm Bắt đầu)
+        @Override
         @Transactional(readOnly = true)
         public Quiz getQuizDetail(Long quizId) {
                 Quiz quiz = quizRepository.findById(quizId)
@@ -150,7 +154,14 @@ public class QuizServiceImpl implements QuizService {
                 return quiz;
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public java.util.List<Quiz> getAllAdminQuizzes() {
+                return quizRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        }
+
         // 3. Tạo bài kiểm tra ngẫu nhiên theo Chủ đề (Topic)
+        @Override
         @Transactional
         public Quiz createRandomQuizByTopic(Long topicId, Long creatorId, String title,
                         int durationMinutes, int requiredQuestions) {

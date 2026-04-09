@@ -29,13 +29,17 @@ public class ReviewService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void updateQuestionMemory(Long userId, Question question, boolean isCorrect) {
-        UserQuestionMemory memory = memoryRepository.findByUserUserIdAndQuestionQuestionId(userId, question.getQuestionId())
-                .orElseGet(() -> UserQuestionMemory.builder()
-                        .user(userRepository.getReferenceById(userId))
+    public void updateQuestionMemory(User user, Question question, boolean isCorrect) {
+        // 1. Tìm bản ghi cũ hoặc khởi tạo đối tượng mới (dùng Builder)
+        UserQuestionMemory memory = memoryRepository.findByUserUserIdAndQuestionQuestionId(user.getUserId(), question.getQuestionId())
+                .orElse(UserQuestionMemory.builder()
+                        .user(user)
                         .question(question)
                         .correctStreak(0)
+                        .wrongStreak(0)
+                        .reviewCount(0) // Khởi tạo để tránh NPE
                         .memoryScore(BigDecimal.valueOf(0.1))
+                        .nextReviewAt(LocalDateTime.now().plusDays(1))
                         .build());
 
         memory.setLastResult(isCorrect);
@@ -45,19 +49,27 @@ public class ReviewService {
             memory.setCorrectStreak(memory.getCorrectStreak() + 1);
             memory.setWrongStreak(0);
             
-            // Công thức Spaced Repetition
-            BigDecimal increment = BigDecimal.valueOf(0.1).add(BigDecimal.valueOf(0.05).multiply(BigDecimal.valueOf(memory.getCorrectStreak())));
+            // Tính toán memory_score: Tăng dần dựa trên chuỗi đúng
+            BigDecimal increment = BigDecimal.valueOf(0.1)
+                    .add(BigDecimal.valueOf(0.05).multiply(BigDecimal.valueOf(memory.getCorrectStreak())));
             BigDecimal newScore = memory.getMemoryScore().add(increment);
+            
+            // Giới hạn tối đa của memory_score là 1.0 (Hoàn toàn ghi nhớ)
             if (newScore.compareTo(BigDecimal.ONE) > 0) newScore = BigDecimal.ONE;
             memory.setMemoryScore(newScore);
 
-            // Tính ngày: $$daysToAdd = \text{round}(2^{\text{streak}-1} \times (1 + \text{score}))$$
+            // Tính ngày ôn tập tiếp theo (Sử dụng hàm mũ để giãn cách ngày ôn)
             long daysToAdd = Math.round(Math.pow(2, memory.getCorrectStreak() - 1) * (1 + memory.getMemoryScore().doubleValue()));
             memory.setNextReviewAt(LocalDateTime.now().plusDays(daysToAdd).truncatedTo(ChronoUnit.DAYS));
         } else {
             memory.setCorrectStreak(0);
+            memory.setWrongStreak(memory.getWrongStreak() + 1);
+            
+            // Phạt memory_score: Giảm đi một nửa
             memory.setMemoryScore(memory.getMemoryScore().multiply(BigDecimal.valueOf(0.5)));
-            memory.setNextReviewAt(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS));
+
+            // Buộc ôn lại ngay vào ngày mai
+            memory.setNextReviewAt(LocalDateTime.now().plusDays(1));
         }
         memoryRepository.save(memory);
     }
@@ -66,8 +78,7 @@ public class ReviewService {
     public void updateMultipleQuestionMemories(User user, List<ReviewItemResult> results) {
         if (results != null) {
             for (ReviewItemResult res : results) {
-                // Truyền user.getUserId() để khớp với kiểu Long của hàm trên
-                this.updateQuestionMemory(user.getUserId(), res.getQuestion(), res.isCorrect());
+                this.updateQuestionMemory(user, res.getQuestion(), res.isCorrect());
             }
         }
     }

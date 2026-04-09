@@ -66,7 +66,7 @@ public class ReviewController {
     }
 
     // Xử lý nộp bài
-    @PostMapping("/session/submit")
+   @PostMapping("/session/submit")
     public String submitReview(@ModelAttribute ReviewSubmissionDTO submission, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         

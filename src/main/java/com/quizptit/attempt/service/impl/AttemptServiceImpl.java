@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,6 +48,7 @@ public class AttemptServiceImpl implements AttemptService {
         private final ProgressService progressService;
         private final ReviewService reviewService;
 
+        @Override
         @Transactional
         public Attempt startAttempt(Long quizId, Long userId) {
                 Quiz quiz = quizRepository.findById(quizId)
@@ -103,6 +105,7 @@ public class AttemptServiceImpl implements AttemptService {
                 return savedAttempt;
         }
 
+        @Override
         @Transactional
         public void saveAnswer(Long attemptQuestionId, Long optionId) {
                 AttemptQuestion attemptQuestion = attemptQuestionRepository.findById(attemptQuestionId)
@@ -135,6 +138,7 @@ public class AttemptServiceImpl implements AttemptService {
                 attemptAnswerRepository.save(answer);
         }
 
+        @Override
         @Transactional
         public Attempt submitAttempt(Long attemptId) {
                 List<ReviewItemResult> reviewResults = new ArrayList<>();
@@ -216,11 +220,13 @@ public class AttemptServiceImpl implements AttemptService {
                 return gradedAttempt;
         }
 
+        @Override
         @Transactional(readOnly = true)
         public List<Attempt> getUserAttemptHistory(Long userId) {
                 return attemptRepository.findByUser_UserIdOrderByStartedAtDesc(userId);
         }
 
+        @Override
         @Transactional(readOnly = true)
         public Attempt getAttemptResultDetail(Long attemptId, Long currentUserId) {
                 Attempt attempt = attemptRepository.findByIdWithQuiz(attemptId)
@@ -237,11 +243,23 @@ public class AttemptServiceImpl implements AttemptService {
                 return attempt;
         }
 
+        @Override
         public Attempt getAttemptById(Long attemptId) {
                 return attemptRepository.findById(attemptId).orElse(null);
         }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Map<Long, AttemptAnswer> getAnswersMapForAttempt(Long attemptId) {
+                List<AttemptAnswer> answers = attemptAnswerRepository
+                                .findByAttemptQuestion_Attempt_AttemptId(attemptId);
+                return answers.stream().collect(java.util.stream.Collectors.toMap(
+                                a -> a.getAttemptQuestion().getAttemptQuestionId(),
+                                a -> a));
+        }
         // Trong AttemptService.java
 
+        @Override
         public Long getRemainingSeconds(Attempt attempt) {
                 // 1. Lấy thời gian bắt đầu và tổng thời gian cho phép (phút)
                 LocalDateTime startTime = attempt.getStartedAt();

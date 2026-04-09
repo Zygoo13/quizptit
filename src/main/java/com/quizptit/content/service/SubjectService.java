@@ -20,4 +20,5 @@ public interface SubjectService {
     void toggleStatus(Long subjectId);
 
     List<Subject> getAllSubjects();
+
 }
