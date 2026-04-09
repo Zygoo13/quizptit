@@ -13,11 +13,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
-@RequestMapping("/quizzes") // Đường dẫn cho sinh viên (không có chữ /admin)
+@RequestMapping("/quizzes") 
 @RequiredArgsConstructor
 public class StudentQuizWebController {
 
@@ -29,7 +30,6 @@ public class StudentQuizWebController {
     public String showQuizResult(@PathVariable Long attemptId, Model model) {
         Long userId = CurrentUserUtils.getCurrentUserId();
 
-        // Lấy chi tiết bài làm đã được chấm điểm từ Database
         Attempt attempt = attemptService.getAttemptResultDetail(attemptId, userId);
 
         model.addAttribute("attempt", attempt);
@@ -49,8 +49,14 @@ public class StudentQuizWebController {
     }
 
     @GetMapping("/{quizId}")
-    public String showQuizDetail(@PathVariable Long quizId, Model model) {
+    public String showQuizDetail(@PathVariable Long quizId, Model model, RedirectAttributes redirectAttributes) {
         Quiz quiz = quizService.getQuizDetail(quizId);
+        
+        if (!quiz.getIsPublished() && !CurrentUserUtils.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Đề thi này hiện đang tạm ẩn.");
+            return "redirect:/quizzes";
+        }
+        
         model.addAttribute("quiz", quiz);
         return "quiz/student/quiz-detail";
     }
@@ -62,7 +68,6 @@ public class StudentQuizWebController {
         return "quiz/student/quiz-random";
     }
 
-    // 2. VÀO PHÒNG THI (Đang làm bài)
     @GetMapping("/attempts/{attemptId}/take")
     public String takeQuiz(@PathVariable Long attemptId, Model model) {
         Attempt attempt = attemptService.getAttemptById(attemptId);

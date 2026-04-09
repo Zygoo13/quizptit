@@ -3,6 +3,7 @@ package com.quizptit.quiz.service.impl;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -57,7 +58,7 @@ public class QuizServiceImpl implements QuizService {
                                 .quizType(QuizType.MANUAL)
                                 .durationMinutes(request.getDurationMinutes())
                                 .totalQuestions(request.getQuestionIds().size())
-                                .isPublished(true)
+                                .isPublished(false)
                                 .createdBy(creator)
                                 .build();
 
@@ -140,10 +141,6 @@ public class QuizServiceImpl implements QuizService {
                 Quiz quiz = quizRepository.findById(quizId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
 
-                if (!quiz.getIsPublished()) {
-                        throw new RuntimeException("Bài Quiz này chưa được mở");
-                }
-
                 return quiz;
         }
 
@@ -203,4 +200,89 @@ public class QuizServiceImpl implements QuizService {
                 return savedQuiz;
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public Map<String, Object> getManualQuizEditData(Long quizId) {
+                Quiz quiz = quizRepository.findById(quizId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz ID=" + quizId));
+
+                List<Long> currentQuestionIds = quiz.getQuizQuestions().stream()
+                                .map(qq -> qq.getQuestion().getQuestionId())
+                                .toList();
+
+                return Map.of(
+                                "quizId", quiz.getQuizId(),
+                                "title", quiz.getTitle(),
+                                "durationMinutes", quiz.getDurationMinutes(),
+                                "subjectId", quiz.getSubject() != null ? quiz.getSubject().getSubjectId() : null,
+                                "subjectName", quiz.getSubject() != null ? quiz.getSubject().getSubjectName() : "",
+                                "topicId", quiz.getTopic() != null ? quiz.getTopic().getTopicId() : null,
+                                "topicName", quiz.getTopic() != null ? quiz.getTopic().getTopicName() : "",
+                                "questionIds", currentQuestionIds);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Quiz getManualQuizById(Long quizId) {
+                return quizRepository.findById(quizId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz ID=" + quizId));
+        }
+
+        @Override
+        @Transactional
+        public Quiz updateManualQuiz(Long quizId, ManualQuizRequest request) {
+                Quiz quiz = quizRepository.findById(quizId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz ID=" + quizId));
+
+                if (quiz.getQuizType() != QuizType.MANUAL) {
+                        throw new RuntimeException("Chỉ có thể sửa đề thi thủ công (MANUAL)");
+                }
+
+                quiz.setTitle(request.getTitle());
+                quiz.setDurationMinutes(request.getDurationMinutes());
+                quiz.setTotalQuestions(request.getQuestionIds().size());
+
+                if (request.getSubjectId() != null) {
+                        Subject subject = subjectRepository.findById(request.getSubjectId())
+                                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Môn học"));
+                        quiz.setSubject(subject);
+                }
+                if (request.getTopicId() != null) {
+                        Topic topic = topicRepository.findById(request.getTopicId())
+                                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Chủ đề"));
+                        quiz.setTopic(topic);
+                } else {
+                        quiz.setTopic(null);
+                }
+
+                quizRepository.save(quiz);
+
+                quizQuestionRepository.deleteByQuiz_QuizId(quizId);
+                quizQuestionRepository.flush();
+
+                List<QuizQuestion> newQuizQuestions = new ArrayList<>();
+                for (int i = 0; i < request.getQuestionIds().size(); i++) {
+                        Question question = new Question();
+                        question.setQuestionId(request.getQuestionIds().get(i));
+                        QuizQuestion quizQuestion = QuizQuestion.builder()
+                                        .quiz(quiz)
+                                        .question(question)
+                                        .orderNo(i + 1)
+                                        .scoreWeight(BigDecimal.ONE)
+                                        .build();
+                        newQuizQuestions.add(quizQuestion);
+                }
+                quizQuestionRepository.saveAll(newQuizQuestions);
+
+                return quiz;
+        }
+
+        @Override
+        @Transactional
+        public Quiz toggleQuizPublishStatus(Long quizId) {
+                Quiz quiz = quizRepository.findById(quizId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz ID=" + quizId));
+                quiz.setIsPublished(!quiz.getIsPublished());
+                return quizRepository.save(quiz);
+        }
 }

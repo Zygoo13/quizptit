@@ -11,6 +11,7 @@ import com.quizptit.attempt.repository.AttemptAnswerRepository;
 import com.quizptit.attempt.repository.AttemptQuestionRepository;
 import com.quizptit.attempt.repository.AttemptRepository;
 import com.quizptit.attempt.service.AttemptService;
+import com.quizptit.common.util.CurrentUserUtils;
 import com.quizptit.content.entity.AnswerOption;
 import com.quizptit.content.repository.AnswerOptionRepository;
 import com.quizptit.progress.service.ProgressService;
@@ -54,7 +55,7 @@ public class AttemptServiceImpl implements AttemptService {
                 Quiz quiz = quizRepository.findById(quizId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
 
-                if (!quiz.getIsPublished()) {
+                if (!quiz.getIsPublished() && !CurrentUserUtils.isAdmin()) {
                         throw new RuntimeException("Bài Quiz này chưa được mở");
                 }
 
@@ -66,8 +67,6 @@ public class AttemptServiceImpl implements AttemptService {
                                                 userId, quizId, AttemptStatus.IN_PROGRESS);
 
                 if (existingAttempt.isPresent()) {
-                        // Nếu CÓ làm dở -> Trả về luôn bài cũ để họ làm tiếp (không tạo thêm câu hỏi
-                        // rác)
                         return existingAttempt.get();
                 }
                 Attempt attempt = Attempt.builder()
@@ -76,6 +75,7 @@ public class AttemptServiceImpl implements AttemptService {
                                 .startedAt(LocalDateTime.now())
                                 .status(AttemptStatus.IN_PROGRESS)
                                 .correctCount(0)
+                                .totalQuestions(0) 
                                 .durationSeconds(0)
                                 .build();
 
@@ -102,6 +102,10 @@ public class AttemptServiceImpl implements AttemptService {
                 }
 
                 attemptQuestionRepository.saveAll(attemptQuestions);
+                
+                savedAttempt.setTotalQuestions(attemptQuestions.size());
+                attemptRepository.save(savedAttempt);
+                
                 return savedAttempt;
         }
 
@@ -155,7 +159,6 @@ public class AttemptServiceImpl implements AttemptService {
                 attempt.setStatus(AttemptStatus.SUBMITTED);
                 attempt.setDurationSeconds((int) Duration.between(attempt.getStartedAt(), now).getSeconds());
 
-                // Bắt đầu quá trình chấm điểm
                 List<AttemptQuestion> questions = attemptQuestionRepository.findByAttempt_AttemptId(attemptId);
                 int correctCount = 0;
                 int totalQuestions = questions.size();
@@ -174,7 +177,6 @@ public class AttemptServiceImpl implements AttemptService {
                         boolean isCorrect = false;
 
                         if (answer != null && answer.getSelectedOption() != null) {
-                                // Fix lỗi NullPointerException: Đề phòng Database bị null ở cột is_correct
                                 Boolean isCorrectObj = answer.getSelectedOption().getIsCorrect();
                                 isCorrect = (isCorrectObj != null) ? isCorrectObj : false;
 
@@ -192,28 +194,23 @@ public class AttemptServiceImpl implements AttemptService {
                         reviewResults.add(new ReviewItemResult(aq.getQuestion(), isCorrect));
                 }
 
-                // --- TÍNH 2 LOẠI ĐIỂM: HỆ 10 CHO BẠN, HỆ 1 CHO DB ---
-                BigDecimal totalScore = BigDecimal.ZERO; // Hệ 10 (Để lưu vào Attempt)
-                BigDecimal ratioScore = BigDecimal.ZERO; // Hệ 1 (Để lừa cái Check Constraint)
+                BigDecimal totalScore = BigDecimal.ZERO; 
+                BigDecimal ratioScore = BigDecimal.ZERO; 
 
                 if (totalQuestions > 0) {
-                        double ratio = (double) correctCount / totalQuestions; // Tỉ lệ 0.0 -> 1.0
-                        double score10 = ratio * 10.0; // Thang điểm 10
+                        double ratio = (double) correctCount / totalQuestions; 
+                        double score10 = ratio * 10.0; 
 
                         totalScore = BigDecimal.valueOf(score10).setScale(2, java.math.RoundingMode.HALF_UP);
                         ratioScore = BigDecimal.valueOf(ratio).setScale(4, java.math.RoundingMode.HALF_UP);
                 }
 
-                // Cập nhật tổng điểm hệ 10 vào bảng Attempt (Bài thi của bạn vẫn y nguyên thang
-                // 10)
                 attempt.setCorrectCount(correctCount);
                 attempt.setTotalScore(totalScore);
-                attempt.setStatus(AttemptStatus.GRADED); // Chuyển sang trạng thái đã chấm điểm
+                attempt.setStatus(AttemptStatus.GRADED); 
 
                 Attempt gradedAttempt = attemptRepository.save(attempt);
 
-                // --- BÍ QUYẾT Ở ĐÂY ---
-                // Gọi các service bạn bè nhưng truyền cái ratioScore (<= 1.0)
                 progressService.updateQuizProgress(gradedAttempt.getUser(), gradedAttempt.getQuiz(), ratioScore);
                 reviewService.updateMultipleQuestionMemories(attempt.getUser(), reviewResults);
 
@@ -257,21 +254,15 @@ public class AttemptServiceImpl implements AttemptService {
                                 a -> a.getAttemptQuestion().getAttemptQuestionId(),
                                 a -> a));
         }
-        // Trong AttemptService.java
-
         @Override
         public Long getRemainingSeconds(Attempt attempt) {
-                // 1. Lấy thời gian bắt đầu và tổng thời gian cho phép (phút)
                 LocalDateTime startTime = attempt.getStartedAt();
                 int durationMinutes = attempt.getQuiz().getDurationMinutes();
 
-                // 2. Tính thời gian kết thúc dự kiến
                 LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
 
-                // 3. Tính số giây còn lại từ bây giờ đến lúc kết thúc
                 long remaining = java.time.Duration.between(LocalDateTime.now(), endTime).getSeconds();
 
-                // Nếu thời gian còn lại < 0 thì trả về 0 (đã hết giờ)
                 return Math.max(remaining, 0);
         }
 }

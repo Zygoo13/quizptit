@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content)">
-
-<!-- Tái sử dụng Fragment Head (đã chứa Bootstrap 5.3.8 và Icons) -->
-
-<head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}"></head>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content, script)">
+<head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}">
+    <!-- Meta tags for AJAX CSRF -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
 
 <style>
     :root {

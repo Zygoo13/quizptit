@@ -54,6 +54,10 @@ public class Attempt {
     @Builder.Default
     private Integer durationSeconds = 0;
 
+    @Column(name = "total_questions", nullable = false)
+    @Builder.Default
+    private Integer totalQuestions = 0;
+
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderNo ASC")
     @Builder.Default

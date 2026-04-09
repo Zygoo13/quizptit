@@ -45,4 +45,13 @@ public final class CurrentUserUtils {
     public static boolean isLoggedIn() {
         return getCurrentUser() != null;
     }
+
+    public static boolean isAdmin() {
+        CustomUserDetails currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return false;
+        }
+        return currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
 }

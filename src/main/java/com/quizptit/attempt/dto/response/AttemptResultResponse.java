@@ -19,6 +19,7 @@ public class AttemptResultResponse {
     private LocalDateTime submittedAt;
     private BigDecimal totalScore;
     private Integer correctCount;
+    private Integer totalQuestions;
     private Integer durationSeconds;
     private String status;
 }
