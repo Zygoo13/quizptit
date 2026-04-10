@@ -2,22 +2,36 @@ package com.quizptit.community.service;
 
 import com.quizptit.community.dto.CommentRequest;
 import com.quizptit.community.dto.CommentResponse;
+import com.quizptit.community.entity.Comment;
+
+import jakarta.validation.Valid;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface CommentService {
 
-    // BR-33, 36: Thêm bình luận (Dùng RequestDTO đầu vào, ResponseDTO đầu ra)
     CommentResponse addComment(Long postId, Long userId, CommentRequest request);
 
-    // BR-40: Lấy danh sách bình luận công khai của một bài viết
     List<CommentResponse> getPublicCommentsByPost(Long postId);
 
-    // BR-37: Xóa bình luận (Chính chủ hoặc Admin)
     void deleteComment(Long commentId, Long userId, String userRole);
 
-    // BR-37: Cập nhật bình luận (Hàm mới nè!)
-    CommentResponse updateComment(Long commentId, CommentRequest request, Long userId);
+    CommentResponse updateComment(Long commentId, CommentRequest request, String email);
 
-    // BR-38, 39: Cập nhật trạng thái bình luận (Admin ẩn/hiện bình luận vi phạm)
     void updateCommentStatus(Long commentId, String newStatus, String reason, Long adminId);
+
+    @Transactional
+    void syncCommentCount(Long postId);
+
+    // Sửa void thành CommentResponse
+    CommentResponse addCommentByEmail(Long postId, String email, CommentRequest request);
+
+    void deleteCommentByEmail(Long commentId, String email);
+
+    Optional<Comment> findById(Long id);
+
+    void update(Long id, Comment comment);
+
 }

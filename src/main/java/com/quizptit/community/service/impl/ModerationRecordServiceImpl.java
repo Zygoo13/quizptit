@@ -62,6 +62,27 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     @Override
     @Transactional
+    public void logPostModeration(Long postId, Long adminId, String newStatus, String reason) {
+        // 1. Tìm User Admin để gán vào bản ghi
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Admin ID: " + adminId));
+
+        // 2. Tạo bản ghi log cho bài viết
+        ModerationRecord record = ModerationRecord.builder()
+                .targetId(postId)
+                .targetType("QUESTION_POST") // Phân biệt với COMMENT
+                .action(newStatus)
+                .reason(reason)
+                .moderator(admin)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // 3. Lưu vào database
+        moderationRecordRepository.save(record);
+    }
+
+    @Override
+    @Transactional
     public void logCommentModeration(Long commentId, Long adminId, String newStatus, String reason) {
         ModerationRecord record = new ModerationRecord();
 

@@ -16,4 +16,6 @@ public interface ModerationRecordService {
     List<ModerationRecordResponse> getAllRecords();
 
     void logCommentModeration(Long commentId, Long adminId, String newStatus, String reason);
+
+    void logPostModeration(Long postId, Long userId, String status, String reason);
 }

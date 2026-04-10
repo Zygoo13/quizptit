@@ -2,6 +2,8 @@ package com.quizptit.community.service;
 
 import com.quizptit.community.dto.QuestionPostRequest;
 import com.quizptit.community.dto.QuestionPostResponse;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 public interface QuestionPostService {
@@ -22,9 +24,16 @@ public interface QuestionPostService {
     List<QuestionPostResponse> getAllPostsForAdmin();
 
     // BR-38, 39: Thay đổi trạng thái bài viết & Lưu lý do kiểm duyệt
-    void updatePostStatus(Long postId, String newStatus, String reason, Long adminId);
+    void updatePostStatus(Long postId, String newStatus, String reason, String adminEmail);
 
     // Lấy chi tiết bài viết
     // Trong file QuestionPostService.java
     QuestionPostResponse getPostById(Long postId, Long currentUserId, String role);
+
+    @Transactional
+    void toggleLike(Long postId, Long userId);
+
+    List<String> getLikersByPostId(Long postId);
+
+    List<QuestionPostResponse> getPosts(Long topicId, int page);
 }

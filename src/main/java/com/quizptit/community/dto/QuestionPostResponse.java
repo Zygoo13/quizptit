@@ -10,7 +10,6 @@ public class QuestionPostResponse {
     private Long questionPostId;
     private String title;
     private String content;
-    private Integer viewCount;
     private String status;
     private Long topicId;
 
@@ -18,6 +17,10 @@ public class QuestionPostResponse {
     private Long userId;
     private String fullName;
     private String email;
+    private Integer likeCount;
+    private String topicName;
+    private String themeColor;
+    private long commentCount;
 
     // Thời gian từ BaseEntity
     private LocalDateTime createdAt;

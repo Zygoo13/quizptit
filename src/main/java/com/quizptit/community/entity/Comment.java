@@ -5,6 +5,8 @@ import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "comment")
 @Getter @Setter
@@ -31,43 +33,13 @@ public class Comment extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public Long getCommentId() {
-        return commentId;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Comment parentComment; // Nếu null là cmt cấp 1, nếu có giá trị là cmt cấp 2
 
-    public void setCommentId(Long commentId) {
-        this.commentId = commentId;
-    }
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC") // Phản hồi hiện theo thứ tự thời gian
+    private List<Comment> replies;
 
-    public String getContent() {
-        return content;
-    }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public QuestionPost getQuestionPost() {
-        return questionPost;
-    }
-
-    public void setQuestionPost(QuestionPost questionPost) {
-        this.questionPost = questionPost;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
 }

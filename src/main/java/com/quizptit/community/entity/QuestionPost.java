@@ -6,6 +6,9 @@ import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "question_post")
 @Getter @Setter
@@ -27,8 +30,17 @@ public class QuestionPost extends BaseEntity {
     @Column(name = "view_count", nullable = false)
     private Integer viewCount = 0;
 
+    @Column(name = "like_count", nullable = false)
+    private Integer likeCount = 0;
+
+    @Column(name = "comment_count", nullable = false)
+    private Integer commentCount = 0;
+
     @Column(nullable = false, length = 20)
     private String status = "VISIBLE";
+
+    @Column(name = "theme_color")
+    private String themeColor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -38,59 +50,6 @@ public class QuestionPost extends BaseEntity {
     @Column(name = "topic_id", nullable = false)
     private Long topicId;
 
-    public Long getQuestionPostId() {
-        return questionPostId;
-    }
-
-    public void setQuestionPostId(Long questionPostId) {
-        this.questionPostId = questionPostId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public Integer getViewCount() {
-        return viewCount;
-    }
-
-    public void setViewCount(Integer viewCount) {
-        this.viewCount = viewCount;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Long getTopicId() {
-        return topicId;
-    }
-
-    public void setTopicId(Long topicId) {
-        this.topicId = topicId;
-    }
+    @OneToMany(mappedBy = "questionPost", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Comment> comments = new ArrayList<>();
 }

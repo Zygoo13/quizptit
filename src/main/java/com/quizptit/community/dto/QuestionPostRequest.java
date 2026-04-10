@@ -12,4 +12,7 @@ public class QuestionPostRequest {
 
     @NotBlank(message = "Nội dung không được để trống")
     private String content;
+
+    private Long topicId;
+    private String themeColor;
 }

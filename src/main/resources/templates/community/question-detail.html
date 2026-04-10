@@ -1,56 +1,183 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"> <head>
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
     <meta charset="UTF-8">
     <title th:text="${post.title}">Chi tiết câu hỏi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        .post-content { line-height: 1.8; font-size: 1.1rem; white-space: pre-line; }
-        .meta-info { font-size: 0.9rem; color: #6c757d; }
+        .post-content { line-height: 1.8; font-size: 1.1rem; white-space: pre-line; color: #333; }
+        .avatar-circle { width: 40px; height: 40px; background-color: #0d6efd; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; font-size: 0.9rem; flex-shrink: 0; }
+        .avatar-circle-sm { width: 32px; height: 32px; font-size: 0.8rem; }
+        .reply-box { margin-left: 20px; }
+        .cursor-pointer { cursor: pointer; }
+        .comment-item { position: relative; width: 100%; }
+        .comment-wrapper { display: inline-flex; align-items: center; position: relative; max-width: 90%; }
+        .comment-bubble, .reply-bubble { position: relative; padding: 8px 15px; border-radius: 18px; background-color: #f0f2f5; max-width: 100%; word-wrap: break-word; }
+        .comment-actions-trigger { position: absolute; right: -35px; top: 50%; transform: translateY(-50%); opacity: 0; transition: all 0.2s ease; color: #65676b; cursor: pointer; padding: 5px; z-index: 5; }
+        .comment-wrapper:hover .comment-actions-trigger { opacity: 1; }
+        .dropdown-menu { border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; border: none !important; z-index: 9999 !important; }
+        .btn-reply { font-size: 0.85rem; color: #65676b; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .btn-reply:hover { text-decoration: underline; color: #0d6efd; }
+        .comment-hidden { opacity: 0.5 !important; filter: grayscale(0.5); background-color: #f8d7da !important; }
+        .comment-hidden p { text-decoration: line-through; }
     </style>
 </head>
 <body class="bg-light">
 <div class="container py-5">
     <div class="mb-4">
-        <a th:href="@{/community/questions}" class="btn btn-outline-secondary btn-sm">
-            &larr; Quay lại danh sách
-        </a>
+        <a th:href="@{/community/questions}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">&larr; Quay lại danh sách</a>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-lg-9">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3" th:text="${post.topicName}">Topic</span>
+                        <div class="dropdown" sec:authorize="isAuthenticated()" th:if="${post.email == #authentication.name or #authorization.expression('hasRole(''ADMIN'')')}">
+                            <div class="cursor-pointer p-2 btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-h"></i></div>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                                <th:block th:if="${post.email == #authentication.name}">
+                                    <li><a class="dropdown-item py-2" th:href="@{/community/questions/{id}/edit(id=${post.questionPostId})}"><i class="far fa-edit me-2"></i>Sửa bài</a></li>
+                                    <li><button type="button" class="dropdown-item py-2 text-danger" th:onclick="'confirmDeletePost(' + ${post.questionPostId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa bài</button></li>
+                                </th:block>
+
+                                <th:block sec:authorize="hasRole('ADMIN')">
+                                    <li th:if="${post.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button type="button" class="dropdown-item py-2 text-warning"
+                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'HIDE\')'">
+                                            <i class="fas fa-eye-slash me-2"></i>Ẩn bài (Admin)
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item py-2 text-danger fw-bold"
+                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'DELETE\')'">
+                                            <i class="fas fa-user-shield me-2"></i>Xóa bài (Admin)
+                                        </button>
+                                    </li>
+                                </th:block>
+                            </ul>
+                        </div>
+                    </div>
+                    <h1 class="fw-bold mb-3" th:text="${post.title}"></h1>
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom text-muted small">
+                        <div class="avatar-circle flex-shrink-0"
+                             th:text="${comment?.userFullName != null ? #strings.substring(comment.userFullName, 0, 1) : 'U'}">
+                        </div>
+                        <span class="me-3 text-dark fw-bold" th:text="${post.fullName}"></span>
+                        <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div class="post-content mb-5" th:text="${post.content}"></div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
                 <div class="card-body p-4">
-                    <h1 class="display-6 fw-bold text-primary mb-3" th:text="${post.title}">Tiêu đề bài viết</h1>
+                    <h5 class="fw-bold mb-4">💬 Bình luận (<span th:text="${post.commentCount}"></span>)</h5>
 
-                    <div class="meta-info d-flex align-items-center mb-4 pb-3 border-bottom">
-                            <span class="me-3">
-                                <strong>Người đăng:</strong> <span th:text="${post.fullName}">Admin</span>
-                            </span>
-                        <span class="me-3">
-                                <strong>Ngày:</strong> <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
-                            </span>
-                        <span>
-                                <strong>Lượt xem:</strong> <span th:text="${post.viewCount}">0</span>
-                            </span>
-                    </div>
-
-                    <div class="post-content mb-5" th:text="${post.content}">
-                        Nội dung chi tiết sẽ hiển thị ở đây...
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a th:if="${post.email == #authentication.name}"
-                           th:href="@{/community/questions/{id}/edit(id=${post.questionPostId})}"
-                           class="btn btn-warning">Chỉnh sửa</a>
-
-                        <form th:if="${post.email == #authentication.name}"
-                              th:action="@{/community/questions/{id}/delete(id=${post.questionPostId})}"
-                              method="post"
-                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài này?')">
+                    <div class="mb-5" sec:authorize="isAuthenticated()">
+                        <form th:action="@{/community/questions/{id}/comments/create(id=${post.questionPostId})}" method="post" id="commentForm">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <button type="submit" class="btn btn-danger">Xóa bài</button>
+                            <input type="hidden" name="parentId" id="parentIdInput">
+                            <textarea name="content" id="commentContent" class="form-control rounded-3 shadow-sm" rows="3" placeholder="Viết bình luận..." required></textarea>
+                            <div class="text-end mt-2">
+                                <button type="button" onclick="cancelReply()" class="btn btn-secondary btn-sm rounded-pill px-3 me-2">Hủy</button>
+                                <button type="submit" id="submitBtn" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Gửi</button>
+                            </div>
                         </form>
+                    </div>
+
+                    <div id="commentList">
+                        <div th:each="comment : ${comments}"
+                             th:if="${comment != null and comment.status != 'DELETED' and (comment.status == 'VISIBLE' or #authorization.expression('hasRole(''ADMIN'')'))}"
+                             th:id="'comment-' + ${comment?.commentId}"
+                             class="mb-4 comment-item">
+
+                            <div class="d-flex gap-2 align-items-start">
+                                <div class="avatar-circle avatar-circle-sm flex-shrink-0"
+                                     th:text="${comment?.userFullName != null and !comment.userFullName.isEmpty() ? #strings.substring(comment.userFullName,0,1) : 'U'}">
+                                </div>
+
+                                <div class="flex-grow-1">
+                                    <div class="comment-wrapper">
+                                        <div class="comment-bubble shadow-sm"
+                                             th:classappend="${comment?.status == 'HIDDEN' ? 'comment-hidden' : ''}">
+                                            <div class="fw-bold mb-0" style="font-size: 0.85rem;"
+                                                 th:text="${comment?.userFullName}"></div>
+                                            <p class="mb-0 text-dark" th:text="${comment?.content}"></p>
+                                        </div>
+
+                                        <div class="dropdown comment-actions-trigger" sec:authorize="isAuthenticated()">
+                                            <i class="fas fa-ellipsis-h" data-bs-toggle="dropdown"></i>
+                                            <ul class="dropdown-menu shadow border-0">
+                                                <th:block th:if="${comment?.email == #authentication.name}">
+                                                    <li><a class="dropdown-item edit-comment-btn" href="javascript:void(0)" th:data-id="${comment?.commentId}" th:data-content="${comment?.content}"><i class="far fa-edit me-2"></i>Sửa</a></li>
+                                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" th:onclick="'confirmDeleteComment(' + ${comment?.commentId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa</a></li>
+                                                </th:block>
+
+                                                <th:block sec:authorize="hasRole('ADMIN')">
+                                                    <li th:if="${comment?.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-warning" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${comment?.commentId} + ', \'HIDE\')'"><i class="fas fa-eye-slash me-2"></i>Ẩn (Admin)</a></li>
+                                                    <li><a class="dropdown-item text-danger fw-bold" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${comment?.commentId} + ', \'DELETE\')'"><i class="fas fa-user-shield me-2"></i>Xóa (Admin)</a></li>
+                                                </th:block>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="ms-2 mt-1">
+                                        <small class="text-muted me-3" th:text="${#temporals.format(comment?.createdAt, 'dd/MM HH:mm')}"></small>
+                                        <span class="btn-reply" th:data-id="${comment?.commentId}" th:data-name="${comment?.userFullName}" onclick="handleReplyClick(this, null)">Phản hồi</span>
+                                    </div>
+
+                                    <div class="reply-box mt-3" th:if="${comment?.replies != null and !#lists.isEmpty(comment.replies)}">
+                                        <div th:each="reply : ${comment.replies}"
+                                             th:if="${reply != null and reply.status != 'DELETED' and (reply.status == 'VISIBLE' or #authorization.expression('hasRole(''ADMIN'')'))}"
+                                             th:id="'comment-' + ${reply?.commentId}"
+                                             class="mb-2 comment-item">
+
+                                            <div class="d-flex gap-2 align-items-start">
+                                                <div class="avatar-circle avatar-circle-sm flex-shrink-0"
+                                                     th:text="${reply?.userFullName != null and !reply.userFullName.isEmpty() ? #strings.substring(reply.userFullName,0,1) : 'U'}">
+                                                </div>
+
+                                                <div class="flex-grow-1">
+                                                    <div class="comment-wrapper">
+                                                        <div class="reply-bubble border shadow-sm"
+                                                             th:classappend="${reply?.status == 'HIDDEN' ? 'comment-hidden' : ''}">
+                                                            <div class="fw-bold mb-0" style="font-size: 0.8rem;" th:text="${reply?.userFullName}"></div>
+                                                            <p class="mb-0 small text-dark" th:text="${reply?.content}"></p>
+                                                        </div>
+
+                                                        <div class="dropdown comment-actions-trigger" sec:authorize="isAuthenticated()">
+                                                            <i class="fas fa-ellipsis-h" style="font-size: 0.8rem;" data-bs-toggle="dropdown"></i>
+                                                            <ul class="dropdown-menu shadow border-0">
+                                                                <th:block th:if="${reply?.email == #authentication.name}">
+                                                                    <li><a class="dropdown-item edit-comment-btn" href="javascript:void(0)" th:data-id="${reply?.commentId}" th:data-content="${reply?.content}"><i class="far fa-edit me-2"></i>Sửa</a></li>
+                                                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" th:onclick="'confirmDeleteComment(' + ${reply?.commentId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa</a></li>
+                                                                </th:block>
+
+                                                                <th:block sec:authorize="hasRole('ADMIN')">
+                                                                    <li th:if="${reply?.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                                                    <li><a class="dropdown-item text-warning" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${reply?.commentId} + ', \'HIDE\')'"><i class="fas fa-eye-slash me-2"></i>Ẩn (Admin)</a></li>
+                                                                    <li><a class="dropdown-item text-danger fw-bold" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${reply?.commentId} + ', \'DELETE\')'"><i class="fas fa-user-shield me-2"></i>Xóa (Admin)</a></li>
+                                                                </th:block>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="ms-2">
+                                                        <small class="text-muted me-2" style="font-size: 0.7rem;" th:text="${#temporals.format(reply?.createdAt, 'dd/MM HH:mm')}"></small>
+                                                        <span class="btn-reply" th:data-id="${reply?.commentId}" th:data-name="${reply?.userFullName}" th:data-root="${comment?.commentId}" onclick="handleReplyClick(this, this.getAttribute('data-root'))">Phản hồi</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,6 +185,146 @@
     </div>
 </div>
 
+<div class="modal fade" id="adminActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <form id="adminActionForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <div class="modal-header border-0 pb-0"><h5 class="fw-bold" id="adminModalTitle">Lý do xử lý</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><textarea name="reason" class="form-control rounded-3" rows="3" placeholder="Nhập lý do vi phạm..." required></textarea></div>
+                <div class="modal-footer border-0"><button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary rounded-pill px-4" id="adminSubmitBtn">Xác nhận</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-body p-4 text-center">
+                <h5 class="fw-bold mb-3" id="deleteModalTitle">Xác nhận xóa?</h5>
+                <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <form id="deleteFormAction" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="btn btn-danger rounded-pill px-3">Xác nhận</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const form = document.getElementById('commentForm');
+    const textarea = document.getElementById('commentContent');
+    const parentInput = document.getElementById('parentIdInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const originalAction = form ? form.action : '';
+
+    function handleReplyClick(element, rootId) {
+        const commentId = element.getAttribute('data-id');
+        const name = element.getAttribute('data-name');
+        form.action = originalAction;
+        submitBtn.innerText = "Gửi phản hồi";
+        parentInput.value = rootId ? rootId : commentId;
+        textarea.value = "@" + name + " ";
+        window.scrollTo({ top: form.offsetTop - 150, behavior: 'smooth' });
+        textarea.focus();
+    }
+
+    function cancelReply() {
+        parentInput.value = '';
+        form.action = originalAction;
+        submitBtn.innerText = "Gửi bình luận";
+        textarea.value = '';
+    }
+
+    document.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-comment-btn');
+        if (editBtn) {
+            textarea.value = editBtn.getAttribute('data-content');
+            form.action = '/community/comments/update/' + editBtn.getAttribute('data-id');
+            submitBtn.innerText = "Cập nhật";
+            window.scrollTo({ top: form.offsetTop - 150, behavior: 'smooth' });
+            textarea.focus();
+        }
+    });
+
+    function confirmDeletePost(id) {
+        const deleteForm = document.getElementById('deleteFormAction');
+        deleteForm.action = '/community/questions/' + id + '/delete';
+        document.getElementById('deleteModalTitle').innerText = "Xóa bài viết này?";
+        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+    }
+
+    function confirmDeleteComment(id) {
+        const deleteForm = document.getElementById('deleteFormAction');
+        deleteForm.action = '/community/comments/' + id + '/delete';
+        document.getElementById('deleteModalTitle').innerText = "Xóa bình luận này?";
+        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+    }
+
+    function openAdminAction(id, actionType) {
+        const adminForm = document.getElementById('adminActionForm');
+        const title = document.getElementById('adminModalTitle');
+        const btn = document.getElementById('adminSubmitBtn');
+
+        if (actionType === 'HIDE') {
+            adminForm.action = '/community/admin/comments/' + id + '/hide';
+            title.innerText = "Ẩn phản hồi (Mờ)?";
+            btn.innerText = "Xác nhận ẩn";
+            btn.className = "btn btn-warning rounded-pill px-4";
+        } else if (actionType === 'DELETE') {
+            adminForm.action = '/community/admin/comments/' + id + '/delete';
+            title.innerText = "Xóa vĩnh viễn (Quyền Admin)?";
+            btn.innerText = "Xác nhận xóa";
+            btn.className = "btn btn-danger rounded-pill px-4";
+        }
+        new bootstrap.Modal(document.getElementById('adminActionModal')).show();
+    }
+
+    function openAdminPostActionDetail(id, actionType) {
+        const adminForm = document.getElementById('adminActionForm');
+        const title = document.getElementById('adminModalTitle');
+        const btn = document.getElementById('adminSubmitBtn');
+
+        // Chú ý: Đây là link dành cho POST (questions), không phải comments
+        if (actionType === 'HIDE') {
+            adminForm.action = '/community/admin/questions/' + id + '/hide';
+            title.innerText = "Lý do ẩn bài viết";
+            btn.innerText = "Xác nhận ẩn";
+            btn.className = "btn btn-warning rounded-pill px-4";
+        } else {
+            adminForm.action = '/community/admin/questions/' + id + '/delete';
+            title.innerText = "Lý do xóa vĩnh viễn bài viết";
+            btn.innerText = "Xác nhận xóa";
+            btn.className = "btn btn-danger rounded-pill px-4";
+        }
+        new bootstrap.Modal(document.getElementById('adminActionModal')).show();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Nếu URL có chứa #comment-xxx
+        if (window.location.hash && window.location.hash.startsWith('#comment-')) {
+            const element = document.querySelector(window.location.hash);
+            if (element) {
+                // Đợi 1 chút cho trang ổn định rồi cuộn mượt đến đó
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Hiệu ứng highlight: Đổi màu nền nhẹ rồi mờ dần
+                    element.style.backgroundColor = "#fff3cd"; // Màu vàng nhạt giống highlight
+                    element.style.transition = "background-color 2s";
+                    setTimeout(() => {
+                        element.style.backgroundColor = "transparent";
+                    }, 2000);
+                }, 500);
+            }
+        }
+    });
+</script>
 </body>
 </html>
