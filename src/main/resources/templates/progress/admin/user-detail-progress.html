@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết tiến độ sinh viên - QuizPTIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        :root { --ptit-red: #ce0707; --bg-light: #f8f9fa; }
+        body { background-color: var(--bg-light); font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        
+        /* Card & Layout */
+        .app-card { border: none; border-radius: 16px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); background: #fff; }
+        .info-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; font-weight: 700; }
+        .info-value { font-size: 1.1rem; font-weight: 600; color: #212529; }
+        
+        /* Avatar Placeholder */
+        .avatar-circle {
+            width: 60px; height: 60px; background-color: #e7f1ff; color: #0d6efd;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 700;
+        }
+
+        /* Progress & Table */
+        .progress { height: 8px; border-radius: 10px; background-color: #eee; }
+        .table-modern thead th { 
+            background-color: #f8f9fa; color: #8a92a6; font-weight: 700; 
+            text-transform: uppercase; font-size: 0.75rem; border: none; padding: 1rem;
+        }
+        .table-modern tbody td { padding: 1.25rem 1rem; vertical-align: middle; border-color: #f1f1f1; }
+        
+        /* Badges */
+        .status-badge { padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.8rem; }
+        .score-badge { font-weight: 800; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-5">
+        <div class="mb-4">
+            <a th:href="@{/admin/progress(subjectId=${subject.subjectId})}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+            </a>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-8">
+                <div class="card app-card p-4 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-4 shadow-sm" th:text="${#strings.substring(user.fullName,0,1)}">T</div>
+                        <div>
+                            <h2 class="fw-bold mb-1 text-dark" th:text="${user.fullName}">Tên sinh viên</h2>
+                            <div class="d-flex flex-wrap gap-3 mt-1">
+                                <span class="text-muted"><i class="bi bi-envelope me-1"></i> <span th:text="${user.email}"></span></span>
+                                <span class="text-muted"><i class="bi bi-journal-text me-1"></i> Môn: <strong class="text-dark" th:text="${subject.subjectName}"></strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card app-card p-4 h-100 text-center">
+                    <span class="info-label mb-2 d-block">Trạng thái tài khoản</span>
+                    <div class="mt-2">
+                        <span th:class="'status-badge badge ' + (${user.status.name() == 'ACTIVE'} ? 'bg-success' : 'bg-danger')"
+                              th:text="${user.status}">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card app-card overflow-hidden">
+            <div class="card-header bg-white border-0 py-3 ps-4">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Tiến độ theo từng chương</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-modern table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Tên chương</th>
+                            <th>Tiến độ học tập</th>
+                            <th class="text-center">Số Quiz đã làm</th>
+                            <th class="text-center">Độ thông thạo</th>
+                            <th class="text-end pe-4">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${topicDetails}">
+                            <td class="ps-4">
+                                <span class="fw-bold text-dark" th:text="${t.topicName}">Tên chương</span>
+                            </td>
+                            <td style="width: 25%;">
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2">
+                                        <div class="progress-bar" role="progressbar" 
+                                             th:style="'width: ' + ${t.progressPercentage} + '%'"
+                                             th:classappend="${t.progressPercentage < 40} ? 'bg-danger' : (${t.progressPercentage < 75} ? 'bg-warning' : 'bg-success')"></div>
+                                    </div>
+                                    <small class="fw-bold text-muted" th:text="${#numbers.formatDecimal(t.progressPercentage, 1, 0)} + '%'"></small>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border" th:text="${t.completedQuizzes} + '/' + ${t.totalQuizzes}">0/0</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="score-badge" 
+                                      th:with="score10=${t.averageScore * 10}"
+                                      th:classappend="${score10 < 5.0} ? 'text-danger' : (${score10 < 8.0} ? 'text-primary' : 'text-success')"
+                                      th:text="${#numbers.formatDecimal(score10, 1, 1)}">0.0</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <span th:if="${t.averageScore.doubleValue() >= 0.8}" class="status-badge bg-success text-white">Xuất sắc</span>
+                                <span th:if="${t.averageScore.doubleValue() >= 0.5 && t.averageScore.doubleValue() < 0.8}" class="status-badge bg-primary text-white">Đang học</span>
+                                <span th:if="${t.averageScore.doubleValue() < 0.5 && t.completedQuizzes > 0}" class="status-badge bg-danger text-white">Cần hỗ trợ</span>
+                                <span th:if="${t.completedQuizzes == 0}" class="status-badge bg-secondary text-white">Chưa học</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card app-card mt-5 overflow-hidden">
+            <div class="card-header bg-white border-0 py-3 ps-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Bài làm gần đây</h5>
+            </div>
+            <div class="card-body p-0">
+                <div th:if="${recentAttempts.isEmpty()}" class="p-5 text-center text-muted">
+                    <i class="bi bi-inbox fs-1 opacity-25"></i>
+                    <p class="mt-2">Sinh viên chưa thực hiện bài Quiz nào trong môn này.</p>
+                </div>
+                
+                <table th:unless="${recentAttempts.isEmpty()}" class="table table-modern table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Tên bài Quiz</th>
+                            <th class="text-center">Thời gian nộp</th>
+                            <th class="text-center">Số câu đúng</th>
+                            <th class="text-center">Điểm số</th>
+                            <th class="text-end pe-4">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="a : ${recentAttempts}">
+                            <td class="ps-4 fw-bold text-dark" th:text="${a.quiz.title}"></td>
+                            <td class="text-center">
+                                <small class="text-muted" th:text="${#temporals.format(a.submittedAt, 'HH:mm - dd/MM/yyyy')}"></small>
+                            </td>
+                            <td class="text-center">
+                                <span th:text="${a.correctCount} + '/' + ${a.quiz.totalQuestions}"></span>
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-bold fs-5" 
+                                      th:classappend="${a.totalScore.doubleValue() < 5.0} ? 'text-danger' : 'text-primary'"
+                                      th:text="${#numbers.formatDecimal(a.totalScore, 1, 1)}">0.0</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <span th:if="${a.status.name() == 'GRADED'}" class="text-success small fw-bold">
+                                    <i class="bi bi-check-circle-fill"></i> Đã chấm
+                                </span>
+                                <span th:if="${a.status.name() == 'SUBMITTED'}" class="text-primary small fw-bold">
+                                    <i class="bi bi-send-check"></i> Chờ chấm
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

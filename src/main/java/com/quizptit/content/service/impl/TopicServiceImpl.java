@@ -38,7 +38,8 @@ public class TopicServiceImpl implements TopicService {
 
     @Override
     public Topic createTopic(Topic topic) {
-        if (topicRepository.existsBySubjectSubjectIdAndTopicName(topic.getSubject().getSubjectId(), topic.getTopicName())) {
+        if (topicRepository.existsBySubjectSubjectIdAndTopicName(topic.getSubject().getSubjectId(),
+                topic.getTopicName())) {
             throw new RuntimeException("Topic name already exists for this subject");
         }
         return topicRepository.save(topic);
@@ -55,10 +56,11 @@ public class TopicServiceImpl implements TopicService {
         topic.setDescription(topicDetails.getDescription());
         topic.setOrderNo(topicDetails.getOrderNo());
         topic.setIsActive(topicDetails.getIsActive());
-        
+
         // Subject may be moved
-        if (topicDetails.getSubject() != null && !topic.getSubject().getSubjectId().equals(topicDetails.getSubject().getSubjectId())) {
-             topic.setSubject(subjectRepository.findById(topicDetails.getSubject().getSubjectId()).orElseThrow());
+        if (topicDetails.getSubject() != null
+                && !topic.getSubject().getSubjectId().equals(topicDetails.getSubject().getSubjectId())) {
+            topic.setSubject(subjectRepository.findById(topicDetails.getSubject().getSubjectId()).orElseThrow());
         }
         return topicRepository.save(topic);
     }
@@ -68,5 +70,10 @@ public class TopicServiceImpl implements TopicService {
         Topic topic = getTopicById(topicId);
         topic.setIsActive(!topic.getIsActive());
         topicRepository.save(topic);
+    }
+
+    @Override
+    public List<Topic> getAllTopics() {
+        return topicRepository.findAll();
     }
 }

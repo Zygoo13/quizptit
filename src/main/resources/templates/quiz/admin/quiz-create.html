@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
     th:replace="~{layout/admin-layout :: layout(pageTitle='Tạo Đề Thi', content=~{::content}, script=~{::script})}">
+
 <head>
 </head>
 
@@ -16,9 +17,17 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Chọn Môn Học:</label>
-                        <select class="form-select" id="subjectId">
+                        <select class="form-select" id="subjectId" required>
+                            <option value="">-- Chọn môn học trước --</option>
                             <option th:each="monHoc : ${subjects}" th:value="${monHoc.subjectId}"
                                 th:text="${monHoc.subjectName}"></option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Chọn Chủ Đề:</label>
+                        <select class="form-select" id="topicId" required>
+                            <option value="">-- Vui lòng chọn môn học trước --</option>
                         </select>
                     </div>
 
@@ -30,26 +39,21 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Thời gian làm bài (Phút):</label>
-                        <input type="number" class="form-control" id="durationMinutes" placeholder="VD: 45" required>
+                        <input type="number" class="form-control" id="durationMinutes" placeholder="VD: 45" required
+                            min="1">
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-bold">Tick chọn các câu hỏi đưa vào đề thi:</label>
-                        <div class="border p-3 rounded"
-                            style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
-                            <div class="form-check border-bottom py-2" th:each="cauHoi : ${questions}">
-                                <input class="form-check-input question-checkbox" type="checkbox"
-                                    th:value="${cauHoi.questionId}">
-                                <label class="form-check-label">
-                                    <strong th:text="'Câu ' + ${cauHoi.questionId} + ':'">Câu 1:</strong>
-                                    <span th:text="${cauHoi.content}">Nội dung câu hỏi...</span>
-                                </label>
-                            </div>
+                        <div class="border p-3 rounded" id="question-container"
+                            style="height: 350px; overflow-y: scroll; overflow-x: hidden; background-color: #f8f9fa;">
+                            <div class="text-muted text-center py-3">Vui lòng chọn môn học và chủ đề để hiển thị câu
+                                hỏi...</div>
                         </div>
                     </div>
 
                     <button type="submit" id="btn-tao-de" class="btn btn-success w-100 fw-bold">
-                        Tạo Đề Thi Ngay
+                        <i class="bi bi-plus-circle me-1"></i> Tạo Đề Thi Ngay
                     </button>
                 </form>
             </div>
@@ -57,11 +61,74 @@
     </div>
 
     <script th:fragment="script">
+        document.getElementById('subjectId').addEventListener('change', function () {
+            let subjectId = this.value;
+            let topicSelect = document.getElementById('topicId');
+            let questionContainer = document.getElementById('question-container');
+
+            if (!subjectId) {
+                topicSelect.innerHTML = '<option value="">-- Vui lòng chọn môn học trước --</option>';
+                questionContainer.innerHTML = '<div class="text-muted text-center py-3">Vui lòng chọn môn học và chủ đề để hiển thị câu hỏi...</div>';
+                return;
+            }
+
+            fetch(`/api/quiz-data/topics?subjectId=${subjectId}`)
+                .then(res => res.json())
+                .then(topics => {
+                    topicSelect.innerHTML = '<option value="">-- Vui lòng chọn chủ đề --</option>';
+                    topics.forEach(t => {
+                        topicSelect.innerHTML += `<option value="${t.topicId}">${t.topicName}</option>`;
+                    });
+                });
+
+            questionContainer.innerHTML = '<div class="text-warning text-center py-3"><i class="bi bi-arrow-up-circle"></i> Vui lòng chọn 1 Chủ đề ở trên để hiển thị câu hỏi...</div>';
+        });
+
+        document.getElementById('topicId').addEventListener('change', function () {
+            let topicId = this.value;
+            let questionContainer = document.getElementById('question-container');
+
+            if (!topicId) {
+                questionContainer.innerHTML = '<div class="text-warning text-center py-3"><i class="bi bi-arrow-up-circle"></i> Vui lòng chọn Chủ đề để hiển thị câu hỏi...</div>';
+                return;
+            }
+
+            questionContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Đang tải ngân hàng câu hỏi...</div>';
+
+            fetch(`/api/quiz-data/questions?topicId=${topicId}`)
+                .then(res => res.json())
+                .then(questions => {
+                    questionContainer.innerHTML = ''; 
+
+                    if (questions.length === 0) {
+                        questionContainer.innerHTML = '<div class="text-danger fw-bold text-center py-3"><i class="bi bi-x-circle"></i> Chủ đề này hiện chưa có câu hỏi nào!</div>';
+                        return;
+                    }
+
+                    questions.forEach(q => {
+                        const qCheckId = `q-check-${q.questionId}`;
+                        questionContainer.innerHTML += `
+                            <div class="form-check border-bottom py-2">
+                                <input class="form-check-input question-checkbox" type="checkbox" id="${qCheckId}" value="${q.questionId}">
+                                <label class="form-check-label w-100" for="${qCheckId}" style="cursor: pointer;">
+                                    <strong class="text-primary">Câu ${q.questionId}:</strong>
+                                    <span>${q.content}</span>
+                                </label>
+                            </div>
+                        `;
+                    });
+                })
+                .catch(err => {
+                    console.error("Lỗi:", err);
+                    questionContainer.innerHTML = '<div class="text-danger fw-bold text-center py-3">Lỗi tải dữ liệu. Vui lòng tải lại trang.</div>';
+                });
+        });
+
         const btnSubmit = document.getElementById('btn-tao-de');
 
         if (btnSubmit) {
             btnSubmit.addEventListener('click', function (event) {
-                event.preventDefault();
+                event.preventDefault(); 
 
                 try {
                     const csrfMeta = document.querySelector('meta[name="_csrf"]');
@@ -76,20 +143,38 @@
                     const csrfHeader = csrfHeaderMeta.content;
 
                     let subjectId = parseInt(document.getElementById('subjectId').value);
+                    let topicId = parseInt(document.getElementById('topicId').value);
                     let title = document.getElementById('title').value;
                     let durationMinutes = parseInt(document.getElementById('durationMinutes').value);
 
                     let checkedBoxes = document.querySelectorAll('.question-checkbox:checked');
                     let questionIds = [];
-
                     checkedBoxes.forEach(function (checkbox) {
                         questionIds.push(parseInt(checkbox.value));
                     });
-
+                    if (!subjectId || isNaN(subjectId)) {
+                        alert("Vui lòng chọn Môn học!");
+                        return;
+                    }
+                    if (!topicId || isNaN(topicId)) {
+                        alert("Vui lòng chọn Chủ đề cho đề thi!");
+                        return;
+                    }
+                    if (!title || title.trim() === '') {
+                        alert("Vui lòng nhập tiêu đề đề thi!");
+                        return;
+                    }
+                    if (!durationMinutes || isNaN(durationMinutes) || durationMinutes <= 0) {
+                        alert("Vui lòng nhập thời gian làm bài hợp lệ (lớn hơn 0)!");
+                        return;
+                    }
                     if (questionIds.length === 0) {
                         alert("Vui lòng chọn ít nhất 1 câu hỏi để tạo đề thi.");
                         return;
                     }
+
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo...';
 
                     fetch('/api/quizzes/manual', {
                         method: 'POST',
@@ -99,7 +184,8 @@
                         },
                         body: JSON.stringify({
                             "subjectId": subjectId,
-                            "title": title,
+                            "topicId": topicId,
+                            "title": title.trim(),
                             "durationMinutes": durationMinutes,
                             "questionIds": questionIds
                         })
@@ -109,16 +195,20 @@
                                 alert("Tạo đề thi thành công!");
                                 window.location.href = "/admin/quizzes";
                             } else if (response.status === 403) {
-                                alert("Lỗi 403: Từ chối truy cập. Vui lòng kiểm tra lại quyền hoặc phiên đăng nhập.");
-                            } else if (response.status === 404) {
-                                alert("Lỗi 404: Không tìm thấy điểm cuối API.");
+                                alert("Lỗi 403: Từ chối truy cập. Bạn không có quyền hoặc phiên đăng nhập đã hết hạn.");
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Tạo Đề Thi Ngay';
                             } else {
-                                alert("Lỗi " + response.status + ": Đã có lỗi xảy ra trong quá trình xử lý.");
+                                alert("Lỗi " + response.status + ": Đã xảy ra lỗi trên máy chủ.");
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Tạo Đề Thi Ngay';
                             }
                         })
                         .catch(function (error) {
                             console.error("Lỗi kết nối:", error);
                             alert("Lỗi kết nối mạng. Vui lòng thử lại sau.");
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Tạo Đề Thi Ngay';
                         });
 
                 } catch (error) {

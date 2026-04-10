@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface TopicService {
     Page<Topic> searchTopics(Long subjectId, String keyword, Boolean isActive, Pageable pageable);
-    
+
     List<Topic> getActiveTopicsBySubject(Long subjectId);
 
     Topic getTopicById(Long topicId);
@@ -18,4 +18,6 @@ public interface TopicService {
     Topic updateTopic(Long topicId, Topic topicDetails);
 
     void toggleStatus(Long topicId);
+
+    List<Topic> getAllTopics();
 }
