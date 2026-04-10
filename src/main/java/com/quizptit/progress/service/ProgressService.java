@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.quizptit.review.entity.UserQuestionMemory;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,7 @@ public class ProgressService {
         private final TopicRepository topicRepository;
         private final QuizRepository quizRepository;
         private final UserQuestionMemoryRepository userQuestionMemoryRepository; // 2. Khai báo thêm repository này
+
 
         @Transactional
         public void updateQuizProgress(User user, Quiz quiz, BigDecimal currentScore) {
@@ -208,7 +210,21 @@ public class ProgressService {
         }
 
         public List<QuestionReviewDTO> getSpecificQuestionsToReview(Long userId, Long subjectId) {
-                return userQuestionMemoryRepository.findQuestionsToReviewBySubject(userId, subjectId,
-                                LocalDateTime.now());
+            return userQuestionMemoryRepository
+                    .findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now())
+                    .stream()
+                    .map(this::mapToQuestionReviewDTO)
+                    .collect(Collectors.toList());
+        }
+
+        private QuestionReviewDTO mapToQuestionReviewDTO(UserQuestionMemory memory) {
+            return QuestionReviewDTO.builder()
+                    .questionId(memory.getQuestion().getQuestionId())
+                    .content(memory.getQuestion().getContent())
+                    .subjectName(memory.getQuestion().getTopic().getSubject().getSubjectName())
+                    .memoryScore(memory.getMemoryScore() != null ? memory.getMemoryScore().doubleValue() : null)
+                    .nextReviewAt(memory.getNextReviewAt())
+                    .correctStreak(memory.getCorrectStreak())
+                    .build();
         }
 }
