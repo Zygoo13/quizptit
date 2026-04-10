@@ -22,29 +22,27 @@ public interface UserQuestionMemoryRepository extends JpaRepository<UserQuestion
    @Query("SELECT m FROM UserQuestionMemory m WHERE m.user.userId = :userId AND m.nextReviewAt <= :now")
    List<UserQuestionMemory> findQuestionsToReview(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 
-   @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +
-       "s.subjectId, s.subjectName, " +
-       "SUM(CASE WHEN m.nextReviewAt <= :now THEN 1L ELSE 0L END), " + // Đếm số câu đến hạn ôn
-       "CAST(AVG(m.memoryScore) AS java.math.BigDecimal)) " +
-       "FROM UserQuestionMemory m " +
-       "JOIN m.question q " +
-       "JOIN q.topic t " +
-       "JOIN t.subject s " +
-       "WHERE m.user.userId = :userId " +
-       "GROUP BY s.subjectId, s.subjectName")
-   List<ReviewSubjectDTO> findReviewDashboardData(@Param("userId") Long userId, @Param("now") LocalDateTime now);
-
-   
-   @Query("SELECT new com.quizptit.progress.dto.QuestionReviewDTO(q.questionId, q.content, t.topicName) " +
-           "FROM UserQuestionMemory m " +
-           "JOIN m.question q " +
-           "JOIN q.topic t " +
-           "JOIN t.subject s " +
-           "WHERE m.user.userId = :userId " +
-           "AND s.subjectId = :subjectId " +
-           "AND m.nextReviewAt <= :now")
-   List<QuestionReviewDTO> findQuestionsToReviewBySubject(
-            @Param("userId") Long userId, 
-            @Param("subjectId") Long subjectId, 
-            @Param("now") LocalDateTime now);
+    @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +
+        "s.subjectId, s.subjectName, " +
+        "SUM(CASE WHEN m.nextReviewAt <= :now THEN 1L ELSE 0L END), " + 
+        "AVG(m.memoryScore)) " + 
+        "FROM UserQuestionMemory m " + // Bắt đầu từ bảng Memory
+        "JOIN m.question q " +
+        "JOIN q.topic t " +
+        "JOIN t.subject s " +
+        "WHERE m.user.userId = :userId " + // Chỉ lấy dữ liệu của chính user này
+        "GROUP BY s.subjectId, s.subjectName")
+    List<ReviewSubjectDTO> findReviewDashboardData(
+        @Param("userId") Long userId, 
+        @Param("now") LocalDateTime now);
+    
+    @Query("SELECT m FROM UserQuestionMemory m " +
+        "JOIN m.question q " +
+        "WHERE m.user.userId = :userId AND q.topic.subject.subjectId = :subjectId " +
+        "AND m.nextReviewAt <= :now")
+    List<UserQuestionMemory> findQuestionsToReviewBySubject( // Trả về List Entity
+        @Param("userId") Long userId, 
+        @Param("subjectId") Long subjectId, 
+        @Param("now") LocalDateTime now
+);
 }

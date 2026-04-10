@@ -5,6 +5,7 @@ import com.quizptit.content.entity.Topic;
 import com.quizptit.content.repository.SubjectRepository;
 import com.quizptit.content.repository.TopicRepository;
 import com.quizptit.quiz.entity.Quiz;
+import com.quizptit.quiz.entity.enums.QuizType;
 import com.quizptit.quiz.repository.QuizRepository;
 import com.quizptit.progress.dto.*;
 import com.quizptit.progress.entity.LearningProgress;
