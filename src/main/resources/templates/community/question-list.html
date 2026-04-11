@@ -223,7 +223,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">Xác nhận</button>
+                    <button type="submit" id="adminConfirmBtn" class="btn btn-danger px-4 rounded-pill fw-bold">Xác nhận</button>
                 </div>
             </form>
         </div>
@@ -280,19 +280,30 @@
     }
 
     function openAdminPostAction(id, actionType) {
-        const adminForm = document.getElementById('adminActionForm'); // ID của Form trong Modal Admin
-        const title = document.getElementById('adminModalTitle');
+    const adminForm = document.getElementById('adminActionForm');
+    const title = document.getElementById('adminModalTitle');
+    const confirmBtn = document.getElementById('adminConfirmBtn'); // Lấy cái nút ra
 
-        if (actionType === 'HIDE') {
-            adminForm.action = '/community/admin/questions/' + id + '/hide';
-            title.innerText = "Lý do ẩn bài viết";
-        } else {
-            adminForm.action = '/community/admin/questions/' + id + '/delete';
-            title.innerText = "Lý do xóa vĩnh viễn bài viết";
-        }
+    if (actionType === 'HIDE') {
+        adminForm.action = '/admin/community/questions/' + id + '/hide';
+        title.innerText = "Lý do ẩn bài viết";
 
-        new bootstrap.Modal(document.getElementById('adminActionModal')).show();
+        // Đổi màu sang Vàng (warning)
+        confirmBtn.classList.remove('btn-danger');
+        confirmBtn.classList.add('btn-warning');
+        confirmBtn.innerText = "Xác nhận ẩn";
+    } else {
+        adminForm.action = '/admin/community/questions/' + id + '/delete';
+        title.innerText = "Lý do xóa vĩnh viễn bài viết";
+
+        // Đổi màu sang Đỏ (danger)
+        confirmBtn.classList.remove('btn-warning');
+        confirmBtn.classList.add('btn-danger');
+        confirmBtn.innerText = "Xác nhận xóa";
     }
+
+    new bootstrap.Modal(document.getElementById('adminActionModal')).show();
+}
 </script>
 </body>
 </html>
