@@ -125,7 +125,10 @@ public class QuestionPostServiceImpl implements QuestionPostService {
 
     @Override
     public List<QuestionPostResponse> getAllPostsForAdmin() {
-        return questionPostRepository.findAll().stream()
+        // Gọi hàm có OrderBy để lấy mới nhất lên đầu
+        List<QuestionPost> posts = questionPostRepository.findAllByOrderByCreatedAtDesc();
+
+        return posts.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -177,30 +180,34 @@ public class QuestionPostServiceImpl implements QuestionPostService {
 
         // 2. Tìm ID Admin từ Email
         User admin = userRepository.findByEmail(adminEmail)
-                .orElseThrow(() -> new RuntimeException("Admin không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Admin không tồn tại với email: " + adminEmail));
 
-        // 3. Cập nhật trạng thái bài viết
+        // 3. Xác định ACTION để ghi vào Moderation Log
+        // Nếu status mới là VISIBLE, ta coi đó là hành động RESTORE
+        String action = newStatus;
+        if ("VISIBLE".equals(newStatus)) {
+            action = "RESTORE";
+        }
+
+        // 4. Cập nhật trạng thái bài viết
         post.setStatus(newStatus);
         questionPostRepository.save(post);
 
-        // 4. LOGIC ĐỒNG BỘ: Nếu bài viết bị ẨN hoặc XÓA, ta cũng xử lý các comment bên trong
-        // Điều này ngăn việc comment của bài đã bị xóa vẫn xuất hiện ở nơi khác (nếu có)
+        // 5. Đồng bộ comment (Chỉ khi Ẩn/Xóa bài viết)
         if ("DELETED".equals(newStatus) || "HIDDEN".equals(newStatus)) {
             try {
-                // Bạn có thể viết query này trong CommentRepository:
-                // @Modifying @Query("UPDATE Comment c SET c.status = :status WHERE c.questionPost.questionPostId = :postId")
                 commentRepository.updateStatusByPostId(postId, newStatus);
             } catch (Exception e) {
-                System.err.println("Lưu ý: Bài viết không có comment hoặc lỗi đồng bộ comment: " + e.getMessage());
+                System.err.println("Lỗi đồng bộ comment: " + e.getMessage());
             }
         }
 
-        // 5. Lưu nhật ký kiểm duyệt (Moderation Log)
+        // 6. GHI NHẬT KÝ KIỂM DUYỆT (Dùng biến action đã xử lý ở bước 3)
         try {
-            // Sử dụng hàm log dành cho Post mà bạn đã có (hoặc tương tự hàm log comment)
-            moderationRecordService.logPostModeration(postId, admin.getUserId(), newStatus, reason);
+            // Truyền 'action' (có thể là HIDE, DELETE hoặc RESTORE) vào hàm log
+            moderationRecordService.logPostModeration(postId, admin.getUserId(), action, reason);
         } catch (Exception e) {
-            System.err.println("LOG_ERROR: Không thể lưu nhật ký kiểm duyệt bài viết: " + e.getMessage());
+            System.err.println("LOG_ERROR: Không thể lưu nhật ký: " + e.getMessage());
         }
     }
 

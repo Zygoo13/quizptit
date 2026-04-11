@@ -28,4 +28,6 @@ public interface QuestionPostRepository extends JpaRepository<QuestionPost, Long
 
     List<QuestionPost> findByStatusOrderByCreatedAtDesc(String status);
 
+    // Trong file QuestionPostRepository.java
+    List<QuestionPost> findAllByOrderByCreatedAtDesc();
 }

@@ -79,46 +79,36 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     @Override
     @Transactional
-    public void logPostModeration(Long postId, Long adminId, String newStatus, String reason) {
-        // 1. Tìm User Admin để gán vào bản ghi
+    public void logPostModeration(Long postId, Long adminId, String action, String reason) {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Admin ID: " + adminId));
 
-        // 2. Tạo bản ghi log cho bài viết
         ModerationRecord record = ModerationRecord.builder()
                 .targetId(postId)
-                .targetType("QUESTION_POST") // Phân biệt với COMMENT
-                .action(newStatus)
+                .targetType("QUESTION_POST")
+                .action(action) // Đảm bảo truyền "RESTORE" khi khôi phục
                 .reason(reason)
                 .moderator(admin)
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        // 3. Lưu vào database
         moderationRecordRepository.save(record);
     }
 
     @Override
     @Transactional
-    public void logCommentModeration(Long commentId, Long adminId, String newStatus, String reason) {
-        ModerationRecord record = new ModerationRecord();
-
-        // 1. Gán các thông tin cơ bản
-        record.setTargetId(commentId);
-        record.setTargetType("COMMENT");
-        record.setReason(reason);
-
-        // 2. Map newStatus (từ Service truyền vào) sang trường action của Entity
-        // Ví dụ: newStatus là "HIDDEN" thì action cũng là "HIDE" hoặc "HIDDEN"
-        record.setAction(newStatus);
-
-        // 3. Xử lý trường Moderator (Quan trọng nhất)
-        // Vì moderator là một Entity User, bạn cần set Object User cho nó chứ không phải ID
+    public void logCommentModeration(Long commentId, Long adminId, String action, String reason) {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Admin ID: " + adminId));
-        record.setModerator(admin);
 
-        record.setCreatedAt(LocalDateTime.now());
+        ModerationRecord record = ModerationRecord.builder()
+                .targetId(commentId)
+                .targetType("COMMENT")
+                .action(action) // Truyền "RESTORE", "HIDE" hoặc "DELETE"
+                .reason(reason)
+                .moderator(admin)
+                .createdAt(LocalDateTime.now())
+                .build();
 
         moderationRecordRepository.save(record);
     }
@@ -134,13 +124,12 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     private ModerationRecordResponse mapToResponse(ModerationRecord record) {
         Long finalPostId = null;
-        String content = "Nội dung không tồn tại"; // Mặc định
+        String content = "Nội dung không tồn tại";
 
         if ("QUESTION_POST".equals(record.getTargetType())) {
             finalPostId = record.getTargetId();
-            // Tìm bài viết để lấy title hoặc nội dung
             content = questionPostRepository.findById(record.getTargetId())
-                    .map(p -> p.getTitle()) // Hoặc p.getContent() tùy bạn muốn hiện gì
+                    .map(p -> p.getTitle())
                     .orElse("Bài viết đã bị xóa vĩnh viễn");
         }
         else if ("COMMENT".equals(record.getTargetType())) {
@@ -148,7 +137,7 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
             if (commentOpt.isPresent()) {
                 var comment = commentOpt.get();
                 finalPostId = comment.getQuestionPost().getQuestionPostId();
-                content = comment.getContent(); // Lấy nội dung bình luận
+                content = comment.getContent();
             } else {
                 content = "Bình luận đã bị xóa vĩnh viễn";
             }
@@ -158,10 +147,13 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
                 .moderationId(record.getModerationId())
                 .postId(finalPostId)
                 .commentId("COMMENT".equals(record.getTargetType()) ? record.getTargetId() : null)
-                .content(content) // Đưa nội dung vào đây
-                .action(record.getAction())
+                .content(content)
+                .action(record.getAction()) // Sẽ mang giá trị HIDE, DELETE, hoặc RESTORE
                 .reason(record.getReason())
-                .moderatorName(record.getModerator() != null ? record.getModerator().getFullName() : "N/A")
+                // Thêm ID người xử lý để hiện ở cột thứ 4 như bạn muốn
+                .moderatorName(record.getModerator() != null
+                        ? "[" + record.getModerator().getUserId() + "] " + record.getModerator().getFullName()
+                        : "N/A")
                 .createdAt(record.getCreatedAt())
                 .build();
     }

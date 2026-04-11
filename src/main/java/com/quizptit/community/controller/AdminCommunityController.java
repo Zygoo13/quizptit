@@ -9,6 +9,7 @@ import com.quizptit.community.service.QuestionPostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 
@@ -22,21 +23,18 @@ public class AdminCommunityController {
     private final ModerationRecordService moderationService;
     private final UserRepository userRepository;
 
-    // 1. /admin/community/questions
     @GetMapping("/questions")
     public String listQuestions(Model model) {
         model.addAttribute("questions", questionService.getAllPostsForAdmin());
         return "community/admin/question-list";
     }
 
-    // 2. /admin/community/comments
     @GetMapping("/comments")
     public String listComments(Model model) {
         model.addAttribute("comments", commentService.getAllCommentsForAdmin());
         return "community/admin/comment-list";
     }
 
-    // 3. /admin/community/moderation-records
     @GetMapping("/moderation-records")
     public String listModerationLogs(@RequestParam(defaultValue = "QUESTION_POST") String type, Model model) {
         model.addAttribute("records", moderationService.getRecordsByType(type));
@@ -44,35 +42,47 @@ public class AdminCommunityController {
         return "community/admin/moderation-record-list";
     }
 
-    // 4. Các Route xử lý hành động (Hide/Restore/Delete)
-    // Ví dụ cho Question: /admin/community/questions/{id}/hide
     @PostMapping("/questions/{id}/{action}")
     public String handleQuestionAction(@PathVariable Long id,
                                        @PathVariable String action,
-                                       @RequestParam(required = false, defaultValue = "Admin action") String reason,
-                                       Principal principal) {
-        String status = action.equalsIgnoreCase("hide") ? "HIDDEN" :
-                action.equalsIgnoreCase("restore") ? "VISIBLE" : "DELETED";
+                                       @RequestParam(required = false, defaultValue = "Admin xử lý nội dung") String reason,
+                                       Principal principal,
+                                       RedirectAttributes redirectAttributes) {
+
+        String status = action.equalsIgnoreCase("restore") ? "VISIBLE" :
+                action.equalsIgnoreCase("hide") ? "HIDDEN" : "DELETED";
 
         questionService.updatePostStatus(id, status, reason, principal.getName());
-        return "redirect:/admin/community/moderation-records?type=QUESTION_POST";
+
+        redirectAttributes.addFlashAttribute("message", "Thao tác bài viết thành công!");
+
+        // Nếu là khôi phục thì về trang Nhật ký, nếu là Ẩn/Xóa thì về danh sách bài viết
+        if ("restore".equalsIgnoreCase(action)) {
+            return "redirect:/admin/community/moderation-records?type=QUESTION_POST";
+        }
+        return "redirect:/admin/community/questions";
     }
 
-    // Tương tự cho Comment: /admin/community/comments/{id}/{action}
     @PostMapping("/comments/{id}/{action}")
     public String handleCommentAction(@PathVariable Long id,
                                       @PathVariable String action,
-                                      @RequestParam(required = false, defaultValue = "Admin action") String reason,
-                                      Principal principal) {
-        String status = action.equalsIgnoreCase("hide") ? "HIDDEN" :
-                action.equalsIgnoreCase("restore") ? "VISIBLE" : "DELETED";
+                                      @RequestParam(required = false, defaultValue = "Admin xử lý nội dung") String reason,
+                                      Principal principal,
+                                      RedirectAttributes redirectAttributes) {
 
-        // Tìm Admin để lấy ID (Long) truyền vào Service
+        String status = action.equalsIgnoreCase("restore") ? "VISIBLE" :
+                action.equalsIgnoreCase("hide") ? "HIDDEN" : "DELETED";
+
         User admin = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Admin không tồn tại"));
 
         commentService.updateCommentStatus(id, status, reason, admin.getUserId());
 
-        return "redirect:/admin/community/moderation-records?type=COMMENT";
+        redirectAttributes.addFlashAttribute("message", "Thao tác bình luận thành công!");
+
+        if ("restore".equalsIgnoreCase(action)) {
+            return "redirect:/admin/community/moderation-records?type=COMMENT";
+        }
+        return "redirect:/admin/community/comments";
     }
 }
