@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Chi tiết Chủ đề</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<head th:replace="~{fragments/head :: head('Chi tiết Chủ đề')}"></head>
 <body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 <div class="container mt-5">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -20,7 +17,8 @@
             <h6 class="card-subtitle mb-3 text-muted small" th:text="'Thứ tự bài học: ' + ${topic.orderNo}">Thứ tự</h6>
             <p class="card-text mt-3" style="white-space: pre-line;" th:text="${topic.description}">Mô tả chi tiết</p>
             <div class="mt-4">
-                <button class="btn btn-outline-success">Luyện tập trắc nghiệm (Comming Soon)</button>
+                <a th:href="@{/quizzes/random}" class="btn btn-outline-success">Luyện tập trắc nghiệm</a>
+                <a th:href="@{/subjects/{id}/topics(id=${topic.subject.subjectId})}" class="btn btn-outline-secondary ms-2">&lt; Quay lại danh sách</a>
             </div>
         </div>
     </div>
