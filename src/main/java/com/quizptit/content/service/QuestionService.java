@@ -10,7 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface QuestionService {
-    Page<Question> searchQuestions(Long topicId, QuestionStatus status, DifficultyLevel difficulty, String keyword,
+    Page<Question> searchQuestions(Long subjectId, Long topicId, QuestionStatus status, DifficultyLevel difficulty, String keyword,
             Pageable pageable);
 
     Question getQuestionById(Long questionId);

@@ -21,7 +21,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     @Query("""
             SELECT q
             FROM Question q
-            WHERE (:topicId IS NULL OR q.topic.topicId = :topicId)
+            WHERE (:subjectId IS NULL OR q.topic.subject.subjectId = :subjectId)
+              AND (:topicId IS NULL OR q.topic.topicId = :topicId)
               AND (:status IS NULL OR q.status = :status)
               AND (:difficulty IS NULL OR q.difficultyLevel = :difficulty)
               AND (:keyword IS NULL OR :keyword = ''
@@ -29,6 +30,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
                    OR LOWER(q.explanation) LIKE LOWER(CONCAT('%', :keyword, '%')))
             """)
     Page<Question> searchQuestions(
+            @Param("subjectId") Long subjectId,
             @Param("topicId") Long topicId,
             @Param("status") QuestionStatus status,
             @Param("difficulty") DifficultyLevel difficulty,

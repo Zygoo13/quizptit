@@ -19,12 +19,22 @@
 
     <div class="card shadow-sm border-0 border-top border-4 border-warning">
         <div class="card-body p-4">
-            <form th:action="@{/admin/questions/{id}/edit(id=${question.questionId})}" th:object="${question}" method="post">
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Thuộc Chủ đề</label>
-                    <select class="form-select shadow-sm" th:field="*{topic.topicId}" required>
-                        <option th:each="t : ${topics}" th:value="${t.topicId}" th:text="${t.topicName}"></option>
-                    </select>
+            <form id="editForm" th:action="@{/admin/questions/{id}/edit(id=${question.questionId})}" th:object="${question}" method="post">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Thuộc Môn học (*)</label>
+                        <select id="subjectFilter" class="form-select shadow-sm" onchange="filterTopics()" required>
+                            <option value="">-- Chọn môn học --</option>
+                            <option th:each="s : ${subjects}" th:value="${s.subjectId}" th:text="${s.subjectName}" th:selected="${question.topic != null and question.topic.subject != null and question.topic.subject.subjectId == s.subjectId}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Thuộc Chủ đề (*)</label>
+                        <select id="topicFilter" class="form-select shadow-sm" th:field="*{topic.topicId}" required>
+                            <option value="">-- Chọn một chủ đề --</option>
+                            <option th:each="t : ${topics}" th:value="${t.topicId}" th:text="${t.topicName}" th:data-subject-id="${t.subject.subjectId}"></option>
+                        </select>
+                    </div>
                 </div>
                 <div class="mb-4">
                     <label class="form-label fw-bold">Nội dung câu hỏi</label>
@@ -44,9 +54,30 @@
                         </select>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-muted small">Giải thích chi tiết</label>
-                    <textarea class="form-control" th:field="*{explanation}" rows="4"></textarea>
+                <h4 class="mt-4 mb-3 fs-5 fw-bold text-secondary border-bottom pb-2">Các đáp án</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3" th:each="option, stat : *{options}">
+                        <div class="card bg-light border-0 shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold mb-0 text-primary">
+                                        Đáp án <span th:text="${option.optionLabel}">A</span>
+                                    </label>
+                                    <div class="form-check form-switch cursor-pointer">
+                                        <input class="form-check-input correct-option-radio" type="radio" name="correctOptionIndex" th:value="${stat.index}" th:id="'radio-' + ${stat.index}" th:checked="${option.isCorrect}">
+                                        <label class="form-check-label text-success fw-bold" th:for="'radio-' + ${stat.index}">Đúng</label>
+                                    </div>
+                                </div>
+                                <input type="hidden" th:field="*{options[__${stat.index}__].optionLabel}" />
+                                <textarea class="form-control border-0 shadow-sm" th:field="*{options[__${stat.index}__].content}" rows="2" required placeholder="Nhập nội dung đáp án..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4 mt-3">
+                    <label class="form-label fw-bold small text-muted">Giải thích cho đáp án (Không bắt buộc)</label>
+                    <textarea class="form-control" th:field="*{explanation}" rows="3"></textarea>
                 </div>
                 
                 <div class="pt-3 border-top d-flex gap-2">
@@ -57,5 +88,47 @@
         </div>
     </div>
 </div>
+<script>
+    function filterTopics() {
+        const subjectId = document.getElementById('subjectFilter').value;
+        const topicSelect = document.getElementById('topicFilter');
+        const options = topicSelect.options;
+        for (let i = 1; i < options.length; i++) {
+            const rowTopicSubj = options[i].getAttribute('data-subject-id');
+            if (!subjectId || subjectId === rowTopicSubj) {
+                options[i].hidden = false;
+            } else {
+                options[i].hidden = true;
+            }
+        }
+        if (topicSelect.selectedIndex > 0 && options[topicSelect.selectedIndex].hidden) {
+            topicSelect.selectedIndex = 0;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', filterTopics);
+
+    // Toggle radio button functionality
+    let previousRadio = null;
+    document.querySelectorAll('.correct-option-radio').forEach(radio => {
+        if(radio.checked) previousRadio = radio;
+        radio.addEventListener('click', function(e) {
+            if (previousRadio === this) {
+                this.checked = false;
+                previousRadio = null;
+            } else {
+                previousRadio = this;
+            }
+        });
+    });
+
+    // Validate on submit
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        let checked = document.querySelector('.correct-option-radio:checked');
+        if (!checked) {
+            e.preventDefault();
+            alert('Cảnh báo: Bạn chưa chọn đáp án ĐÚNG nào cả! Vui lòng tích chọn ít nhất 1 đáp án làm đáp án đúng.');
+        }
+    });
+</script>
 </body>
 </html>
