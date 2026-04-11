@@ -22,7 +22,7 @@ public class AdminSubjectController {
                                @RequestParam(required = false) Boolean isActive,
                                @RequestParam(defaultValue = "0") int page,
                                Model model) {
-        Page<Subject> subjects = subjectService.searchSubjects(keyword, isActive, PageRequest.of(page, 10));
+        Page<Subject> subjects = subjectService.searchSubjects(keyword, isActive, PageRequest.of(page, 50));
         model.addAttribute("subjects", subjects);
         model.addAttribute("keyword", keyword);
         model.addAttribute("isActive", isActive);
