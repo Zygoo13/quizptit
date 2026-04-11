@@ -79,22 +79,34 @@ public class QuestionPostController {
 
     // 2. Sửa lại hàm xem chi tiết (Dòng 82)
     @GetMapping("/questions/{postId}")
-    public String getPostById(@PathVariable Long postId, Model model) {
-        // Lấy thông tin bài viết
-        QuestionPostResponse post = postService.getPostById(postId, 0L, "GUEST");
-        model.addAttribute("post", post);
+    public String getPostById(@PathVariable Long postId,
+                              @RequestParam(required = false) Long commentId,
+                              Model model, Principal principal) {
+        String role = "GUEST";
+        Long userId = null; // Để null thay vì 0L để khớp với logic check (currentUserId != null) trong Service
 
-        // --- KHÚC NÀY QUAN TRỌNG ĐỂ HẾT LỖI 500 ---
-        // Lấy danh sách bình luận của bài viết này
-        var comments = commentService.getPublicCommentsByPost(postId);
-
-        // Nếu danh sách null thì gán list rỗng để HTML không bị lỗi .size()
-        if (comments == null) {
-            comments = new java.util.ArrayList<>();
+        if (principal != null) {
+            User user = userRepository.findByEmail(principal.getName()).orElse(null);
+            if (user != null) {
+                userId = user.getUserId();
+                // Lấy tên Role và bỏ tiền tố ROLE_ nếu có (để thành "ADMIN" thay vì "ROLE_ADMIN")
+                String rawRole = user.getRole().getRoleName().name();
+                role = rawRole.replace("ROLE_", "");
+            }
         }
 
-        model.addAttribute("comments", comments);
-        // ------------------------------------------
+        // 1. Lấy bài viết (Admin sẽ không bị vướng check status nhờ logic mình sửa ở Service)
+        // Nếu postId không tồn tại, hàm này ném ResourceNotFoundException -> Spring sẽ hiện 404 thay vì 500
+        QuestionPostResponse post = postService.getPostById(postId, userId, role);
+        model.addAttribute("post", post);
+
+        // 2. Lấy danh sách bình luận (Đã có logic đổi nội dung cho bài bị ẩn/xóa)
+        var comments = "ADMIN".equals(role)
+                ? commentService.getAllCommentsByPost(postId)
+                : commentService.getPublicCommentsByPost(postId);
+
+        model.addAttribute("comments", comments != null ? comments : new java.util.ArrayList<>());
+        model.addAttribute("targetCommentId", commentId);
 
         return "community/question-detail";
     }

@@ -133,19 +133,22 @@ public class QuestionPostServiceImpl implements QuestionPostService {
     @Override
     @Transactional(readOnly = true)
     public QuestionPostResponse getPostById(Long postId, Long currentUserId, String role) {
+        // 1. Tìm bài viết, nếu không thấy thì ném lỗi 404 (chứ không phải 500)
         QuestionPost post = questionPostRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết ID: " + postId));
 
-        // 2. Kiểm tra điều kiện hiển thị (Thêm check null cho currentUserId)
+        // 2. Logic kiểm tra quyền xem bài (Giữ nguyên ý tưởng Facebook của bạn)
         boolean isAdmin = "ADMIN".equals(role);
-        boolean isOwner = (currentUserId != null) && post.getUser().getUserId().equals(currentUserId);
+        boolean isOwner = (currentUserId != null && post.getUser() != null)
+                && post.getUser().getUserId().equals(currentUserId);
         boolean isVisible = "VISIBLE".equals(post.getStatus());
 
-        // LOGIC CHẶN: Nếu không phải Admin, không phải chủ bài, mà bài lại đang bị Ẩn/Xóa -> Chặn
+        // Nếu không phải ADMIN, cũng không phải chủ bài, mà bài lại bị ẨN/XÓA -> Chặn
         if (!isAdmin && !isOwner && !isVisible) {
             throw new ResourceNotFoundException("Bài viết này hiện không khả dụng.");
         }
 
+        // 3. Trả về DTO
         return mapToResponse(post);
     }
 
@@ -249,40 +252,35 @@ public class QuestionPostServiceImpl implements QuestionPostService {
 
     // Hàm phụ để map Entity sang DTO, tránh lặp code
     private QuestionPostResponse mapToResponse(QuestionPost post) {
-        String tName = topicRepository.findById(post.getTopicId())
-                .map(t -> t.getTopicName())
-                .orElse("Chung");
+        if (post == null) return null;
 
-        // Lấy số lượng bình luận từ list comments trong Entity QuestionPost
-        // Nếu post.getComments() là null thì để là 0
-        // Sửa lại dòng tính count trong QuestionPostServiceImpl
-        long totalComments = 0;
-        if (post.getComments() != null) {
-            // CHỈ LỌC NHỮNG BÌNH LUẬN CÓ STATUS LÀ 'VISIBLE'
-            List<Comment> activeComments = post.getComments().stream()
-                    .filter(c -> "VISIBLE".equals(c.getStatus()))
-                    .toList();
-
-            // 1. Lấy danh sách các bình luận GỐC (không có parentId) và phải là VISIBLE
-            List<Comment> rootComments = activeComments.stream()
-                    .filter(c -> c.getParentComment() == null)
-                    .toList();
-
-            // 2. Đếm: Mỗi cha (1) + số lượng con của nó (cũng phải lọc VISIBLE)
-            for (Comment root : rootComments) {
-                totalComments += 1; // Tính bản thân comment cha
-
-                if (root.getReplies() != null) {
-                    // Chỉ đếm những reply có trạng thái VISIBLE
-                    long visibleReplies = root.getReplies().stream()
-                            .filter(r -> "VISIBLE".equals(r.getStatus()))
-                            .count();
-                    totalComments += visibleReplies;
-                }
+        // Tìm tên Topic an toàn
+        String tName = "Chung";
+        try {
+            if (post.getTopicId() != null) {
+                tName = topicRepository.findById(post.getTopicId())
+                        .map(t -> t.getTopicName())
+                        .orElse("Chung");
             }
+        } catch (Exception e) {
+            System.err.println("Lỗi lấy Topic: " + e.getMessage());
         }
 
-        QuestionPostResponse.QuestionPostResponseBuilder builder = QuestionPostResponse.builder()
+        // TÍNH TOÁN COMMENT COUNT AN TOÀN
+        long totalComments = 0;
+        try {
+            if (post.getComments() != null) {
+                // Chỉ đếm những comment không bị DELETED (Giữ lại HIDDEN theo yêu cầu Facebook của bạn)
+                totalComments = post.getComments().stream()
+                        .filter(c -> c != null && !"DELETED".equals(c.getStatus()))
+                        .count();
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi đếm comment: " + e.getMessage());
+        }
+
+        // Build Response
+        return QuestionPostResponse.builder()
                 .questionPostId(post.getQuestionPostId())
                 .title(post.getTitle())
                 .content(post.getContent())
@@ -293,18 +291,10 @@ public class QuestionPostServiceImpl implements QuestionPostService {
                 .updatedAt(post.getUpdatedAt())
                 .likeCount(post.getLikeCount() != null ? post.getLikeCount() : 0)
                 .commentCount(totalComments)
-                .themeColor(post.getThemeColor() != null ? post.getThemeColor() : "#ffffff");
-
-        if (post.getUser() != null) {
-            builder.userId(post.getUser().getUserId())
-                    .fullName(post.getUser().getFullName())
-                    .email(post.getUser().getEmail());
-        } else {
-            builder.userId(null)
-                    .fullName("Người dùng ẩn danh")
-                    .email("N/A");
-        }
-
-        return builder.build();
+                .themeColor(post.getThemeColor() != null ? post.getThemeColor() : "#ffffff")
+                .userId(post.getUser() != null ? post.getUser().getUserId() : null)
+                .fullName(post.getUser() != null ? post.getUser().getFullName() : "Người dùng ẩn danh")
+                .email(post.getUser() != null ? post.getUser().getEmail() : "N/A")
+                .build();
     }
 }

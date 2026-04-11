@@ -4,7 +4,9 @@ import com.quizptit.community.dto.ModerationRecordRequest;
 import com.quizptit.community.dto.ModerationRecordResponse;
 import com.quizptit.community.entity.ModerationRecord;
 import com.quizptit.community.exception.ResourceNotFoundException;
+import com.quizptit.community.repository.CommentRepository;
 import com.quizptit.community.repository.ModerationRecordRepository;
+import com.quizptit.community.repository.QuestionPostRepository;
 import com.quizptit.community.service.ModerationRecordService;
 import com.quizptit.user.entity.User;
 import com.quizptit.user.repository.UserRepository;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +25,20 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     private final ModerationRecordRepository moderationRecordRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final QuestionPostRepository questionPostRepository;
+
+    @Override
+    public List<ModerationRecordResponse> getRecordsByType(String type) {
+        // 1. Lấy danh sách Entity từ Repository
+        List<ModerationRecord> list = moderationRecordRepository.findByTargetTypeOrderByCreatedAtDesc(type);
+
+        // 2. Chuyển đổi từ Entity sang DTO dùng mapToResponse
+        return list.stream()
+                .filter(Objects::nonNull)
+                .map(this::mapToResponse) // Dòng này cực kỳ quan trọng
+                .collect(Collectors.toList());
+    }
 
     @Override
     @Transactional
@@ -116,10 +133,32 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
     }
 
     private ModerationRecordResponse mapToResponse(ModerationRecord record) {
+        Long finalPostId = null;
+        String content = "Nội dung không tồn tại"; // Mặc định
+
+        if ("QUESTION_POST".equals(record.getTargetType())) {
+            finalPostId = record.getTargetId();
+            // Tìm bài viết để lấy title hoặc nội dung
+            content = questionPostRepository.findById(record.getTargetId())
+                    .map(p -> p.getTitle()) // Hoặc p.getContent() tùy bạn muốn hiện gì
+                    .orElse("Bài viết đã bị xóa vĩnh viễn");
+        }
+        else if ("COMMENT".equals(record.getTargetType())) {
+            var commentOpt = commentRepository.findById(record.getTargetId());
+            if (commentOpt.isPresent()) {
+                var comment = commentOpt.get();
+                finalPostId = comment.getQuestionPost().getQuestionPostId();
+                content = comment.getContent(); // Lấy nội dung bình luận
+            } else {
+                content = "Bình luận đã bị xóa vĩnh viễn";
+            }
+        }
+
         return ModerationRecordResponse.builder()
                 .moderationId(record.getModerationId())
-                .postId("QUESTION_POST".equals(record.getTargetType()) ? record.getTargetId() : null)
+                .postId(finalPostId)
                 .commentId("COMMENT".equals(record.getTargetType()) ? record.getTargetId() : null)
+                .content(content) // Đưa nội dung vào đây
                 .action(record.getAction())
                 .reason(record.getReason())
                 .moderatorName(record.getModerator() != null ? record.getModerator().getFullName() : "N/A")

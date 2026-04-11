@@ -12,4 +12,6 @@ public interface ModerationRecordRepository extends JpaRepository<ModerationReco
 
     // Tìm tất cả các bản ghi kiểm duyệt của một Moderator (User)
     List<ModerationRecord> findByModeratorUserId(Long userId);
+
+    List<ModerationRecord> findByTargetTypeOrderByCreatedAtDesc(String type);
 }

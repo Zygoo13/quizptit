@@ -20,8 +20,11 @@
         .dropdown-menu { border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; border: none !important; z-index: 9999 !important; }
         .btn-reply { font-size: 0.85rem; color: #65676b; text-decoration: none; font-weight: 600; cursor: pointer; }
         .btn-reply:hover { text-decoration: underline; color: #0d6efd; }
-        .comment-hidden { opacity: 0.5 !important; filter: grayscale(0.5); background-color: #f8d7da !important; }
-        .comment-hidden p { text-decoration: line-through; }
+        .opacity-75 { opacity: 0.7; }
+        .italic { font-style: italic; }
+        .bg-warning-light { background-color: #fff3cd !important; }
+        .comment-hidden { background-color: #f8f9fa !important; border: 1px dashed #dee2e6 !important; opacity: 0.8; }
+        .comment-hidden p { color: #6c757d !important; font-style: italic; }
     </style>
 </head>
 <body class="bg-light">
@@ -34,6 +37,11 @@
         <div class="col-lg-9">
             <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
                 <div class="card-body p-4 p-md-5">
+                    <div th:if="${post.status != 'VISIBLE'}" class="alert alert-warning border-0 shadow-sm mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Thông báo hệ thống:</strong> Bài viết này đang ở trạng thái <span class="badge bg-warning text-dark" th:text="${post.status}"></span>. Chỉ quản trị viên và người đăng mới có thể xem.
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="badge bg-primary-subtle text-primary rounded-pill px-3" th:text="${post.topicName}">Topic</span>
                         <div class="dropdown" sec:authorize="isAuthenticated()" th:if="${post.email == #authentication.name or #authorization.expression('hasRole(''ADMIN'')')}">
@@ -43,31 +51,18 @@
                                     <li><a class="dropdown-item py-2" th:href="@{/community/questions/{id}/edit(id=${post.questionPostId})}"><i class="far fa-edit me-2"></i>Sửa bài</a></li>
                                     <li><button type="button" class="dropdown-item py-2 text-danger" th:onclick="'confirmDeletePost(' + ${post.questionPostId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa bài</button></li>
                                 </th:block>
-
                                 <th:block sec:authorize="hasRole('ADMIN')">
                                     <li th:if="${post.email == #authentication.name}"><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <button type="button" class="dropdown-item py-2 text-warning"
-                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'HIDE\')'">
-                                            <i class="fas fa-eye-slash me-2"></i>Ẩn bài (Admin)
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button type="button" class="dropdown-item py-2 text-danger fw-bold"
-                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'DELETE\')'">
-                                            <i class="fas fa-user-shield me-2"></i>Xóa bài (Admin)
-                                        </button>
-                                    </li>
+                                    <li><button type="button" class="dropdown-item py-2 text-warning" th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'HIDE\')'"><i class="fas fa-eye-slash me-2"></i>Ẩn bài (Admin)</button></li>
+                                    <li><button type="button" class="dropdown-item py-2 text-danger fw-bold" th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', \'DELETE\')'"><i class="fas fa-user-shield me-2"></i>Xóa bài (Admin)</button></li>
                                 </th:block>
                             </ul>
                         </div>
                     </div>
                     <h1 class="fw-bold mb-3" th:text="${post.title}"></h1>
                     <div class="d-flex align-items-center mb-4 pb-3 border-bottom text-muted small">
-                        <div class="avatar-circle flex-shrink-0"
-                             th:text="${comment?.userFullName != null ? #strings.substring(comment.userFullName, 0, 1) : 'U'}">
-                        </div>
-                        <span class="me-3 text-dark fw-bold" th:text="${post.fullName}"></span>
+                        <div class="avatar-circle flex-shrink-0" th:text="${post.fullName != null ? #strings.substring(post.fullName, 0, 1) : 'U'}"></div>
+                        <span class="me-3 text-dark fw-bold ms-2" th:text="${post.fullName}"></span>
                         <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
                     </div>
                     <div class="post-content mb-5" th:text="${post.content}"></div>
@@ -91,22 +86,19 @@
                     </div>
 
                     <div id="commentList">
-                        <div th:each="comment : ${comments}"
-                             th:if="${comment != null and comment.status != 'DELETED' and (comment.status == 'VISIBLE' or #authorization.expression('hasRole(''ADMIN'')'))}"
-                             th:id="'comment-' + ${comment?.commentId}"
-                             class="mb-4 comment-item">
+                        <div th:each="comment : ${comments}" th:id="'comment-' + ${comment.commentId}"
+                             th:classappend="${comment.commentId == targetCommentId} ? 'bg-warning-light border-start border-4 border-warning' : ''"
+                             class="mb-4 comment-item p-3 rounded shadow-sm">
 
-                            <div class="d-flex gap-2 align-items-start">
+                            <div class="d-flex gap-2 align-items-start" th:classappend="${comment.status != 'VISIBLE'} ? 'opacity-75 italic' : ''">
                                 <div class="avatar-circle avatar-circle-sm flex-shrink-0"
                                      th:text="${comment?.userFullName != null and !comment.userFullName.isEmpty() ? #strings.substring(comment.userFullName,0,1) : 'U'}">
                                 </div>
 
                                 <div class="flex-grow-1">
                                     <div class="comment-wrapper">
-                                        <div class="comment-bubble shadow-sm"
-                                             th:classappend="${comment?.status == 'HIDDEN' ? 'comment-hidden' : ''}">
-                                            <div class="fw-bold mb-0" style="font-size: 0.85rem;"
-                                                 th:text="${comment?.userFullName}"></div>
+                                        <div class="comment-bubble shadow-sm" th:classappend="${comment?.status != 'VISIBLE' ? 'comment-hidden' : ''}">
+                                            <div class="fw-bold mb-0" style="font-size: 0.85rem;" th:text="${comment?.userFullName}"></div>
                                             <p class="mb-0 text-dark" th:text="${comment?.content}"></p>
                                         </div>
 
@@ -117,7 +109,6 @@
                                                     <li><a class="dropdown-item edit-comment-btn" href="javascript:void(0)" th:data-id="${comment?.commentId}" th:data-content="${comment?.content}"><i class="far fa-edit me-2"></i>Sửa</a></li>
                                                     <li><a class="dropdown-item text-danger" href="javascript:void(0)" th:onclick="'confirmDeleteComment(' + ${comment?.commentId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa</a></li>
                                                 </th:block>
-
                                                 <th:block sec:authorize="hasRole('ADMIN')">
                                                     <li th:if="${comment?.email == #authentication.name}"><hr class="dropdown-divider"></li>
                                                     <li><a class="dropdown-item text-warning" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${comment?.commentId} + ', \'HIDE\')'"><i class="fas fa-eye-slash me-2"></i>Ẩn (Admin)</a></li>
@@ -129,24 +120,22 @@
 
                                     <div class="ms-2 mt-1">
                                         <small class="text-muted me-3" th:text="${#temporals.format(comment?.createdAt, 'dd/MM HH:mm')}"></small>
-                                        <span class="btn-reply" th:data-id="${comment?.commentId}" th:data-name="${comment?.userFullName}" onclick="handleReplyClick(this, null)">Phản hồi</span>
+                                        <span th:if="${comment.status == 'VISIBLE'}" class="btn-reply" th:data-id="${comment?.commentId}" th:data-name="${comment?.userFullName}" onclick="handleReplyClick(this, null)">Phản hồi</span>
                                     </div>
 
                                     <div class="reply-box mt-3" th:if="${comment?.replies != null and !#lists.isEmpty(comment.replies)}">
-                                        <div th:each="reply : ${comment.replies}"
-                                             th:if="${reply != null and reply.status != 'DELETED' and (reply.status == 'VISIBLE' or #authorization.expression('hasRole(''ADMIN'')'))}"
-                                             th:id="'comment-' + ${reply?.commentId}"
-                                             class="mb-2 comment-item">
+                                        <div th:each="reply : ${comment.replies}" th:id="'comment-' + ${reply.commentId}"
+                                             th:classappend="${reply.commentId == targetCommentId} ? 'bg-warning-light border-start border-4 border-warning' : ''"
+                                             class="mb-2 comment-item p-2 rounded">
 
-                                            <div class="d-flex gap-2 align-items-start">
+                                            <div class="d-flex gap-2 align-items-start" th:classappend="${reply.status != 'VISIBLE'} ? 'opacity-75 italic' : ''">
                                                 <div class="avatar-circle avatar-circle-sm flex-shrink-0"
                                                      th:text="${reply?.userFullName != null and !reply.userFullName.isEmpty() ? #strings.substring(reply.userFullName,0,1) : 'U'}">
                                                 </div>
 
                                                 <div class="flex-grow-1">
                                                     <div class="comment-wrapper">
-                                                        <div class="reply-bubble border shadow-sm"
-                                                             th:classappend="${reply?.status == 'HIDDEN' ? 'comment-hidden' : ''}">
+                                                        <div class="reply-bubble border shadow-sm" th:classappend="${reply?.status != 'VISIBLE' ? 'comment-hidden' : ''}">
                                                             <div class="fw-bold mb-0" style="font-size: 0.8rem;" th:text="${reply?.userFullName}"></div>
                                                             <p class="mb-0 small text-dark" th:text="${reply?.content}"></p>
                                                         </div>
@@ -158,7 +147,6 @@
                                                                     <li><a class="dropdown-item edit-comment-btn" href="javascript:void(0)" th:data-id="${reply?.commentId}" th:data-content="${reply?.content}"><i class="far fa-edit me-2"></i>Sửa</a></li>
                                                                     <li><a class="dropdown-item text-danger" href="javascript:void(0)" th:onclick="'confirmDeleteComment(' + ${reply?.commentId} + ')'"><i class="far fa-trash-alt me-2"></i>Xóa</a></li>
                                                                 </th:block>
-
                                                                 <th:block sec:authorize="hasRole('ADMIN')">
                                                                     <li th:if="${reply?.email == #authentication.name}"><hr class="dropdown-divider"></li>
                                                                     <li><a class="dropdown-item text-warning" href="javascript:void(0)" th:onclick="'openAdminAction(' + ${reply?.commentId} + ', \'HIDE\')'"><i class="fas fa-eye-slash me-2"></i>Ẩn (Admin)</a></li>
@@ -169,7 +157,6 @@
                                                     </div>
                                                     <div class="ms-2">
                                                         <small class="text-muted me-2" style="font-size: 0.7rem;" th:text="${#temporals.format(reply?.createdAt, 'dd/MM HH:mm')}"></small>
-                                                        <span class="btn-reply" th:data-id="${reply?.commentId}" th:data-name="${reply?.userFullName}" th:data-root="${comment?.commentId}" onclick="handleReplyClick(this, this.getAttribute('data-root'))">Phản hồi</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -291,7 +278,6 @@
         const title = document.getElementById('adminModalTitle');
         const btn = document.getElementById('adminSubmitBtn');
 
-        // Chú ý: Đây là link dành cho POST (questions), không phải comments
         if (actionType === 'HIDE') {
             adminForm.action = '/community/admin/questions/' + id + '/hide';
             title.innerText = "Lý do ẩn bài viết";
@@ -307,20 +293,14 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        // Nếu URL có chứa #comment-xxx
         if (window.location.hash && window.location.hash.startsWith('#comment-')) {
             const element = document.querySelector(window.location.hash);
             if (element) {
-                // Đợi 1 chút cho trang ổn định rồi cuộn mượt đến đó
                 setTimeout(() => {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    // Hiệu ứng highlight: Đổi màu nền nhẹ rồi mờ dần
-                    element.style.backgroundColor = "#fff3cd"; // Màu vàng nhạt giống highlight
+                    element.style.backgroundColor = "#fff3cd";
                     element.style.transition = "background-color 2s";
-                    setTimeout(() => {
-                        element.style.backgroundColor = "transparent";
-                    }, 2000);
+                    setTimeout(() => { element.style.backgroundColor = "transparent"; }, 2000);
                 }, 500);
             }
         }

@@ -34,4 +34,8 @@ public interface CommentService {
 
     void update(Long id, Comment comment);
 
+    List<CommentResponse> getAllCommentsForAdmin();
+
+    List<CommentResponse> getAllCommentsByPost(Long postId);
+
 }

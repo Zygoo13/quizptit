@@ -2,6 +2,8 @@ package com.quizptit.community.service;
 
 import com.quizptit.community.dto.ModerationRecordRequest;
 import com.quizptit.community.dto.ModerationRecordResponse;
+import com.quizptit.community.entity.ModerationRecord;
+
 import java.util.List;
 
 public interface ModerationRecordService {
@@ -18,4 +20,6 @@ public interface ModerationRecordService {
     void logCommentModeration(Long commentId, Long adminId, String newStatus, String reason);
 
     void logPostModeration(Long postId, Long userId, String status, String reason);
+
+    List<ModerationRecordResponse> getRecordsByType(String type); // type là "POST" hoặc "COMMENT"
 }

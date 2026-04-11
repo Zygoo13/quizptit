@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 public class ModerationRecordResponse {
     private Long moderationId;
     private Long postId;
-    private Long commentId; // Có thể null nếu kiểm duyệt bài viết
+    private Long commentId;
+    private String content;
     private String action;
     private String reason;
     private String moderatorName; // Tên Admin thực hiện kiểm duyệt
