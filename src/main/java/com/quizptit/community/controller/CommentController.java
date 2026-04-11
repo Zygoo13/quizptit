@@ -29,14 +29,17 @@ public class CommentController {
     // BR-33, BR-36: Thêm bình luận/phản hồi vào bài viết
     // Route: /community/questions/{questionPostId}/comments/create
     @PostMapping("/questions/{postId}/comments/create")
-
     public String addComment(
             @PathVariable Long postId,
             Principal principal,
             @Valid @ModelAttribute CommentRequest request) {
-        // Truyền email thay vì User Entity
-        commentService.addCommentByEmail(postId, principal.getName(), request);
-        return "redirect:/community/questions/" + postId;
+
+        // 1. Gọi Service và lấy về DTO chứa ID của comment mới
+        CommentResponse newComment = commentService.addCommentByEmail(postId, principal.getName(), request);
+
+        // 2. Redirect kèm theo "mỏ neo" #comment-ID
+        // Trình duyệt sẽ tự cuộn xuống đúng thẻ <div> có id tương ứng
+        return "redirect:/community/questions/" + postId + "#comment-" + newComment.getCommentId();
     }
 
     // BR-37: Mở trang chỉnh sửa
