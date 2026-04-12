@@ -1,5 +1,6 @@
 package com.quizptit.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.quizptit.common.base.BaseEntity;
 import com.quizptit.common.constant.UserStatus;
 import jakarta.persistence.*;
@@ -12,6 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User extends BaseEntity {
 
     @Id
