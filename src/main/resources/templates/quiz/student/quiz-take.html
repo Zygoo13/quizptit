@@ -6,10 +6,16 @@
 <div th:fragment="content">
     <style>
         .question-nav-btn {
-            width: 42px;
+            min-width: 44px;
             height: 42px;
-            border-radius: 50%;
+            border-radius: 999px;
             font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .question-nav-btn.answered {
@@ -48,6 +54,12 @@
             font-size: 1.25rem;
             font-weight: 800;
             letter-spacing: 0.5px;
+        }
+
+        .question-nav-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
     </style>
     
@@ -129,7 +141,7 @@
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-3">Điều hướng câu hỏi</h6>
                         
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="question-nav-grid">
                             <a th:each="attemptQuestion, stat : ${attempt.attemptQuestions}"
                                th:href="'#question-' + ${attemptQuestion.attemptQuestionId}"
                                class="btn btn-outline-secondary question-nav-btn"

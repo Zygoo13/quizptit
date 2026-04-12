@@ -51,11 +51,11 @@
                     </div>
                     
                     <th:block th:with="answer=${answerMap != null ? answerMap.get(attemptQuestion.attemptQuestionId) : null}">
-                        <span th:if="${answer != null and answer.isCorrect}"
+                        <span th:if="${answer != null and answer.isCorrect != null and answer.isCorrect}"
                               class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                             Đúng
                         </span>
-                        <span th:if="${answer == null or !answer.isCorrect}"
+                        <span th:if="${answer == null or answer.isCorrect == null or !answer.isCorrect}"
                               class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2">
                             Sai / Chưa chọn
                         </span>
@@ -66,8 +66,13 @@
                      th:with="selectedAnswer=${answerMap != null ? answerMap.get(attemptQuestion.attemptQuestionId) : null}">
                     <div th:each="option : ${attemptQuestion.question.options}"
                          class="option-review"
-                         th:classappend="${option.isCorrect} ? ' correct' : ''"
-                         th:classappend="${selectedAnswer != null and selectedAnswer.selectedOption != null and selectedAnswer.selectedOption.optionId == option.optionId and !option.isCorrect} ? ' selected-wrong' : ''">
+                         th:class="${'option-review'
+                            + (option.isCorrect ? ' correct' : '')
+                            + (selectedAnswer != null
+                               and selectedAnswer.selectedOption != null
+                               and selectedAnswer.selectedOption.optionId != null
+                               and selectedAnswer.selectedOption.optionId == option.optionId
+                               and !option.isCorrect ? ' selected-wrong' : '')}">
                         <div class="d-flex justify-content-between align-items-start gap-3">
                             <div>
                                 <div class="fw-semibold mb-1"
@@ -83,7 +88,11 @@
                                     Đáp án đúng
                                 </span>
                                 
-                                <span th:if="${selectedAnswer != null and selectedAnswer.selectedOption != null and selectedAnswer.selectedOption.optionId == option.optionId and !option.isCorrect}"
+                                <span th:if="${selectedAnswer != null
+                                              and selectedAnswer.selectedOption != null
+                                              and selectedAnswer.selectedOption.optionId != null
+                                              and selectedAnswer.selectedOption.optionId == option.optionId
+                                              and !option.isCorrect}"
                                       class="badge bg-danger rounded-pill px-3 py-2">
                                     Bạn đã chọn
                                 </span>

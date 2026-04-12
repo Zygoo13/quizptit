@@ -29,6 +29,7 @@
             justify-content: center;
             font-weight: 700;
             flex-shrink: 0;
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
         }
 
         .post-content-summary {
@@ -45,6 +46,22 @@
             background: var(--bs-primary);
             color: #fff;
             border-color: var(--bs-primary);
+        }
+
+        .interaction-btn {
+            border: 0;
+            background: transparent;
+            padding: 0;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        .interaction-btn:hover {
+            color: #0d6efd;
+        }
+
+        .interaction-btn.liked {
+            color: #0d6efd;
         }
     </style>
     
@@ -104,11 +121,11 @@
         <div th:each="post : ${posts}"
              class="card community-post-card"
              th:style="'background-color:' + ${(post.themeColor != null and !#strings.isEmpty(post.themeColor)) ? post.themeColor : '#ffffff'}">
+            
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="avatar-circle"
-                             th:style="'background:' + (${post.questionPostId % 2 == 0} ? '#0d6efd' : '#6610f2')"
                              th:text="${post.fullName != null and !#strings.isEmpty(post.fullName)} ? ${#strings.substring(post.fullName,0,1)} : 'U'">
                             U
                         </div>
@@ -143,15 +160,20 @@
                 </div>
                 
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <div class="d-flex flex-wrap gap-3 small text-muted">
-                        <span>
+                    <div class="d-flex flex-wrap gap-4 align-items-center">
+                        <button type="button"
+                                class="interaction-btn"
+                                th:attr="data-post-id=${post.questionPostId}"
+                                onclick="toggleLike(this)">
                             <i class="bi bi-hand-thumbs-up me-1"></i>
-                            <span th:text="${post.likeCount != null ? post.likeCount : 0}">0</span> lượt thích
-                        </span>
-                        <span>
+                            <span class="like-count" th:text="${post.likeCount != null ? post.likeCount : 0}">0</span> lượt thích
+                        </button>
+                        
+                        <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
+                           class="interaction-btn text-decoration-none">
                             <i class="bi bi-chat-left-text me-1"></i>
                             <span th:text="${post.commentCount}">0</span> bình luận
-                        </span>
+                        </a>
                     </div>
                     
                     <div class="d-flex gap-2">
@@ -164,6 +186,46 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        async function toggleLike(button) {
+            const postId = button.getAttribute('data-post-id');
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+            try {
+                const response = await fetch(`/community/questions/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        ...(header && token ? { [header]: token } : {})
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = '/auth/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    console.error('Like failed');
+                    return;
+                }
+
+                const countEl = button.querySelector('.like-count');
+                const current = parseInt(countEl.innerText || '0', 10);
+
+                if (button.classList.contains('liked')) {
+                    button.classList.remove('liked');
+                    countEl.innerText = String(Math.max(0, current - 1));
+                } else {
+                    button.classList.add('liked');
+                    countEl.innerText = String(current + 1);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
 </div>
 </body>
 </html>
