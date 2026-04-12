@@ -211,7 +211,9 @@ public class AttemptServiceImpl implements AttemptService {
 
                 Attempt gradedAttempt = attemptRepository.save(attempt);
 
-                progressService.updateQuizProgress(gradedAttempt.getUser(), gradedAttempt.getQuiz(), ratioScore);
+                if (gradedAttempt.getQuiz().getTopic() != null) {
+                        progressService.updateQuizProgress(gradedAttempt.getUser(), gradedAttempt.getQuiz(), ratioScore);
+                }
                 reviewService.updateMultipleQuestionMemories(attempt.getUser(), reviewResults);
 
                 return gradedAttempt;

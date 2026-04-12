@@ -24,7 +24,8 @@
                             <div class="form-check mb-2" th:each="opt : ${aq.question.options}">
                                 <input class="form-check-input answer-radio" type="radio"
                                     th:name="'question_' + ${aq.attemptQuestionId}" th:id="'opt_' + ${opt.optionId}"
-                                    th:value="${opt.optionId}" th:data-aq-id="${aq.attemptQuestionId}">
+                                    th:value="${opt.optionId}" th:data-aq-id="${aq.attemptQuestionId}"
+                                    th:checked="${answerMap != null && answerMap.get(aq.attemptQuestionId) != null && answerMap.get(aq.attemptQuestionId).selectedOption != null && answerMap.get(aq.attemptQuestionId).selectedOption.optionId == opt.optionId}">
                                 <label class="form-check-label w-100" th:for="'opt_' + ${opt.optionId}"
                                     th:text="${opt.content}">
                                     Đáp án A
@@ -68,13 +69,23 @@
                     [csrfHeader]: csrfToken
                 }
             })
-                .then(res => res.json())
+                .then(async res => {
+                    if (!res.ok) {
+                        const errorData = await res.json().catch(() => ({ message: "Lỗi hệ thống khi nộp bài" }));
+                        throw new Error(errorData.message || "Lỗi khi nộp bài");
+                    }
+                    return res.json();
+                })
                 .then(result => {
-                    let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
-                    window.location.replace(resultUrl);
+                    if (result && result.attemptId) {
+                        let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
+                        window.location.replace(resultUrl);
+                    } else {
+                        throw new Error("Không tìm thấy thông tin lượt làm bài sau khi nộp");
+                    }
                 })
                 .catch(err => {
-                    alert("Lỗi khi nộp bài!");
+                    alert(err.message || "Lỗi khi nộp bài!");
                     submitBtn.innerHTML = '<i class="bi bi-send-check me-2"></i> NỘP BÀI THI';
                     submitBtn.disabled = false;
                 });

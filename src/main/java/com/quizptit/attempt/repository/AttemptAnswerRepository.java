@@ -1,5 +1,6 @@
 package com.quizptit.attempt.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,6 @@ public interface AttemptAnswerRepository extends JpaRepository<AttemptAnswer, Lo
 
     Optional<AttemptAnswer> findByAttemptQuestion_AttemptQuestionId(Long attemptQuestionId);
 
-    java.util.List<AttemptAnswer> findByAttemptQuestion_Attempt_AttemptId(Long attemptId);
+    List<AttemptAnswer> findByAttemptQuestion_Attempt_AttemptId(Long attemptId);
 
 }

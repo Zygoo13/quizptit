@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class RandomQuizRequest {
-    private Long subjectId; // Tạo random theo Môn học (dùng khi topicId = null)
-    private Long topicId; // Tạo random theo Chủ đề (ưu tiên hơn nếu được truyền vào)
+    private Long subjectId;
+    private Long topicId;
     private String title;
     private Integer durationMinutes;
     private Integer requiredQuestions;
