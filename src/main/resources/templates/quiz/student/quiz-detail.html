@@ -1,70 +1,114 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/student-layout :: layout(pageTitle='Chi Tiết Bài Thi', content=~{::content}, script=~{::script})}">
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout(${quiz.title}, ~{::content})}">
 <head></head>
-
 <body>
-
-    <div th:fragment="content" class="container mt-5" style="max-width: 600px;">
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="bg-primary text-white text-center py-4 rounded-top-4">
-                <i class="bi bi-file-earmark-text fs-1"></i>
-                <h4 class="fw-bold mt-2" th:text="${quiz.title}">Tiêu đề đề thi</h4>
-            </div>
-            <div class="card-body p-4 text-center">
-                <p class="text-muted mb-4">Hãy chuẩn bị sẵn sàng trước khi bắt đầu tính giờ.</p>
-
-                <div class="d-flex justify-content-around mb-4">
-                    <div>
-                        <h5 class="fw-bold text-dark mb-0" th:text="${quiz.durationMinutes} + ' Phút'">45 Phút</h5>
-                        <small class="text-muted">Thời gian</small>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                        <div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-3"
+                                  th:text="${quiz.subject != null ? quiz.subject.subjectName : 'Quiz'}">
+                                Subject
+                            </span>
+                            <h2 class="fw-bold mb-2" th:text="${quiz.title}">Tên quiz</h2>
+                            <p class="text-muted mb-0"
+                               th:text="${quiz.description != null and !#strings.isEmpty(quiz.description)} ? ${quiz.description} : 'Đề thi trắc nghiệm dùng để luyện tập và kiểm tra kiến thức.'">
+                                Mô tả
+                            </p>
+                        </div>
+                        
+                        <a th:href="@{/quizzes}" class="btn btn-outline-secondary rounded-pill px-3">
+                            <i class="bi bi-arrow-left me-1"></i> Quay lại
+                        </a>
                     </div>
-                    <div>
-                        <h5 class="fw-bold text-dark mb-0" th:text="${quiz.totalQuestions} + ' Câu'">50 Câu</h5>
-                        <small class="text-muted">Số lượng</small>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Số câu hỏi</div>
+                                <div class="fw-bold fs-4" th:text="${quiz.totalQuestions}">20</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Thời lượng</div>
+                                <div class="fw-bold fs-4" th:text="${quiz.durationMinutes} + ' phút'">45 phút</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Chủ đề</div>
+                                <div class="fw-bold fs-6" th:text="${quiz.topic != null ? quiz.topic.topicName : 'Tổng hợp'}">Topic</div>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <div class="alert alert-light border rounded-4 mb-4">
+                        <div class="fw-semibold mb-2">Lưu ý trước khi bắt đầu</div>
+                        <ul class="mb-0 ps-3">
+                            <li>Đảm bảo kết nối ổn định trong suốt quá trình làm bài.</li>
+                            <li>Thời gian sẽ được tính ngay khi bắt đầu.</li>
+                            <li>Kết quả sẽ được lưu trong lịch sử làm bài của bạn.</li>
+                        </ul>
+                    </div>
+                    
+                    <button type="button"
+                            class="btn btn-primary btn-lg rounded-pill px-4"
+                            th:attr="data-quiz-id=${quiz.quizId}"
+                            onclick="startAttempt(this)">
+                        <i class="bi bi-play-circle me-1"></i> Bắt đầu làm bài
+                    </button>
+                    
+                    <div id="startMessage" class="mt-4"></div>
                 </div>
-
-                <button id="btn-start" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm"
-                    th:data-quiz-id="${quiz.quizId}">
-                    BẮT ĐẦU LÀM BÀI
-                </button>
             </div>
         </div>
     </div>
+    
+    <script>
+        async function startAttempt(button) {
+            const quizId = button.getAttribute('data-quiz-id');
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            const messageBox = document.getElementById('startMessage');
 
-    <script th:fragment="script">
-        document.getElementById('btn-start').addEventListener('click', function (e) {
-            e.preventDefault();
-            const quizId = this.getAttribute('data-quiz-id');
-            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
-
-
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo đề...';
-            this.disabled = true;
-
-            fetch(`/api/attempts/start/${quizId}`, {
-                method: 'POST',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.attemptId) {
-
-                        window.location.href = `/quizzes/attempts/${data.attemptId}/take`;
+            try {
+                const response = await fetch(`/api/attempts/start/${quizId}`, {
+                    method: 'POST',
+                    headers: {
+                        ...(header && token ? { [header]: token } : {})
                     }
-                })
-                .catch(error => {
-                    alert("Có lỗi xảy ra, không thể tạo phiên làm bài!");
-                    window.location.reload();
                 });
-        });
+
+                const data = await response.json().catch(() => null);
+
+                if (response.status === 401) {
+                    window.location.href = '/auth/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    messageBox.innerHTML = `<div class="alert alert-danger mb-0">${data?.message || 'Không thể bắt đầu bài làm.'}</div>`;
+                    return;
+                }
+
+                if (data?.attemptId) {
+                    window.location.href = `/quizzes/attempts/${data.attemptId}/take`;
+                    return;
+                }
+
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không lấy được attemptId.</div>`;
+            } catch (e) {
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không thể bắt đầu bài làm.</div>`;
+            }
+        }
     </script>
-
+</div>
 </body>
-
 </html>

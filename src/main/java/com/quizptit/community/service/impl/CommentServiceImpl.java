@@ -50,14 +50,7 @@ public class CommentServiceImpl implements CommentService {
                 .status("VISIBLE")
                 .build();
 
-        commentRepository.saveAndFlush(comment); // Lưu comment mới trước
-
-        // CẬP NHẬT SỐ LƯỢNG SAU KHI THÊM
-        long visibleCount = commentRepository.countByQuestionPost_QuestionPostIdAndStatus(postId, "VISIBLE");
-        post.setCommentCount((int) visibleCount);
-        questionPostRepository.saveAndFlush(post);
-
-        // Trong hàm addComment, trước khi return mapToResponse...
+        commentRepository.saveAndFlush(comment);
         syncCommentCount(postId);
 
         return mapToResponse(comment);
@@ -69,20 +62,20 @@ public class CommentServiceImpl implements CommentService {
         if (!questionPostRepository.existsById(postId)) {
             throw new ResourceNotFoundException("Bài viết không tồn tại");
         }
-        // Không dùng filter ở đây để tránh làm đứt mạch cây bình luận
+
         return commentRepository.findByQuestionPost_QuestionPostIdAndParentCommentIsNullOrderByCreatedAtDesc(postId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // --- HÀM 2: DÙNG CHO ADMIN (HOẶC HỆ THỐNG - HÀM ĐANG BÁO LỖI THIẾU) ---
     @Override
     @Transactional(readOnly = true)
     public List<CommentResponse> getAllCommentsByPost(Long postId) {
         if (!questionPostRepository.existsById(postId)) {
             throw new ResourceNotFoundException("Bài viết không tồn tại");
         }
+
         return commentRepository.findByQuestionPost_QuestionPostIdAndParentCommentIsNullOrderByCreatedAtDesc(postId)
                 .stream()
                 .map(this::mapToResponse)
@@ -94,22 +87,22 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponse updateComment(Long commentId, CommentRequest request, String email) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận"));
+
         if (!comment.getUser().getEmail().equals(email)) {
             throw new SecurityException("Bạn không có quyền sửa bình luận này!");
         }
+
         if (request.getContent() != null && !request.getContent().isBlank()) {
             comment.setContent(request.getContent());
             comment = commentRepository.save(comment);
         }
+
         return mapToResponse(comment);
     }
 
-
-    // ------------------ CHỈ SỬA DELETE THEO FACEBOOK ------------------
     @Override
     @Transactional
     public void deleteComment(Long commentId, Long userId, String userRole) {
-        // 1. Lấy comment
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bình luận không tồn tại"));
 
@@ -120,26 +113,14 @@ public class CommentServiceImpl implements CommentService {
             throw new SecurityException("Bạn không có quyền xóa bình luận này");
         }
 
-        // 2. Xóa mềm comment chính
-        comment.setStatus("DELETED");
+        comment.setStatus("HIDDEN");
         commentRepository.saveAndFlush(comment);
 
-        // 3. Nếu là comment gốc, xóa mềm tất cả reply con bằng query trực tiếp
         if (comment.getParentComment() == null) {
             commentRepository.softDeleteRepliesByParentId(comment.getCommentId());
         }
 
-        // 4. Cập nhật lại số lượng comment VISIBLE
-        Long postId = comment.getQuestionPost().getQuestionPostId();
-        long visibleCount = commentRepository.countByQuestionPost_QuestionPostIdAndStatus(postId, "VISIBLE");
-
-        QuestionPost post = questionPostRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại"));
-        post.setCommentCount((int) visibleCount);
-        questionPostRepository.saveAndFlush(post);
-
-        // 5. Đồng bộ thêm nếu có hàm sync
-        syncCommentCount(postId);
+        syncCommentCount(comment.getQuestionPost().getQuestionPostId());
     }
 
     @Override
@@ -147,8 +128,6 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponse addCommentByEmail(Long postId, String email, CommentRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
-
-        // Sửa lại để nhận về CommentResponse từ hàm addComment
         return addComment(postId, user.getUserId(), request);
     }
 
@@ -166,32 +145,23 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận"));
 
-        // 1. Xác định ACTION thực tế để ghi log
-        // Nếu status truyền xuống là VISIBLE -> Hành động của Admin là RESTORE
-        String moderationAction = status;
-        if ("VISIBLE".equals(status)) {
-            moderationAction = "RESTORE";
-        }
+        String normalizedStatus = normalizeCommentStatus(status);
+        String moderationAction = mapModerationAction(normalizedStatus);
 
-        // 2. Cập nhật status thực tế cho comment (vẫn phải là VISIBLE/HIDDEN/DELETED)
-        comment.setStatus(status);
+        comment.setStatus(normalizedStatus);
 
-        // 3. Nếu là xóa (DELETED) và là comment gốc, thì ẩn luôn đám con (giữ nguyên logic của bạn)
-        if ("DELETED".equals(status) && comment.getParentComment() == null) {
+        if ("HIDDEN".equals(normalizedStatus) && comment.getParentComment() == null) {
             commentRepository.softDeleteRepliesByParentId(comment.getCommentId());
         }
 
-        commentRepository.save(comment);
+        commentRepository.saveAndFlush(comment);
 
-        // 4. Lưu nhật ký kiểm duyệt với 'moderationAction' đã xử lý
         try {
-            // Truyền moderationAction (RESTORE/HIDDEN/DELETED) thay vì status thuần túy
             moderationRecordService.logCommentModeration(commentId, adminId, moderationAction, reason);
         } catch (Exception e) {
             System.err.println("Lỗi lưu nhật ký kiểm duyệt bình luận: " + e.getMessage());
         }
 
-        // 5. Cập nhật lại số lượng comment cho bài viết
         syncCommentCount(comment.getQuestionPost().getQuestionPostId());
     }
 
@@ -211,31 +181,52 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentResponse> getAllCommentsForAdmin() {
-        // Lấy tất cả, không phân biệt cha con hay trạng thái để Admin quản lý tổng thể
         return commentRepository.findAll().stream()
-                .map(this::mapToResponse) // Dùng hàm mapToResponse bạn đã viết rất chuẩn rồi
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public void syncCommentCount(Long postId) {
-        // Đếm những comment thực sự là gốc (parentId is null) và VISIBLE
-        // Hoặc nếu bạn muốn đếm cả reply thì giữ nguyên nhưng phải đảm bảo xóa cả con (như mình đã chỉ)
         long visibleCount = commentRepository.countByQuestionPost_QuestionPostIdAndStatus(postId, "VISIBLE");
 
-        QuestionPost post = questionPostRepository.findById(postId).get();
+        QuestionPost post = questionPostRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bài viết không tồn tại"));
         post.setCommentCount((int) visibleCount);
         questionPostRepository.saveAndFlush(post);
-
-        // In ra để nhìn tận mắt trong console
-        System.out.println("FIX_COUNT_LOG: PostID " + postId + " -> Số thực trong DB là: " + visibleCount);
     }
 
-    // Chuyển Entity -> DTO
+    private String normalizeCommentStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "HIDDEN";
+        }
+
+        String value = status.trim().toUpperCase();
+
+        if ("DELETED".equals(value)) {
+            return "HIDDEN";
+        }
+
+        if ("VISIBLE".equals(value) || "HIDDEN".equals(value)) {
+            return value;
+        }
+
+        return "HIDDEN";
+    }
+
+    private String mapModerationAction(String status) {
+        if ("VISIBLE".equalsIgnoreCase(status)) {
+            return "RESTORE";
+        }
+        if ("HIDDEN".equalsIgnoreCase(status)) {
+            return "HIDE";
+        }
+        return "HIDE";
+    }
+
     private CommentResponse mapToResponse(Comment comment) {
         if (comment == null) return null;
 
-        // 1. LUÔN LUÔN lấy thông tin thật từ User ngay từ đầu
         var responseBuilder = CommentResponse.builder()
                 .commentId(comment.getCommentId())
                 .status(comment.getStatus())
@@ -244,27 +235,19 @@ public class CommentServiceImpl implements CommentService {
                 .parentId(comment.getParentComment() != null ? comment.getParentComment().getCommentId() : null)
                 .userId(comment.getUser().getUserId())
                 .email(comment.getUser().getEmail())
-                .userFullName(comment.getUser().getFullName()); // Lấy tên thật ở đây
+                .userFullName(comment.getUser().getFullName());
 
-        // 2. CHỈ thay đổi Content và Tên hiển thị NẾU KHÔNG PHẢI ADMIN (hoặc để Admin thấy hết)
-        // Nếu bạn muốn trang Admin hiện cả tên thật của cmt đã xóa:
         if ("VISIBLE".equals(comment.getStatus())) {
             responseBuilder.content(comment.getContent());
-        }
-        else if ("HIDDEN".equals(comment.getStatus())) {
+        } else if ("HIDDEN".equals(comment.getStatus())) {
             String type = (comment.getParentComment() == null) ? "Bình luận" : "Phản hồi";
             responseBuilder.content(type + " này đã bị ẩn bởi quản trị viên");
-            // Nếu muốn trang Client vẫn hiện "Thông báo hệ thống",
-            // nhưng Admin vẫn thấy tên thật thì logic này cần check Role.
-            // Tuy nhiên, để đơn giản cho Admin check, ta cứ giữ tên thật ở trên là xong.
-        }
-        else if ("DELETED".equals(comment.getStatus())) {
-            responseBuilder.content("Bình luận này đã bị xóa");
+        } else {
+            responseBuilder.content("Bình luận này đã bị ẩn");
         }
 
         CommentResponse response = responseBuilder.build();
 
-        // XỬ LÝ ĐỆ QUY CHO REPLY
         if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
             List<CommentResponse> replyDtos = comment.getReplies().stream()
                     .map(this::mapToResponse)

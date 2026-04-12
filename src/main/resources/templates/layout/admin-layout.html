@@ -1,224 +1,32 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content, script)">
-<head th:replace="~{fragments/head :: head('Quản trị - ' + ${pageTitle})}">
-    <!-- Meta tags for AJAX CSRF -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-</head>
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 
-<style>
-    :root {
-        --sidebar-width: 280px;
-    }
-
-    body {
-        background-color: #f0f2f5;
-    }
-
-    /* Sidebar Styling */
-    .admin-sidebar {
-        background: #ffffff;
-        border-right: 1px solid #e0e0e0;
-        height: 100vh;
-        overflow-y: auto;
-        --bs-offcanvas-width: var(--sidebar-width);
-    }
-
-    @media (min-width: 992px) {
-        .admin-sidebar {
-            position: sticky;
-            top: 0;
-            padding: 1.5rem 1rem;
-            z-index: 1020;
-            width: var(--sidebar-width) !important;
-        }
-    }
-
-    .sidebar-title {
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #adb5bd;
-        margin: 1.5rem 0 0.5rem 0.75rem;
-        letter-spacing: 1px;
-    }
-
-    .nav-link-admin {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        color: #495057;
-        font-weight: 500;
-        border-radius: 10px;
-        transition: all 0.2s;
-        text-decoration: none;
-        margin-bottom: 2px;
-    }
-
-    .nav-link-admin i {
-        margin-right: 12px;
-        font-size: 1.1rem;
-    }
-
-    .nav-link-admin:hover {
-        background-color: #f8f9fa;
-        color: #0d6efd;
-    }
-
-    .nav-link-admin.active {
-        background-color: #e7f1ff;
-        color: #0d6efd;
-    }
-
-    /* Content Area */
-    .admin-main-content {
-        padding: 2rem;
-    }
-
-    .admin-card-container {
-        background: #ffffff;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        min-height: 80vh;
-    }
-
-    .admin-footer {
-        padding: 2rem 0;
-        color: #adb5bd;
-        font-size: 0.85rem;
-    }
-</style>
-
-<body>
-
-    <div class="container-fluid p-0">
-        <div class="d-flex">
-
-            <!-- SIDEBAR -->
-            <aside class="admin-sidebar offcanvas-lg offcanvas-start flex-shrink-0" tabindex="-1" id="adminSidebar"
-                aria-labelledby="adminSidebarLabel">
-                <div class="offcanvas-header d-lg-none mt-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-shield-lock-fill text-primary fs-3 me-2"></i>
-                        <span class="fw-bold fs-5" id="adminSidebarLabel">QuizPTIT Admin</span>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar"
-                        aria-label="Close"></button>
+<main class="flex-grow-1 py-4">
+    <div class="container-fluid px-3 px-lg-4">
+        <div th:replace="~{fragments/flash-message :: flash-message}"></div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-xl-2">
+                <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+            </div>
+            
+            <div class="col-lg-9 col-xl-10">
+                <div th:insert="${content}">
+                    Nội dung admin
                 </div>
-
-                <div class="offcanvas-body d-flex flex-column px-2 p-lg-0">
-                    <div class="d-none d-lg-flex align-items-center mb-4 px-2">
-                        <i class="bi bi-shield-lock-fill text-primary fs-3 me-2"></i>
-                        <span class="fw-bold fs-5">QuizPTIT Admin</span>
-                    </div>
-
-                    <nav class="nav flex-column">
-                        <a class="nav-link-admin" th:href="@{/admin}"
-                            th:classappend="${requestURI == '/admin' ? 'active' : ''}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-
-                        <div class="sidebar-title">Người dùng & Hệ thống</div>
-                        <a class="nav-link-admin" th:href="@{/admin/users}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/users') ? 'active' : ''}">
-                            <i class="bi bi-people"></i> Quản lý User
-                        </a>
-
-                        <div class="sidebar-title">Nội dung học thuật</div>
-                        <a class="nav-link-admin" th:href="@{/admin/subjects}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/subjects') ? 'active' : ''}">
-                            <i class="bi bi-book"></i> Môn học
-                        </a>
-                        <a class="nav-link-admin" th:href="@{/admin/topics}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/topics') ? 'active' : ''}">
-                            <i class="bi bi-tags"></i> Chủ đề
-                        </a>
-                        <a class="nav-link-admin" th:href="@{/admin/questions}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/questions') ? 'active' : ''}">
-                            <i class="bi bi-patch-question"></i> Ngân hàng câu hỏi
-                        </a>
-
-                        <div class="sidebar-title">Khảo thí & Kết quả</div>
-                        <a class="nav-link-admin" th:href="@{/admin/quizzes}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/quizzes') ? 'active' : ''}">
-                            <i class="bi bi-journal-check"></i> Quản lý Kỳ thi
-                        </a>
-                        <a class="nav-link-admin" th:href="@{/admin/progress}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/progress') ? 'active' : ''}">
-                            <i class="bi bi-bar-chart-line"></i> Theo dõi Tiến độ
-                        </a>
-
-                        <div class="sidebar-title">Cộng đồng & Kiểm duyệt</div>
-                        <a class="nav-link-admin" th:href="@{/admin/community/questions}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/community/questions') ? 'active' : ''}">
-                            <i class="bi bi-chat-dots"></i> Bài đăng cộng đồng
-                        </a>
-                        <a class="nav-link-admin" th:href="@{/admin/community/moderation-records}"
-                            th:classappend="${requestURI != null and requestURI.contains('/admin/moderation') ? 'active' : ''}">
-                            <i class="bi bi-clipboard-check"></i> Nhật ký kiểm duyệt
-                        </a>
-
-                        <hr class="my-4 mx-2 text-muted opacity-25">
-                        <a class="nav-link-admin text-danger" th:href="@{/}">
-                            <i class="bi bi-house-door"></i> Về trang học viên
-                        </a>
-                    </nav>
-                </div>
-            </aside>
-
-            <!-- MAIN CONTENT AREA -->
-            <main class="flex-grow-1 overflow-hidden" style="min-height: 100vh;">
-                <!-- Top Navbar cho Admin -->
-                <nav class="navbar navbar-expand navbar-light bg-white border-bottom sticky-top px-3 px-md-4 py-3">
-                    <div class="container-fluid p-0 mt-1">
-                        <div class="d-flex align-items-center">
-                            <button class="btn btn-outline-primary d-lg-none me-2" type="button"
-                                data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar">
-                                <i class="bi bi-list"></i>
-                            </button>
-                            <h5 class="m-0 fw-bold d-none d-sm-block mt-1" th:text="${pageTitle}">Page Title</h5>
-                        </div>
-
-                        <div class="ms-auto d-flex align-items-center gap-3">
-                            <div class="text-end d-none d-sm-block">
-                                <small class="d-block text-muted">Xin chào, Admin</small>
-                                <span class="fw-bold small" th:text="${currentUserEmail}">admin@ptit.edu.vn</span>
-                            </div>
-                            <div class="vr mx-2"></div>
-                            <form th:action="@{/auth/logout}" method="post" class="m-0">
-                                <button type="submit" class="btn btn-outline-danger btn-sm border-0">
-                                    <i class="bi bi-box-arrow-right fs-5"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </nav>
-
-                <div class="admin-main-content">
-                    <!-- Thông báo Flash Messages -->
-                    <div th:replace="~{fragments/flash-message :: flash-message}"></div>
-
-                    <!-- Card bọc nội dung động -->
-                    <div class="admin-card-container">
-                        <div th:insert="${content}">
-                            Nội dung trang quản trị...
-                        </div>
-                    </div>
-
-                    <footer class="admin-footer text-center">
-                        &copy; 2026 <strong>QuizPTIT Dashboard</strong>. Developed by Group PTIT.
-                    </footer>
-                </div>
-            </main>
-
+            </div>
         </div>
     </div>
+</main>
 
-    <script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
-    <!-- Page-specific scripts -->
-    <div th:if="${script != null}">
-        <div th:replace="${script}"></div>
-    </div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
+<div th:if="${script != null}">
+    <div th:replace="${script}"></div>
+</div>
 </body>
-
 </html>

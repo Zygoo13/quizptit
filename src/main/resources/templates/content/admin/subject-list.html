@@ -1,86 +1,125 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý Môn học</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Quản lý môn học', ~{::content}, ~{})}">
+<head></head>
 <body>
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <a href="/admin" class="btn btn-outline-secondary">&lt; Quay lại</a>
-            <h2 class="mb-0">Quản lý Môn học (Admin)</h2>
+<div th:fragment="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Quản lý môn học</h3>
+            <p class="text-muted mb-0">Quản lý danh sách môn học, trạng thái hiển thị và thông tin mô tả.</p>
         </div>
-        <a href="/admin/subjects/create" class="btn btn-success fw-bold px-4">+ Tạo mới</a>
+        
+        <a th:href="@{/admin/subjects/create}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Tạo môn học
+        </a>
     </div>
-
-    <div th:if="${successMessage}" class="alert alert-success border-0 shadow-sm" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert alert-danger border-0 shadow-sm" th:text="${errorMessage}"></div>
-
-    <form class="mb-4 row g-3 bg-light p-3 rounded" action="/admin/subjects" method="get">
-        <div class="col-md-6">
-            <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm môn học..." th:value="${keyword}">
+    
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form th:action="@{/admin/subjects}" method="get" class="row g-3 align-items-end">
+                <div class="col-lg-6">
+                    <label class="form-label fw-semibold">Từ khóa</label>
+                    <input type="text"
+                           name="keyword"
+                           class="form-control"
+                           th:value="${keyword}"
+                           placeholder="Tìm theo tên môn hoặc mô tả">
+                </div>
+                
+                <div class="col-lg-3">
+                    <label class="form-label fw-semibold">Trạng thái</label>
+                    <select name="isActive" class="form-select">
+                        <option th:selected="${isActive == null}" value="">Tất cả</option>
+                        <option th:selected="${isActive == true}" value="true">Đang hiển thị</option>
+                        <option th:selected="${isActive == false}" value="false">Đang ẩn</option>
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i> Lọc
+                    </button>
+                    <a th:href="@{/admin/subjects}" class="btn btn-outline-secondary flex-fill">Làm mới</a>
+                </div>
+            </form>
         </div>
-        <div class="col-md-4">
-            <select name="isActive" class="form-select">
-                <option value="">-- Tất cả trạng thái --</option>
-                <option value="true" th:selected="${isActive == true}">Đang hoạt động</option>
-                <option value="false" th:selected="${isActive == false}">Đã ẩn</option>
-            </select>
+    </div>
+    
+    <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tên môn học</th>
+                        <th>Mô tả</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${subjects == null or #lists.isEmpty(subjects.content)}">
+                        <td colspan="6" class="text-center py-5 text-muted">Không có môn học nào phù hợp.</td>
+                    </tr>
+                    
+                    <tr th:each="subject : ${subjects.content}">
+                        <td class="ps-4 fw-bold text-primary" th:text="${subject.subjectId}">1</td>
+                        
+                        <td>
+                            <div class="fw-semibold text-dark" th:text="${subject.subjectName}">Lập trình Java</div>
+                        </td>
+                        
+                        <td>
+                            <div class="text-muted"
+                                 style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                 th:text="${subject.description != null and !#strings.isEmpty(subject.description)} ? ${subject.description} : 'Không có mô tả'">
+                                Mô tả
+                            </div>
+                        </td>
+                        
+                        <td>
+                        <span th:if="${subject.isActive}"
+                              class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đang hiển thị
+                        </span>
+                            <span th:unless="${subject.isActive}"
+                                  class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2">
+                            <i class="bi bi-eye-slash-fill me-1"></i> Đang ẩn
+                        </span>
+                        </td>
+                        
+                        <td>
+                            <span th:text="${#temporals.format(subject.createdAt, 'dd/MM/yyyy HH:mm')}">12/04/2026 10:00</span>
+                        </td>
+                        
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-2">
+                                <a th:href="@{/admin/subjects/{id}/edit(id=${subject.subjectId})}"
+                                   class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                    <i class="bi bi-pencil-square me-1"></i> Sửa
+                                </a>
+                                
+                                <form th:action="@{/admin/subjects/{id}/toggle-status(id=${subject.subjectId})}"
+                                      method="post"
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                        <i class="bi bi-arrow-repeat me-1"></i>
+                                        <span th:text="${subject.isActive} ? 'Ẩn' : 'Hiện'">Ẩn</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100 fw-bold" type="submit">Lọc kết quả</button>
+        
+        <div class="card-body pt-3" th:if="${subjects != null and subjects.totalPages > 1}">
+            <div th:replace="~{fragments/pagination :: pagination(${subjects})}"></div>
         </div>
-    </form>
-
-    <div class="table-responsive">
-        <table class="table table-hover border shadow-sm rounded">
-            <thead class="table-light text-secondary small text-uppercase">
-                <tr>
-                    <th>ID</th>
-                    <th>Tên môn</th>
-                    <th>Mô tả</th>
-                    <th>Trạng thái</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="subject : ${subjects.content}">
-                    <td th:text="${subject.subjectId}">ID</td>
-                    <td class="fw-bold text-dark" th:text="${subject.subjectName}">Name</td>
-                    <td class="text-muted small" th:text="${subject.description}">Desc</td>
-                    <td>
-                        <span th:if="${subject.isActive}" class="badge bg-success-subtle text-success border border-success">Hoạt động</span>
-                        <span th:unless="${subject.isActive}" class="badge bg-secondary-subtle text-secondary border border-secondary">Đã ẩn</span>
-                    </td>
-                    <td>
-                        <div class="d-flex gap-1">
-                            <a th:href="@{/admin/subjects/{id}/edit(id=${subject.subjectId})}" class="btn btn-warning btn-sm">Sửa</a>
-                            <form th:action="@{/admin/subjects/{id}/toggle-status(id=${subject.subjectId})}" method="post">
-                                <button type="submit" class="btn btn-sm" th:classappend="${subject.isActive} ? 'btn-outline-danger' : 'btn-outline-success'" th:text="${subject.isActive} ? 'Ẩn' : 'Bật'"></button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                <tr th:if="${subjects.empty}">
-                    <td colspan="5" class="text-center py-4 text-muted">Danh sách đang trống. Hãy tạo môn học mới!</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const backBtn = document.querySelector('a.btn-outline-secondary');
-        if (backBtn && backBtn.textContent.includes('Quay lại')) {
-            if (document.referrer.includes('subject')) {
-                backBtn.href = '/';
-            } else {
-                backBtn.href = '/admin';
-            }
-        }
-    });
-</script>
 </body>
 </html>

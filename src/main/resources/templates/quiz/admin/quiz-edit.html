@@ -1,213 +1,229 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/admin-layout :: layout(pageTitle='Sửa Đề Thi', content=~{::content}, script=~{::script})}">
-
-<head>
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Cập nhật quiz', ~{::content}, ~{})}">
+<head></head>
 <body>
-
-    <div th:fragment="content">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Chỉnh sửa đề thi thủ công</h6>
-                <span class="badge bg-info text-dark">ID: <span th:text="${quizId}"></span></span>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">Cập nhật quiz</h3>
+                    <p class="text-muted mb-0">Chỉnh sửa đề thi thủ công và trạng thái công khai của quiz.</p>
+                </div>
+                
+                <a th:href="@{/admin/quizzes}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
             </div>
-            <div class="card-body">
-                <form id="form-sua-de">
-                    <input type="hidden" id="quizId" th:value="${quizId}">
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Chọn Môn Học:</label>
-                        <select class="form-select" id="subjectId" required disabled>
-                            <option value="">-- Loading --</option>
-                            <option th:each="monHoc : ${subjects}" th:value="${monHoc.subjectId}"
-                                th:text="${monHoc.subjectName}"></option>
-                        </select>
-                        <small class="text-muted">Môn học không thể thay đổi khi đã tạo đề.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Chọn Chủ Đề:</label>
-                        <select class="form-select" id="topicId" required>
-                            <option value="">-- Loading --</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tiêu đề đề thi:</label>
-                        <input type="text" class="form-control" id="title" placeholder="VD: Đề thi giữa kỳ môn Java"
-                            required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Thời gian làm bài (Phút):</label>
-                        <input type="number" class="form-control" id="durationMinutes" placeholder="VD: 45" required
-                            min="1">
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Danh sách câu hỏi (Tick chọn để thay đổi):</label>
-                        <div class="border p-3 rounded" id="question-container"
-                            style="height: 350px; overflow-y: scroll; overflow-x: hidden; background-color: #f8f9fa;">
-                            <div class="text-center py-5">
-                                <span class="spinner-border spinner-border-sm text-primary"></span> Đang tải dữ liệu...
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <form id="editQuizForm">
+                        <input type="hidden" id="quizId" th:value="${quizId}">
+                        
+                        <div class="row g-4">
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Môn học</label>
+                                <select id="subjectId" class="form-select" required>
+                                    <option value="">-- Chọn môn học --</option>
+                                    <option th:each="subject : ${subjects}"
+                                            th:value="${subject.subjectId}"
+                                            th:text="${subject.subjectName}">
+                                        Subject
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Chủ đề</label>
+                                <select id="topicId" class="form-select">
+                                    <option value="">-- Chọn chủ đề (không bắt buộc) --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-8">
+                                <label class="form-label fw-semibold">Tiêu đề quiz</label>
+                                <input type="text" id="title" class="form-control" required>
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <label class="form-label fw-semibold">Thời lượng (phút)</label>
+                                <input type="number" id="durationMinutes" class="form-control" min="1" required>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Danh sách câu hỏi</label>
+                                <div class="border rounded-4 p-3 bg-light-subtle" style="max-height: 420px; overflow-y: auto;">
+                                    <div id="questionList" class="d-flex flex-column gap-2">
+                                        <div class="text-muted">Đang tải dữ liệu quiz...</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a href="/admin/quizzes" class="btn btn-secondary w-25">Quay lại</a>
-                        <button type="submit" id="btn-luu-de" class="btn btn-primary w-75 fw-bold">
-                            <i class="bi bi-save me-1"></i> Lưu Thay Đổi
-                        </button>
-                    </div>
-                </form>
+                        
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> Lưu thay đổi
+                            </button>
+                            
+                            <button type="button" id="togglePublishBtn" class="btn btn-outline-warning px-4">
+                                <i class="bi bi-arrow-repeat me-1"></i> Đổi trạng thái
+                            </button>
+                            
+                            <a th:href="@{/admin/quizzes}" class="btn btn-outline-secondary px-4">Hủy</a>
+                        </div>
+                    </form>
+                    
+                    <div id="formMessage" class="mt-4"></div>
+                </div>
             </div>
         </div>
     </div>
+    
+    <script>
+        const quizId = document.getElementById('quizId').value;
+        const subjectSelect = document.getElementById('subjectId');
+        const topicSelect = document.getElementById('topicId');
+        const questionList = document.getElementById('questionList');
+        const editForm = document.getElementById('editQuizForm');
+        const messageBox = document.getElementById('formMessage');
+        const togglePublishBtn = document.getElementById('togglePublishBtn');
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
 
-    <script th:fragment="script">
-        document.addEventListener('DOMContentLoaded', async function () {
-            const quizId = document.getElementById('quizId').value;
-            const subjectSelect = document.getElementById('subjectId');
-            const topicSelect = document.getElementById('topicId');
-            const questionContainer = document.getElementById('question-container');
-            const btnSubmit = document.getElementById('btn-luu-de');
+        function authHeaders(json = true) {
+            return {
+                ...(json ? {'Content-Type': 'application/json'} : {}),
+                ...(csrfHeader && csrfToken ? {[csrfHeader]: csrfToken} : {})
+            };
+        }
 
-            let currentQuizData = null;
+        async function loadTopics(subjectId, selectedTopicId = '') {
+            topicSelect.innerHTML = '<option value="">-- Chọn chủ đề (không bắt buộc) --</option>';
+            if (!subjectId) return;
+
+            const response = await fetch(`/api/quiz-data/topics?subjectId=${subjectId}`);
+            const topics = await response.json();
+
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic.topicId;
+                option.textContent = topic.topicName;
+                if (String(topic.topicId) === String(selectedTopicId)) {
+                    option.selected = true;
+                }
+                topicSelect.appendChild(option);
+            });
+        }
+
+        async function loadQuestions(topicId, selectedQuestionIds = []) {
+            if (!topicId) {
+                questionList.innerHTML = '<div class="text-muted">Hãy chọn chủ đề để tải câu hỏi.</div>';
+                return;
+            }
+
+            const response = await fetch(`/api/quiz-data/questions?topicId=${topicId}`);
+            const questions = await response.json();
+
+            if (!questions.length) {
+                questionList.innerHTML = '<div class="text-muted">Không có câu hỏi nào trong chủ đề này.</div>';
+                return;
+            }
+
+            questionList.innerHTML = '';
+            questions.forEach(question => {
+                const checked = selectedQuestionIds.includes(question.questionId) ? 'checked' : '';
+                const item = document.createElement('label');
+                item.className = 'form-check border rounded-3 p-3 bg-white';
+                item.innerHTML = `
+                    <input class="form-check-input me-2" type="checkbox" value="${question.questionId}" name="questionIds" ${checked}>
+                    <span class="form-check-label">${question.content}</span>
+                `;
+                questionList.appendChild(item);
+            });
+        }
+
+        async function initEditData() {
+            try {
+                const response = await fetch(`/api/quizzes/${quizId}/edit-data`);
+                const data = await response.json();
+
+                document.getElementById('title').value = data.title || '';
+                document.getElementById('durationMinutes').value = data.durationMinutes || 45;
+                subjectSelect.value = data.subjectId || '';
+                await loadTopics(data.subjectId, data.topicId);
+                await loadQuestions(data.topicId, data.questionIds || []);
+            } catch (e) {
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không tải được dữ liệu quiz.</div>`;
+            }
+        }
+
+        subjectSelect.addEventListener('change', async () => {
+            await loadTopics(subjectSelect.value, '');
+            questionList.innerHTML = '<div class="text-muted">Hãy chọn chủ đề để tải câu hỏi.</div>';
+        });
+
+        topicSelect.addEventListener('change', async () => {
+            await loadQuestions(topicSelect.value, []);
+        });
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const selectedQuestionIds = Array.from(document.querySelectorAll('input[name="questionIds"]:checked'))
+                .map(input => Number(input.value));
+
+            const payload = {
+                subjectId: subjectSelect.value ? Number(subjectSelect.value) : null,
+                topicId: topicSelect.value ? Number(topicSelect.value) : null,
+                title: document.getElementById('title').value,
+                durationMinutes: Number(document.getElementById('durationMinutes').value),
+                questionIds: selectedQuestionIds
+            };
 
             try {
-                const res = await fetch(`/api/quizzes/${quizId}/edit-data`);
-                currentQuizData = await res.json();
-
-                document.getElementById('title').value = currentQuizData.title;
-                document.getElementById('durationMinutes').value = currentQuizData.durationMinutes;
-
-                subjectSelect.value = currentQuizData.subjectId;
-
-                await loadTopics(currentQuizData.subjectId, currentQuizData.topicId);
-
-                if (currentQuizData.topicId) {
-                    await loadQuestions(currentQuizData.topicId, currentQuizData.questionIds);
-                }
-
-            } catch (err) {
-                console.error("Error loading edit data:", err);
-                alert("Không thể tải thông tin đề thi.");
-            }
-
-            topicSelect.addEventListener('change', function () {
-                loadQuestions(this.value, []);
-            });
-
-            async function loadTopics(subjectId, selectedTopicId) {
-                if (!subjectId) return;
-                try {
-                    const res = await fetch(`/api/quiz-data/topics?subjectId=${subjectId}`);
-                    const topics = await res.json();
-                    topicSelect.innerHTML = '<option value="">-- Chọn Chủ Đề --</option>';
-                    topics.forEach(t => {
-                        const selected = t.topicId == selectedTopicId ? 'selected' : '';
-                        topicSelect.innerHTML += `<option value="${t.topicId}" ${selected}>${t.topicName}</option>`;
-                    });
-                } catch (err) {
-                    console.error("Error loading topics:", err);
-                }
-            }
-
-            async function loadQuestions(topicId, checkedIds) {
-                if (!topicId) {
-                    questionContainer.innerHTML = '<div class="text-warning text-center py-3">Chọn chủ đề để xem câu hỏi.</div>';
-                    return;
-                }
-
-                questionContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Đang tải câu hỏi...</div>';
-
-                try {
-                    const res = await fetch(`/api/quiz-data/questions?topicId=${topicId}`);
-                    const questions = await res.json();
-                    questionContainer.innerHTML = '';
-
-                    if (questions.length === 0) {
-                        questionContainer.innerHTML = '<div class="text-danger fw-bold text-center py-3">Chủ đề này không có câu hỏi!</div>';
-                        return;
-                    }
-
-                    questions.forEach(q => {
-                        const isChecked = checkedIds.includes(q.questionId) ? 'checked' : '';
-                        const qCheckId = `q-check-${q.questionId}`;
-                        questionContainer.innerHTML += `
-                            <div class="form-check border-bottom py-2">
-                                <input class="form-check-input question-checkbox" type="checkbox" id="${qCheckId}" value="${q.questionId}" ${isChecked}>
-                                <label class="form-check-label w-100" for="${qCheckId}" style="cursor: pointer;">
-                                    <strong class="text-primary">Câu ${q.questionId}:</strong>
-                                    <span>${q.content}</span>
-                                </label>
-                            </div>
-                        `;
-                    });
-                } catch (err) {
-                    console.error("Error loading questions:", err);
-                    questionContainer.innerHTML = '<div class="text-danger text-center py-3">Lỗi tải dữ liệu.</div>';
-                }
-            }
-
-            btnSubmit.addEventListener('click', function (event) {
-                event.preventDefault();
-
-                const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
-
-                let title = document.getElementById('title').value;
-                let durationMinutes = parseInt(document.getElementById('durationMinutes').value);
-                let topicId = parseInt(topicSelect.value);
-
-                let checkedBoxes = document.querySelectorAll('.question-checkbox:checked');
-                let questionIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-
-                if (!title || !durationMinutes || !topicId || questionIds.length === 0) {
-                    alert("Vui lòng điền đủ thông tin và chọn ít nhất 1 câu hỏi!");
-                    return;
-                }
-
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';
-
-                fetch(`/api/quizzes/${quizId}/manual`, {
+                const response = await fetch(`/api/quizzes/${quizId}/manual`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({
-                        "subjectId": parseInt(subjectSelect.value),
-                        "topicId": topicId,
-                        "title": title.trim(),
-                        "durationMinutes": durationMinutes,
-                        "questionIds": questionIds
-                    })
-                })
-                    .then(res => {
-                        if (res.ok) {
-                            alert("Cập nhật đề thi thành công!");
-                            window.location.href = "/admin/quizzes";
-                        } else {
-                            alert("Sửa đề thi thất bại!");
-                            btnSubmit.disabled = false;
-                            btnSubmit.innerHTML = '<i class="bi bi-save me-1"></i> Lưu Thay Đổi';
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Error saving:", err);
-                        alert("Lỗi kết nối mạng.");
-                        btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = '<i class="bi bi-save me-1"></i> Lưu Thay Đổi';
-                    });
-            });
+                    headers: authHeaders(true),
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageBox.innerHTML = `<div class="alert alert-danger mb-0">${data.message || 'Cập nhật thất bại.'}</div>`;
+                    return;
+                }
+
+                messageBox.innerHTML = `<div class="alert alert-success mb-0">${data.message || 'Cập nhật thành công.'}</div>`;
+            } catch (error) {
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không thể cập nhật quiz.</div>`;
+            }
         });
+
+        togglePublishBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`/api/quizzes/${quizId}/toggle-status`, {
+                    method: 'PATCH',
+                    headers: authHeaders(false)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không thể đổi trạng thái quiz.</div>`;
+                    return;
+                }
+
+                messageBox.innerHTML = `<div class="alert alert-success mb-0">${data.message}</div>`;
+            } catch (e) {
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không thể đổi trạng thái quiz.</div>`;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', initEditData);
     </script>
-
+</div>
 </body>
-
 </html>

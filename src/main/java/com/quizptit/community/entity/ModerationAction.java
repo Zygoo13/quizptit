@@ -1,4 +1,6 @@
 package com.quizptit.community.entity;
 
-public class ModerationAction {
+public enum ModerationAction {
+    HIDE,
+    RESTORE
 }

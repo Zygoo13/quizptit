@@ -5,13 +5,16 @@ import com.quizptit.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "comment")
-@Getter @Setter
+@Getter
+@Setter
 @Builder
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class Comment extends BaseEntity {
 
     @Id
@@ -22,6 +25,7 @@ public class Comment extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Builder.Default
     @Column(nullable = false, length = 20)
     private String status = "VISIBLE";
 
@@ -35,11 +39,10 @@ public class Comment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    private Comment parentComment; // Nếu null là cmt cấp 1, nếu có giá trị là cmt cấp 2
+    private Comment parentComment;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("createdAt ASC") // Phản hồi hiện theo thứ tự thời gian
-    private List<Comment> replies;
-
-
+    @OrderBy("createdAt ASC")
+    private List<Comment> replies = new ArrayList<>();
 }

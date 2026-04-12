@@ -1,149 +1,271 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/student-layout :: layout(pageTitle='Đang Làm Bài', content=~{::content}, script=~{::script})}">
-
-<head>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Làm bài', ~{::content})}">
+<head></head>
 <body>
+<div th:fragment="content">
+    <style>
+        .question-nav-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            font-weight: 700;
+        }
 
-    <div th:fragment="content" class="container mt-4">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card shadow-sm border-0 mb-4" th:each="aq, stt : ${attempt.attemptQuestions}">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <span th:text="'Câu ' + ${stt.count} + ': '">Câu 1:</span>
-                            <span class="text-dark" th:text="${aq.question.content}">Nội dung câu hỏi</span>
-                        </h6>
+        .question-nav-btn.answered {
+            background-color: #198754;
+            color: #fff;
+            border-color: #198754;
+        }
 
-                        <div class="options-container ps-3">
-                            <div class="form-check mb-2" th:each="opt : ${aq.question.options}">
-                                <input class="form-check-input answer-radio" type="radio"
-                                    th:name="'question_' + ${aq.attemptQuestionId}" th:id="'opt_' + ${opt.optionId}"
-                                    th:value="${opt.optionId}" th:data-aq-id="${aq.attemptQuestionId}"
-                                    th:checked="${answerMap != null && answerMap.get(aq.attemptQuestionId) != null && answerMap.get(aq.attemptQuestionId).selectedOption != null && answerMap.get(aq.attemptQuestionId).selectedOption.optionId == opt.optionId}">
-                                <label class="form-check-label w-100" th:for="'opt_' + ${opt.optionId}"
-                                    th:text="${opt.content}">
-                                    Đáp án A
+        .question-block {
+            scroll-margin-top: 110px;
+        }
+
+        .sticky-submit-box {
+            position: sticky;
+            top: 90px;
+        }
+
+        .option-card {
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            padding: 14px 16px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .option-card:hover {
+            border-color: #0d6efd;
+            background: #f8fbff;
+        }
+
+        .option-card input {
+            margin-top: 0.2rem;
+        }
+
+        .timer-box {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+    </style>
+    
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" th:text="${attempt.quiz.title}">Làm bài</h3>
+            <p class="text-muted mb-0">
+                Hoàn thành toàn bộ câu hỏi trước khi hết thời gian.
+            </p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2">
+                <i class="bi bi-clock me-1"></i>
+                Còn lại:
+                <span id="countdown"
+                      class="timer-box"
+                      th:text="${remainingSeconds}">0</span>
+            </span>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-xl-9">
+            <form id="quizForm" onsubmit="return false;">
+                <div class="d-flex flex-column gap-4">
+                    <div th:each="attemptQuestion, stat : ${attempt.attemptQuestions}"
+                         th:id="'question-' + ${attemptQuestion.attemptQuestionId}"
+                         class="card border-0 shadow-sm question-block">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-2"
+                                          th:text="'Câu ' + ${stat.index + 1}">
+                                        Câu 1
+                                    </span>
+                                    <h5 class="fw-bold mb-0"
+                                        th:text="${attemptQuestion.question.content}">
+                                        Nội dung câu hỏi
+                                    </h5>
+                                </div>
+                                
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
+                                      th:text="${attemptQuestion.scoreWeight}">
+                                    1.0
+                                </span>
+                            </div>
+                            
+                            <div class="d-flex flex-column gap-3 mt-4"
+                                 th:if="${attemptQuestion.question.options != null}">
+                                <label th:each="option : ${attemptQuestion.question.options}"
+                                       class="option-card d-flex align-items-start gap-3">
+                                    <input class="form-check-input mt-1"
+                                           type="radio"
+                                           th:name="'question-' + ${attemptQuestion.attemptQuestionId}"
+                                           th:value="${option.optionId}"
+                                           th:checked="${answerMap != null and answerMap.containsKey(attemptQuestion.attemptQuestionId) and answerMap.get(attemptQuestion.attemptQuestionId).selectedOption != null and answerMap.get(attemptQuestion.attemptQuestionId).selectedOption.optionId == option.optionId}"
+                                           th:attr="data-attempt-question-id=${attemptQuestion.attemptQuestionId}"
+                                           onchange="saveAnswer(this)">
+                                    
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold mb-1"
+                                             th:text="${option.optionLabel} + '.'">
+                                            A.
+                                        </div>
+                                        <div th:text="${option.content}">Nội dung đáp án</div>
+                                    </div>
                                 </label>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="card shadow-sm border-0 sticky-top" style="top: 80px; z-index: 1000;">
-                    <div class="card-body text-center">
-                        <p class="text-muted fw-bold mb-1 small">THỜI GIAN CÒN LẠI</p>
-                        <h1 class="fw-bold text-danger mb-3 display-6" id="countdown-timer">00:00</h1>
-                        <hr>
-                        <button id="btn-submit" class="btn btn-primary w-100 fw-bold btn-lg shadow-sm"
-                            th:data-attempt-id="${attempt.attemptId}">
-                            <i class="bi bi-send-check me-2"></i> NỘP BÀI THI
+            </form>
+        </div>
+        
+        <div class="col-xl-3">
+            <div class="sticky-submit-box d-flex flex-column gap-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Điều hướng câu hỏi</h6>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <a th:each="attemptQuestion, stat : ${attempt.attemptQuestions}"
+                               th:href="'#question-' + ${attemptQuestion.attemptQuestionId}"
+                               class="btn btn-outline-secondary question-nav-btn"
+                               th:classappend="${answerMap != null and answerMap.containsKey(attemptQuestion.attemptQuestionId) and answerMap.get(attemptQuestion.attemptQuestionId).selectedOption != null} ? 'answered' : ''"
+                               th:text="${stat.index + 1}">
+                                1
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Nộp bài</h6>
+                        <p class="text-muted small">
+                            Khi nộp bài, hệ thống sẽ tự động chấm điểm và cập nhật tiến độ học tập.
+                        </p>
+                        
+                        <button type="button"
+                                class="btn btn-danger w-100 rounded-pill"
+                                th:attr="data-attempt-id=${attempt.attemptId}"
+                                onclick="submitAttempt(this)">
+                            <i class="bi bi-send-check me-1"></i> Nộp bài
                         </button>
+                        
+                        <div id="submitMessage" class="mt-3"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script th:inline="javascript">
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        let remainingSeconds = Number([[${remainingSeconds}]]);
+        const countdownEl = document.getElementById('countdown');
 
-    <script th:fragment="script" th:inline="javascript">
-        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
 
-        function performSubmit() {
-            let submitBtn = document.getElementById('btn-submit');
-            let attemptId = submitBtn.getAttribute('data-attempt-id');
-
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang nộp bài...';
-            submitBtn.disabled = true;
-
-            fetch(`/api/attempts/submit/${attemptId}`, {
-                method: 'POST',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
-            })
-                .then(async res => {
-                    if (!res.ok) {
-                        const errorData = await res.json().catch(() => ({ message: "Lỗi hệ thống khi nộp bài" }));
-                        throw new Error(errorData.message || "Lỗi khi nộp bài");
-                    }
-                    return res.json();
-                })
-                .then(result => {
-                    if (result && result.attemptId) {
-                        let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
-                        window.location.replace(resultUrl);
-                    } else {
-                        throw new Error("Không tìm thấy thông tin lượt làm bài sau khi nộp");
-                    }
-                })
-                .catch(err => {
-                    alert(err.message || "Lỗi khi nộp bài!");
-                    submitBtn.innerHTML = '<i class="bi bi-send-check me-2"></i> NỘP BÀI THI';
-                    submitBtn.disabled = false;
-                });
+            if (h > 0) {
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
-        document.querySelectorAll('.answer-radio').forEach(radio => {
-            radio.addEventListener('change', function () {
-                let attemptQuestionId = this.getAttribute('data-aq-id');
-                let optionId = this.value;
+        if (countdownEl) {
+            countdownEl.textContent = formatTime(remainingSeconds);
+        }
 
-                fetch('/api/attempts/save-answer', {
+        const timer = setInterval(() => {
+            remainingSeconds = Math.max(remainingSeconds - 1, 0);
+
+            if (countdownEl) {
+                countdownEl.textContent = formatTime(remainingSeconds);
+            }
+
+            if (remainingSeconds <= 0) {
+                clearInterval(timer);
+                const submitBtn = document.querySelector('[data-attempt-id]');
+                if (submitBtn) {
+                    submitAttempt(submitBtn, true);
+                }
+            }
+        }, 1000);
+
+        async function saveAnswer(input) {
+            const attemptQuestionId = input.getAttribute('data-attempt-question-id');
+            const optionId = input.value;
+
+            try {
+                const response = await fetch('/api/attempts/save-answer', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
+                        ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
                     },
                     body: JSON.stringify({
-                        "attemptQuestionId": parseInt(attemptQuestionId),
-                        "optionId": parseInt(optionId)
+                        attemptQuestionId: Number(attemptQuestionId),
+                        optionId: Number(optionId)
                     })
-                }).then(res => {
-                    if (!res.ok) console.error("Lỗi không lưu được nháp câu " + attemptQuestionId);
                 });
-            });
-        });
 
-        document.getElementById('btn-submit').addEventListener('click', function (e) {
-            e.preventDefault();
-            if (confirm("Bạn có chắc chắn muốn nộp bài không?")) {
-                performSubmit();
+                if (!response.ok) {
+                    console.error('Save answer failed');
+                    return;
+                }
+
+                updateQuestionNavState(attemptQuestionId, true);
+            } catch (e) {
+                console.error(e);
             }
-        });
-
-        let totalTimeInSeconds = /*[[${remainingSeconds != null ? remainingSeconds : (attempt.quiz.durationMinutes * 60)}]]*/ 60;
-        const timerElement = document.getElementById("countdown-timer");
-
-        function updateTimer() {
-            if (totalTimeInSeconds <= 0) {
-                clearInterval(timerInterval);
-                timerElement.innerText = "00:00";
-                performSubmit();
-                return;
-            }
-
-            let minutes = Math.floor(totalTimeInSeconds / 60);
-            let seconds = totalTimeInSeconds % 60;
-            timerElement.innerText = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
-
-            if (totalTimeInSeconds <= 60) {
-                timerElement.classList.add("animate__animated", "animate__flash", "animate__infinite");
-            }
-            totalTimeInSeconds--;
         }
 
-        let timerInterval = setInterval(updateTimer, 1000);
-        updateTimer();
+        function updateQuestionNavState(attemptQuestionId, answered) {
+            const anchor = document.querySelector(`a[href="#question-${attemptQuestionId}"]`);
+            if (anchor && answered) {
+                anchor.classList.add('answered');
+            }
+        }
+
+        async function submitAttempt(button, auto = false) {
+            const attemptId = button.getAttribute('data-attempt-id');
+            const messageBox = document.getElementById('submitMessage');
+
+            if (!auto) {
+                const confirmed = confirm('Bạn chắc chắn muốn nộp bài?');
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/api/attempts/submit/${attemptId}`, {
+                    method: 'POST',
+                    headers: {
+                        ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                    }
+                });
+
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok) {
+                    messageBox.innerHTML = `<div class="alert alert-danger mb-0">${data?.message || 'Không thể nộp bài.'}</div>`;
+                    return;
+                }
+
+                window.location.href = `/quizzes/attempts/${attemptId}/result`;
+            } catch (e) {
+                messageBox.innerHTML = `<div class="alert alert-danger mb-0">Không thể nộp bài.</div>`;
+            }
+        }
     </script>
-
+</div>
 </body>
-
 </html>

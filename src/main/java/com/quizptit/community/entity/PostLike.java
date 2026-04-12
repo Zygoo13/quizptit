@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class PostLike {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

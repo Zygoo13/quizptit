@@ -6,7 +6,6 @@ import com.quizptit.attempt.entity.enums.AttemptStatus;
 import com.quizptit.common.util.CurrentUserUtils;
 import com.quizptit.content.entity.Subject;
 import com.quizptit.quiz.entity.Quiz;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,9 +30,7 @@ public class StudentQuizWebController {
     @GetMapping("/attempts/{attemptId}/result")
     public String showQuizResult(@PathVariable Long attemptId, Model model) {
         Long userId = CurrentUserUtils.getCurrentUserId();
-
         Attempt attempt = attemptService.getAttemptResultDetail(attemptId, userId);
-
         model.addAttribute("attempt", attempt);
         return "quiz/student/quiz-result";
     }
@@ -41,7 +38,6 @@ public class StudentQuizWebController {
     @GetMapping("/attempts/{attemptId}/review")
     public String reviewQuizAttempt(@PathVariable Long attemptId, Model model) {
         Long userId = CurrentUserUtils.getCurrentUserId();
-
         Attempt attempt = attemptService.getAttemptResultDetail(attemptId, userId);
         Map<Long, AttemptAnswer> answerMap = attemptService.getAnswersMapForAttempt(attemptId);
 
@@ -51,7 +47,15 @@ public class StudentQuizWebController {
     }
 
     @GetMapping("/{quizId}")
-    public String showQuizDetail(@PathVariable Long quizId, Model model, RedirectAttributes redirectAttributes) {
+    public String showQuizDetail(@PathVariable Long quizId,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
+
+        if (!CurrentUserUtils.isLoggedIn()) {
+            redirectAttributes.addFlashAttribute("warningMessage", "Vui lòng đăng nhập để xem và làm bài quiz.");
+            return "redirect:/auth/login";
+        }
+
         Quiz quiz = quizService.getQuizDetail(quizId);
 
         if (!quiz.getIsPublished() && !CurrentUserUtils.isAdmin()) {
@@ -73,6 +77,7 @@ public class StudentQuizWebController {
     @GetMapping("/attempts/{attemptId}/take")
     public String takeQuiz(@PathVariable Long attemptId, Model model) {
         Attempt attempt = attemptService.getAttemptById(attemptId);
+
         if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
             return "redirect:/quizzes/attempts/" + attemptId + "/result";
         }
@@ -97,9 +102,11 @@ public class StudentQuizWebController {
 
         List<Quiz> availableQuizzes = quizService.getAvailableQuizzes(subjectId);
         List<Subject> subjects = subjectService.getActiveSubjects();
+
         model.addAttribute("quizzes", availableQuizzes);
         model.addAttribute("subjects", subjects);
         model.addAttribute("selectedSubjectId", subjectId);
+
         return "quiz/student/quiz-list";
     }
 }

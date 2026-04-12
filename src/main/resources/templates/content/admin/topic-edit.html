@@ -1,56 +1,69 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Chỉnh sửa Chủ đề</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Cập nhật chủ đề', ~{::content}, ~{})}">
+<head></head>
 <body>
-<div class="container mt-5">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/admin/topics">Chủ đề</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
-        </ol>
-    </nav>
-    <h2 class="mb-4">Chỉnh sửa Chủ đề</h2>
-    
-    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-
-    <div class="card shadow-sm border-0 border-top border-4 border-warning">
-        <div class="card-body py-4">
-            <form th:action="@{/admin/topics/{id}/edit(id=${topic.topicId})}" th:object="${topic}" method="post">
-                <input type="hidden" th:field="*{topicId}">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Dưới môn học (*)</label>
-                    <select class="form-select shadow-sm" th:field="*{subject.subjectId}" required>
-                        <option th:each="s : ${subjects}" th:value="${s.subjectId}" th:text="${s.subjectName}"></option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Tên Chủ đề (*)</label>
-                    <input type="text" class="form-control form-control-lg" th:field="*{topicName}" required maxlength="150">
-                </div>
-                <div class="mb-3 row">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Thứ tự bài học (*)</label>
-                        <input type="number" class="form-control" th:field="*{orderNo}" required min="1">
-                    </div>
-                </div>
-                <div class="mb-3 mt-3">
-                    <label class="form-label fw-bold">Mô tả bài học</label>
-                    <textarea class="form-control" th:field="*{description}" rows="4" maxlength="500"></textarea>
-                </div>
-                <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" th:field="*{isActive}">
-                    <label class="form-check-label text-secondary">Trạng thái công khai</label>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">Cập nhật chủ đề</h3>
+                    <p class="text-muted mb-0">Chỉnh sửa thông tin, thứ tự và trạng thái hiển thị của chủ đề.</p>
                 </div>
                 
-                <div class="pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-warning px-4 fw-bold">Cập nhật chủ đề</button>
-                    <a href="/admin/topics" class="btn btn-outline-secondary px-4">Hủy</a>
+                <a th:href="@{/admin/topics}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <form th:action="@{/admin/topics/{id}/edit(id=${topic.topicId})}"
+                          th:object="${topic}"
+                          method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Môn học</label>
+                            <select th:field="*{subject.subjectId}" class="form-select" required>
+                                <option th:each="subject : ${subjects}"
+                                        th:value="${subject.subjectId}"
+                                        th:text="${subject.subjectName}">
+                                    Subject
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên chủ đề</label>
+                            <input type="text" th:field="*{topicName}" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea th:field="*{description}" class="form-control" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Thứ tự</label>
+                            <input type="number" th:field="*{orderNo}" class="form-control" min="1" required>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" th:field="*{isActive}" id="isActive">
+                            <label class="form-check-label fw-semibold" for="isActive">
+                                Hiển thị chủ đề
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> Lưu thay đổi
+                            </button>
+                            <a th:href="@{/admin/topics}" class="btn btn-outline-secondary px-4">Hủy</a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>

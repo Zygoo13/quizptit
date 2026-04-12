@@ -1,27 +1,87 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Danh sách Chủ đề (Topics)')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Danh sách chủ đề', ~{::content})}">
+<head></head>
 <body>
-<div th:replace="~{fragments/navbar :: navbar}"></div>
-<div class="container mt-5">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/subjects">Môn học</a></li>
-            <li class="breadcrumb-item active" aria-current="page" th:text="${subject.subjectName}">Tên môn học</li>
-        </ol>
-    </nav>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Các chủ đề thuộc: <span class="text-primary fw-bold" th:text="${subject.subjectName}">Môn học</span></h2>
-        <a th:href="@{/subjects/{id}(id=${subject.subjectId})}" class="btn btn-outline-secondary">&lt; Quay lại</a>
-    </div>
-    <div class="list-group shadow-sm border-0">
-        <a th:href="@{/topics/{id}(id=${topic.topicId})}" class="list-group-item list-group-item-action py-3 mb-2 border rounded" th:each="topic : ${topics}">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1 text-dark fw-bold" th:text="${topic.orderNo + '. ' + topic.topicName}">Topic Name</h5>
-            </div>
-            <p class="mb-1 text-muted small" th:text="${topic.description}">Mô tả ngắn</p>
+<div th:fragment="content">
+    <style>
+        .topic-card {
+            border: 0;
+            border-radius: 18px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+    </style>
+    
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Danh sách chủ đề</h3>
+            <p class="text-muted mb-0">
+                Các chủ đề thuộc môn:
+                <strong th:text="${subject.subjectName}">Môn học</strong>
+            </p>
+        </div>
+        
+        <a th:href="@{/subjects/{id}(id=${subject.subjectId})}"
+           class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại môn học
         </a>
-        <div th:if="${topics.empty}" class="text-center py-4 text-muted">Chưa có bài học nào được tải lên cho môn học này.</div>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(topics)}" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            Chưa có chủ đề nào trong môn học này.
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-4" th:each="topic : ${topics}">
+            <div class="card topic-card h-100">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2">
+                            Chủ đề
+                        </span>
+                        
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
+                              th:text="'Thứ tự ' + ${topic.orderNo}">
+                            Thứ tự 1
+                        </span>
+                    </div>
+                    
+                    <h5 class="fw-bold mb-2" th:text="${topic.topicName}">Tên chủ đề</h5>
+                    
+                    <div class="text-muted mb-4"
+                         th:text="${topic.description != null and !#strings.isEmpty(topic.description)} ? ${topic.description} : 'Chưa có mô tả cho chủ đề này.'">
+                        Mô tả chủ đề
+                    </div>
+                    
+                    <div class="small text-muted mb-4">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        <span th:text="${topic.createdAt != null ? #temporals.format(topic.createdAt, 'dd/MM/yyyy') : '---'}">
+                            12/04/2026
+                        </span>
+                    </div>
+                    
+                    <div class="mt-auto d-flex gap-2">
+                        <a th:href="@{/topics/{id}(id=${topic.topicId})}"
+                           class="btn btn-outline-primary flex-fill rounded-pill">
+                            <i class="bi bi-eye me-1"></i> Chi tiết
+                        </a>
+                        
+                        <a th:href="@{/community/questions(topicId=${topic.topicId})}"
+                           class="btn btn-primary flex-fill rounded-pill">
+                            <i class="bi bi-chat-dots me-1"></i> Thảo luận
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 </body>

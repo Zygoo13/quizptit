@@ -1,12 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('400 - Bad Request')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/public-layout :: layout('Bad Request', ~{::content})}">
+<head></head>
 <body>
-<div class="container py-5">
-    <div class="app-card">
-        <h1>400 - Bad Request</h1>
-        <p th:text="${errorMessage != null ? errorMessage : 'Bad request.'}">Bad request.</p>
-        <a class="btn btn-primary btn-sm" th:href="@{/}">Back Home</a>
+<div th:fragment="content" class="text-center">
+    <div class="display-1 fw-bold text-warning mb-3">400</div>
+    <h3 class="fw-bold mb-3" th:text="${errorTitle != null ? errorTitle : 'Bad Request'}">Bad Request</h3>
+    <p class="text-muted mb-3"
+       th:text="${errorMessage != null ? errorMessage : 'Yêu cầu gửi lên không hợp lệ hoặc thiếu dữ liệu cần thiết.'}">
+        Yêu cầu không hợp lệ.
+    </p>
+    <p class="small text-muted mb-4" th:if="${path != null}">
+        Path:
+        <code th:text="${path}">/path</code>
+    </p>
+    
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a th:href="@{/}" class="btn btn-primary rounded-pill px-4">Trang chủ</a>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4">Quay lại</a>
     </div>
 </div>
 </body>

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
+
     Optional<PostLike> findByUserAndPost(User user, QuestionPost post);
 
     List<PostLike> findByPost(QuestionPost post);

@@ -1,152 +1,216 @@
-<!--<!DOCTYPE html>-->
-<!--<html xmlns:th="http://www.thymeleaf.org">-->
-<!--<head th:replace="~{fragments/head :: head('QuizPTIT - Admin Dashboard')}"></head>-->
-<!--<body>-->
-
-<!--<div th:replace="~{fragments/navbar :: navbar}"></div>-->
-
-<!--<div class="container">-->
-<!--    <div th:replace="~{fragments/flash-message :: flash-message}"></div>-->
-<!--    -->
-<!--    <div class="row">-->
-<!--        <div class="col-lg-3">-->
-<!--            <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>-->
-<!--        </div>-->
-<!--        -->
-<!--        <div class="col-lg-9">-->
-<!--            <div class="app-card">-->
-<!--                <h1 class="page-title">Admin Dashboard</h1>-->
-<!--                <p class="app-muted mb-1">Trang điều hướng tạm thời cho khu vực quản trị.</p>-->
-<!--                <p class="mb-0">-->
-<!--                    Admin:-->
-<!--                    <strong th:text="${currentUserEmail != null ? currentUserEmail : 'admin'}">admin@example.com</strong>-->
-<!--                </p>-->
-<!--            </div>-->
-<!--            -->
-<!--            <div class="app-card">-->
-<!--                <div class="app-section-title">Quản lý nền hệ thống</div>-->
-<!--                <div class="link-group d-flex flex-wrap">-->
-<!--                    <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/users}">Users</a>-->
-<!--                    <a class="btn btn-outline-primary btn-sm" th:href="@{/profile}">My Profile</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            -->
-<!--            <div class="app-card">-->
-<!--                <div class="app-section-title">Quản lý học liệu</div>-->
-<!--                <div class="link-group d-flex flex-wrap">-->
-<!--                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/subjects}">Subjects</a>-->
-<!--                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/topics}">Topics</a>-->
-<!--                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/questions}">Questions</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            -->
-<!--            <div class="app-card">-->
-<!--                <div class="app-section-title">Quản lý quiz</div>-->
-<!--                <div class="link-group d-flex flex-wrap">-->
-<!--                    <a class="btn btn-outline-success btn-sm" th:href="@{/admin/quizzes}">Quizzes</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            -->
-<!--            <div class="app-card">-->
-<!--                <div class="app-section-title">Theo dõi học tập</div>-->
-<!--                <div class="link-group d-flex flex-wrap">-->
-<!--                    <a class="btn btn-outline-info btn-sm" th:href="@{/admin/progress}">Progress</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            -->
-<!--            <div class="app-card">-->
-<!--                <div class="app-section-title">Quản lý cộng đồng</div>-->
-<!--                <div class="link-group d-flex flex-wrap">-->
-<!--                    <a class="btn btn-outline-dark btn-sm" th:href="@{/admin/community/questions}">Community Questions</a>-->
-<!--                    <a class="btn btn-outline-dark btn-sm" th:href="@{/admin/community/comments}">Community Comments</a>-->
-<!--                    <a class="btn btn-outline-dark btn-sm" th:href="@{/admin/community/moderation-records}">Moderation Records</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
-
-<!--<div th:replace="~{fragments/footer :: footer}"></div>-->
-
-<!--<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>-->
-<!--</body>-->
-<!--</html>-->
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/admin-layout :: layout('Bảng điều khiển', ~{::content}, ~{})}">
-
+      th:replace="~{layout/admin-layout :: layout('Bảng điều khiển', ~{::content}, ~{})}">
 <head></head>
-
 <body>
-    <div th:fragment="content">
-        <!-- Stats Row -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3 text-center">
-                    <h6 class="text-muted small text-uppercase fw-bold">Tổng người dùng</h6>
-                    <h2 class="fw-bold text-primary">1,240</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3 text-center">
-                    <h6 class="text-muted small text-uppercase fw-bold">Bài thi đang mở</h6>
-                    <h2 class="fw-bold text-success">15</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3 text-center">
-                    <h6 class="text-muted small text-uppercase fw-bold">Câu hỏi hệ thống</h6>
-                    <h2 class="fw-bold text-warning">4,500</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3 text-center">
-                    <h6 class="text-muted small text-uppercase fw-bold">Lượt làm bài hôm nay</h6>
-                    <h2 class="fw-bold text-danger">328</h2>
+<div th:fragment="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Bảng điều khiển quản trị</h3>
+            <p class="text-muted mb-0">
+                Tổng quan nhanh các khu vực quản lý chính của hệ thống QuizPTIT.
+            </p>
+        </div>
+        
+        <span class="badge bg-light text-dark border px-3 py-2">
+            Admin:
+            <strong th:text="${currentUserEmail != null ? currentUserEmail : 'admin@quizptit.local'}">admin@quizptit.local</strong>
+        </span>
+    </div>
+    
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="display-6 text-primary mb-2">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Người dùng</div>
+                    <div class="fw-bold fs-4">User</div>
+                    <div class="small text-muted mt-2">Quản lý tài khoản và phân quyền</div>
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm p-4">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2">Hoạt động mới nhất</h5>
-                    <div class="text-center py-5">
-                        <i class="bi bi-activity text-muted opacity-25" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">Dữ liệu biểu đồ hoạt động sẽ hiển thị tại đây.</p>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="display-6 text-success mb-2">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Học liệu</div>
+                    <div class="fw-bold fs-4">Content</div>
+                    <div class="small text-muted mt-2">Môn học, chủ đề, câu hỏi</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="display-6 text-warning mb-2">
+                        <i class="bi bi-journal-check"></i>
+                    </div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Bài luyện</div>
+                    <div class="fw-bold fs-4">Quiz</div>
+                    <div class="small text-muted mt-2">Tạo đề và quản lý publish</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="display-6 text-danger mb-2">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Cộng đồng</div>
+                    <div class="fw-bold fs-4">Moderation</div>
+                    <div class="small text-muted mt-2">Kiểm duyệt nội dung cộng đồng</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Điều hướng quản trị</h5>
+                        <span class="badge bg-light text-dark border">Quick access</span>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/users}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100 hover-card">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-primary">
+                                            <i class="bi bi-people"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Quản lý người dùng</div>
+                                            <div class="small text-muted">Danh sách, chi tiết, role, trạng thái</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/subjects}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-success">
+                                            <i class="bi bi-book"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Quản lý môn học</div>
+                                            <div class="small text-muted">Tạo, sửa, bật/tắt hiển thị</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/questions}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-warning">
+                                            <i class="bi bi-patch-question"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Ngân hàng câu hỏi</div>
+                                            <div class="small text-muted">Quản lý câu hỏi và đáp án</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/quizzes}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-danger">
+                                            <i class="bi bi-journal-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Quản lý quiz</div>
+                                            <div class="small text-muted">Manual quiz, random quiz, publish</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/progress}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-info">
+                                            <i class="bi bi-graph-up-arrow"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Theo dõi tiến độ</div>
+                                            <div class="small text-muted">Tiến độ học tập của sinh viên</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <a th:href="@{/admin/community/moderation-records}" class="text-decoration-none">
+                                <div class="border rounded-4 p-4 h-100">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="fs-2 text-secondary">
+                                            <i class="bi bi-chat-left-text"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">Kiểm duyệt cộng đồng</div>
+                                            <div class="small text-muted">Bài viết, bình luận, nhật ký xử lý</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm p-4 h-100">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2">Module QL</h5>
-                    <div class="d-grid gap-2">
-                        <a th:href="@{/admin/users}" class="btn btn-light text-start"><i class="bi bi-people me-2"></i>
-                            QL Người dùng</a>
-                        <a th:href="@{/admin/subjects}" class="btn btn-light text-start"><i class="bi bi-book me-2"></i>
-                            QL Môn học</a>
-                        <a th:href="@{/admin/quizzes}" class="btn btn-light text-start"><i
-                                class="bi bi-pencil-square me-2"></i> QL Kỳ thi</a>
-                        <a th:href="@{/admin/community/questions}" class="btn btn-light text-start"><i
-                                class="bi bi-shield-check me-2"></i> Kiểm duyệt</a>
+        </div>
+        
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Gợi ý thao tác</h5>
+                    
+                    <div class="d-flex flex-column gap-3">
+                        <div class="border rounded-4 p-3">
+                            <div class="fw-semibold mb-1">Bước 1</div>
+                            <div class="small text-muted">Kiểm tra học liệu nền: môn học, chủ đề, câu hỏi.</div>
+                        </div>
+                        
+                        <div class="border rounded-4 p-3">
+                            <div class="fw-semibold mb-1">Bước 2</div>
+                            <div class="small text-muted">Tạo và publish quiz để sinh viên có thể làm bài.</div>
+                        </div>
+                        
+                        <div class="border rounded-4 p-3">
+                            <div class="fw-semibold mb-1">Bước 3</div>
+                            <div class="small text-muted">Theo dõi tiến độ và xử lý nội dung cộng đồng khi cần.</div>
+                        </div>
+                        
+                        <a th:href="@{/profile}" class="btn btn-outline-primary rounded-pill mt-2">
+                            <i class="bi bi-person-circle me-1"></i> Xem hồ sơ của tôi
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </body>
-
 </html>

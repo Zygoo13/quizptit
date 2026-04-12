@@ -11,8 +11,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "question_post")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class QuestionPost extends BaseEntity {
 
@@ -27,15 +29,19 @@ public class QuestionPost extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Builder.Default
     @Column(name = "view_count", nullable = false)
     private Integer viewCount = 0;
 
+    @Builder.Default
     @Column(name = "like_count", nullable = false)
     private Integer likeCount = 0;
 
+    @Builder.Default
     @Column(name = "comment_count", nullable = false)
     private Integer commentCount = 0;
 
+    @Builder.Default
     @Column(nullable = false, length = 20)
     private String status = "VISIBLE";
 
@@ -50,6 +56,7 @@ public class QuestionPost extends BaseEntity {
     @Column(name = "topic_id", nullable = false)
     private Long topicId;
 
+    @Builder.Default
     @OneToMany(mappedBy = "questionPost", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Comment> comments = new ArrayList<>();
 }

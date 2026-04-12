@@ -51,7 +51,28 @@ public final class CurrentUserUtils {
         if (currentUser == null) {
             return false;
         }
+
         return currentUser.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    public static boolean isStudent() {
+        CustomUserDetails currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return false;
+        }
+
+        return currentUser.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_STUDENT".equals(a.getAuthority()));
+    }
+
+    public static String resolveHomeByRole() {
+        if (!isLoggedIn()) {
+            return "/";
+        }
+        if (isAdmin()) {
+            return "/admin";
+        }
+        return "/student/dashboard";
     }
 }
