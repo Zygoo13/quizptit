@@ -451,6 +451,22 @@
         const submitBtn = document.getElementById('submitBtn');
         const originalAction = form ? form.action : '';
 
+        async function refreshLikeCount(postId) {
+            const response = await fetch(`/community/questions/${postId}/likers`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const likers = await response.json();
+            const countEl = document.getElementById('detailLikeCount');
+            if (countEl) {
+                countEl.innerText = Array.isArray(likers) ? likers.length : 0;
+            }
+        }
+
         async function toggleLikeDetail(button) {
             const postId = button.getAttribute('data-post-id');
             const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -473,16 +489,8 @@
                     return;
                 }
 
-                const countEl = document.getElementById('detailLikeCount');
-                const current = parseInt(countEl.innerText || '0', 10);
-
-                if (button.classList.contains('liked')) {
-                    button.classList.remove('liked');
-                    countEl.innerText = String(Math.max(0, current - 1));
-                } else {
-                    button.classList.add('liked');
-                    countEl.innerText = String(current + 1);
-                }
+                button.classList.toggle('liked');
+                await refreshLikeCount(postId);
             } catch (e) {
                 console.error(e);
             }
