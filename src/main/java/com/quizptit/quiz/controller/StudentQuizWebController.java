@@ -74,8 +74,12 @@ public class StudentQuizWebController {
         if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
             return "redirect:/quizzes/attempts/" + attemptId + "/result";
         }
+        
+        java.util.Map<Long, com.quizptit.attempt.entity.AttemptAnswer> answerMap = attemptService.getAnswersMapForAttempt(attemptId);
+        
         model.addAttribute("remainingSeconds", attemptService.getRemainingSeconds(attempt));
         model.addAttribute("attempt", attempt);
+        model.addAttribute("answerMap", answerMap);
         return "quiz/student/quiz-take";
     }
 

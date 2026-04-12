@@ -23,4 +23,6 @@ public interface AttemptRepository extends JpaRepository<Attempt, Long> {
 
     Optional<Attempt> findFirstByUser_UserIdAndQuiz_QuizIdAndStatusOrderByStartedAtDesc(
             Long userId, Long quizId, AttemptStatus status);
+
+    List<Attempt> findByStatus(AttemptStatus status);
 }
