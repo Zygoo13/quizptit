@@ -69,13 +69,23 @@
                     [csrfHeader]: csrfToken
                 }
             })
-                .then(res => res.json())
+                .then(async res => {
+                    if (!res.ok) {
+                        const errorData = await res.json().catch(() => ({ message: "Lỗi hệ thống khi nộp bài" }));
+                        throw new Error(errorData.message || "Lỗi khi nộp bài");
+                    }
+                    return res.json();
+                })
                 .then(result => {
-                    let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
-                    window.location.replace(resultUrl);
+                    if (result && result.attemptId) {
+                        let resultUrl = `/quizzes/attempts/${result.attemptId}/result`;
+                        window.location.replace(resultUrl);
+                    } else {
+                        throw new Error("Không tìm thấy thông tin lượt làm bài sau khi nộp");
+                    }
                 })
                 .catch(err => {
-                    alert("Lỗi khi nộp bài!");
+                    alert(err.message || "Lỗi khi nộp bài!");
                     submitBtn.innerHTML = '<i class="bi bi-send-check me-2"></i> NỘP BÀI THI';
                     submitBtn.disabled = false;
                 });
