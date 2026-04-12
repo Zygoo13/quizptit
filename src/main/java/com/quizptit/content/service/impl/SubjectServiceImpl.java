@@ -58,4 +58,10 @@ public class SubjectServiceImpl implements SubjectService {
         subject.setIsActive(!subject.getIsActive());
         subjectRepository.save(subject);
     }
+
+    @Override
+    public List<Subject> getAllSubjects() {
+        return subjectRepository.findAll();
+    }
+
 }

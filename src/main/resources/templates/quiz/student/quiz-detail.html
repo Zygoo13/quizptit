@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/student-layout :: layout(pageTitle='Chi Tiết Bài Thi', content=~{::content}, script=~{::script})}">
+
+<head></head>
+
+<body>
+
+    <div th:fragment="content" class="container mt-5" style="max-width: 600px;">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="bg-primary text-white text-center py-4 rounded-top-4">
+                <i class="bi bi-file-earmark-text fs-1"></i>
+                <h4 class="fw-bold mt-2" th:text="${quiz.title}">Tiêu đề đề thi</h4>
+            </div>
+            <div class="card-body p-4 text-center">
+                <p class="text-muted mb-4">Hãy chuẩn bị sẵn sàng trước khi bắt đầu tính giờ.</p>
+
+                <div class="d-flex justify-content-around mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0" th:text="${quiz.durationMinutes} + ' Phút'">45 Phút</h5>
+                        <small class="text-muted">Thời gian</small>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0" th:text="${quiz.totalQuestions} + ' Câu'">50 Câu</h5>
+                        <small class="text-muted">Số lượng</small>
+                    </div>
+                </div>
+
+                <button id="btn-start" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm"
+                    th:data-quiz-id="${quiz.quizId}">
+                    BẮT ĐẦU LÀM BÀI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script th:fragment="script">
+        document.getElementById('btn-start').addEventListener('click', function (e) {
+            e.preventDefault();
+            const quizId = this.getAttribute('data-quiz-id');
+            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo đề...';
+            this.disabled = true;
+
+            fetch(`/api/attempts/start/${quizId}`, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.attemptId) {
+
+                        window.location.href = `/quizzes/attempts/${data.attemptId}/take`;
+                    }
+                })
+                .catch(error => {
+                    alert("Có lỗi xảy ra, không thể tạo phiên làm bài!");
+                    window.location.reload();
+                });
+        });
+    </script>
+
+</body>
+
+</html>

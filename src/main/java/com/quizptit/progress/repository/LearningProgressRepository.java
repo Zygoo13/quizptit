@@ -2,6 +2,7 @@ package com.quizptit.progress.repository;
 
 import com.quizptit.progress.entity.LearningProgress;
 import com.quizptit.progress.dto.AdminProgressDTO;
+import com.quizptit.review.dto.ReviewSubjectDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 public interface LearningProgressRepository extends JpaRepository<LearningProgress, Long> {
     List<LearningProgress> findAllByUserUserId(Long userId);
@@ -35,4 +37,15 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
        @Param("keyword") String keyword, 
        Pageable pageable
     );
+
+    @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +
+        "s.subjectId, s.subjectName, " +
+        "SUM(CASE WHEN lp.masteryScore < 80 THEN 1L ELSE 0L END), " + // Kết quả trả về Long
+        "COALESCE(AVG(lp.masteryScore), 0.0)) " +                   // Trả về Double, khớp với DTO mới
+        "FROM LearningProgress lp " +
+        "JOIN lp.topic t " +
+        "JOIN t.subject s " +
+        "WHERE lp.user.userId = :userId " +
+        "GROUP BY s.subjectId, s.subjectName")
+    List<ReviewSubjectDTO> findAllSubjectsWithReviewCount(@Param("userId") Long userId);
 }

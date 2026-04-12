@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.quizptit.attempt.entity.enums.AttemptStatus;
 import com.quizptit.quiz.entity.Quiz;
@@ -51,4 +53,13 @@ public class Attempt {
     @Column(name = "duration_seconds", nullable = false)
     @Builder.Default
     private Integer durationSeconds = 0;
+
+    @Column(name = "total_questions", nullable = false)
+    @Builder.Default
+    private Integer totalQuestions = 0;
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderNo ASC")
+    @Builder.Default
+    private List<AttemptQuestion> attemptQuestions = new ArrayList<>();
 }

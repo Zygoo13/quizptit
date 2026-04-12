@@ -8,6 +8,9 @@ import com.quizptit.content.repository.TopicRepository;
 import com.quizptit.content.service.QuestionService;
 import com.quizptit.user.entity.User;
 import com.quizptit.user.repository.UserRepository;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +29,8 @@ public class QuestionServiceImpl implements QuestionService {
     private TopicRepository topicRepository;
 
     @Override
-    public Page<Question> searchQuestions(Long topicId, QuestionStatus status, DifficultyLevel difficulty, String keyword, Pageable pageable) {
+    public Page<Question> searchQuestions(Long topicId, QuestionStatus status, DifficultyLevel difficulty,
+            String keyword, Pageable pageable) {
         return questionRepository.searchQuestions(topicId, status, difficulty, keyword, pageable);
     }
 
@@ -51,11 +55,12 @@ public class QuestionServiceImpl implements QuestionService {
         question.setDifficultyLevel(questionDetails.getDifficultyLevel());
         question.setExplanation(questionDetails.getExplanation());
         question.setStatus(questionDetails.getStatus());
-        
-        if (questionDetails.getTopic() != null && !question.getTopic().getTopicId().equals(questionDetails.getTopic().getTopicId())) {
+
+        if (questionDetails.getTopic() != null
+                && !question.getTopic().getTopicId().equals(questionDetails.getTopic().getTopicId())) {
             question.setTopic(topicRepository.findById(questionDetails.getTopic().getTopicId()).orElseThrow());
         }
-        
+
         return questionRepository.save(question);
     }
 
@@ -65,4 +70,10 @@ public class QuestionServiceImpl implements QuestionService {
         question.setStatus(newStatus);
         questionRepository.save(question);
     }
+
+    @Override
+    public List<Question> getAllQuestions() {
+        return questionRepository.findAll();
+    }
+
 }

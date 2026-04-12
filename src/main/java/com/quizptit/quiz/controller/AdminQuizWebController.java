@@ -1,42 +1,37 @@
 package com.quizptit.quiz.controller;
 
-import com.quizptit.content.repository.SubjectRepository;
-import com.quizptit.content.repository.QuestionRepository;
-import com.quizptit.quiz.repository.QuizRepository;
-import org.springframework.data.domain.Sort;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.quizptit.content.service.SubjectService;
 import org.springframework.stereotype.Controller;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/admin/quizzes")
+@RequiredArgsConstructor
 public class AdminQuizWebController {
 
-    // Gọi trực tiếp xuống kho (Repository) thay vì qua Service
-    @Autowired
-    private SubjectRepository subjectRepository;
-
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private QuizRepository quizRepository;
+    private final SubjectService subjectService;
+    private final com.quizptit.quiz.service.QuizService quizService;
 
     @GetMapping
     public String showQuizList(Model model) {
-        model.addAttribute("quizzes", quizRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")));
+        model.addAttribute("quizzes", quizService.getAllAdminQuizzes());
         return "quiz/admin/quiz-list";
     }
 
     @GetMapping("/create")
     public String showCreateQuizPage(Model model) {
-
-        // Dùng hàm findAll() có sẵn của JpaRepository để lấy toàn bộ dữ liệu
-        model.addAttribute("subjects", subjectRepository.findAll());
-        model.addAttribute("questions", questionRepository.findAll());
-
+        model.addAttribute("subjects", subjectService.getAllSubjects());
         return "quiz/admin/quiz-create";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String showEditQuizPage(@PathVariable Long id, Model model) {
+        model.addAttribute("subjects", subjectService.getAllSubjects());
+        model.addAttribute("quizId", id);
+        return "quiz/admin/quiz-edit";
     }
 }

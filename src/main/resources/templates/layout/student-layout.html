@@ -31,6 +31,11 @@
 <!-- 5. Scripts -->
 <script th:src="@{/bootstrap/5.3.8/js/bootstrap.bundle.min.js}"></script>
 
+<!-- Page-specific scripts -->
+<div th:if="${script != null}">
+    <div th:replace="${script}"></div>
+</div>
+
 <style>
     /* Tinh chỉnh thêm cho Layout Student */
     body {

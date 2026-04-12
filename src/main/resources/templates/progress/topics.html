@@ -3,9 +3,10 @@
 <head>
     <title>Chi tiết môn học - QuizPTIT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </head>
 <body class="bg-light">
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
+    <div th:replace="~{fragments/navbar::navbar}"></div>
 
     <div class="container py-5">
         <nav aria-label="breadcrumb" class="mb-4">
@@ -29,7 +30,7 @@
                     <div class="col-md-3">
                         <div class="text-center">
                             <small class="text-muted d-block">Điểm trung bình chương</small>
-                            <span class="fs-5 fw-bold text-success" th:text="${t.averageScore}">0.00</span>
+                            <span class="fs-5 fw-bold text-success" th:text="${#numbers.formatDecimal(t.averageScore * 10, 1, 1)}">0.00</span>
                         </div>
                     </div>
                     <div class="col-md-2 text-center">
@@ -37,7 +38,7 @@
                         <span class="badge bg-info text-dark" th:text="${t.completedQuizzes} + '/' + ${t.totalQuizzes}"></span>
                     </div>
                     <div class="col-md-2 text-end">
-                        <a th:href="@{/progress/topic/{id}(id=${t.topicId})}" class="btn btn-sm btn-primary">
+                        <a th:href="@{/quizzes}" class="btn btn-sm btn-primary">
                             Xem các Quiz
                         </a>
                     </div>
