@@ -7,171 +7,120 @@
 <div th:fragment="content">
     <style>
         .community-post-card {
-            border: 0;
-            border-radius: 18px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-            overflow: hidden;
+            border: 0; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+            transition: all 0.2s ease; overflow: hidden; background: #fff;
         }
-
         .community-post-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+            transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.08);
         }
-
         .avatar-circle {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            flex-shrink: 0;
+            width: 46px; height: 46px; border-radius: 50%; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; flex-shrink: 0;
             background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
         }
-
         .post-content-summary {
-            display: -webkit-box;
-            -webkit-line-clamp: 5;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: pre-line;
-            word-break: break-word;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis; white-space: pre-line; word-break: break-word;
         }
-
-        .topic-filter-chip.active {
-            background: var(--bs-primary);
-            color: #fff;
-            border-color: var(--bs-primary);
+        /* Style thanh chọn chủ đề mới */
+        .filter-wrapper {
+            background: #fff; border-radius: 50px; padding: 6px 10px 6px 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
+            display: flex; align-items: center; width: 100%; max-width: 500px;
+            cursor: pointer;
         }
-
-        .post-meta-text {
-            color: #6c757d;
-            font-weight: 500;
-            font-size: 0.95rem;
+        .topic-select-custom {
+            border: none; outline: none; background: transparent;
+            font-weight: 600; color: #495057; width: 100%;
+            cursor: pointer; appearance: none; /* Ẩn mũi tên mặc định của trình duyệt */
         }
-
-        .post-meta-text i {
-            margin-right: 4px;
+        .filter-icon-box {
+            width: 38px; height: 38px; background: #0d6efd; color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: none; transition: background 0.2s;
         }
+        .filter-icon-box:hover { background: #0b5ed7; }
     </style>
-    
+
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1">Cộng đồng hỏi đáp</h3>
-            <p class="text-muted mb-0">
-                Đặt câu hỏi, trao đổi theo chủ đề và cùng nhau giải quyết vấn đề học tập.
-            </p>
+            <p class="text-muted mb-0">Trao đổi kiến thức và giải đáp thắc mắc cùng PTIT-er.</p>
         </div>
-        
-        <a sec:authorize="isAuthenticated()"
-           th:href="@{/community/questions/create}"
-           class="btn btn-primary rounded-pill px-4">
+        <a sec:authorize="isAuthenticated()" th:href="@{/community/questions/create}" class="btn btn-primary rounded-pill px-4">
             <i class="bi bi-plus-circle me-1"></i> Đặt câu hỏi mới
         </a>
     </div>
-    
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex flex-column gap-3">
-                <div class="d-flex flex-wrap gap-2">
-                    <a th:href="@{/community/questions}"
-                       class="btn rounded-pill px-4 topic-filter-chip"
-                       th:classappend="${currentTopic == null} ? 'active' : 'btn-outline-primary'">
-                        Tất cả
-                    </a>
-                    
-                    <a th:each="topic : ${topics}"
-                       th:href="@{/community/questions(topicId=${topic.topicId})}"
-                       class="btn btn-outline-primary rounded-pill px-4 topic-filter-chip"
-                       th:classappend="${currentTopic == topic.topicId} ? 'active' : ''"
-                       th:text="${topic.topicName}">
-                        Topic
-                    </a>
-                </div>
-                
-                <div class="small text-muted">
-                    Trang hiện tại:
-                    <strong th:text="${currentPage + 1}">1</strong>
-                </div>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <a th:href="@{/community/questions}"
+           class="btn rounded-pill px-4 shadow-sm"
+           th:classappend="${currentTopic == null} ? 'btn-primary' : 'btn-white border text-dark'">
+            Tất cả bài viết
+        </a>
+
+        <form th:action="@{/community/questions}" method="get" class="flex-grow-1 d-flex justify-content-lg-end">
+            <div class="filter-wrapper">
+                <i class="bi bi-tag text-primary me-2"></i>
+                <select name="topicId" class="topic-select-custom">
+                    <option value="" th:selected="${currentTopic == null}">Tìm kiếm theo chủ đề...</option>
+                    <option th:each="topic : ${topics}"
+                            th:value="${topic.topicId}"
+                            th:text="${topic.topicName}"
+                            th:selected="${currentTopic == topic.topicId}">Topic Name</option>
+                </select>
+                <button type="submit" class="filter-icon-box ms-2">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
-        </div>
+        </form>
     </div>
-    
-    <div th:if="${#lists.isEmpty(posts)}" class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <div class="display-6 text-muted mb-3">
-                <i class="bi bi-chat-square-text"></i>
-            </div>
-            <h5 class="fw-bold mb-2">Chưa có bài viết nào</h5>
-            <p class="text-muted mb-0">Hãy là người đầu tiên tạo thảo luận ở chủ đề này.</p>
-        </div>
-    </div>
-    
+
     <div class="d-flex flex-column gap-4">
-        <div th:each="post : ${posts}"
-             class="card community-post-card"
+        <div th:if="${#lists.isEmpty(posts)}" class="text-center py-5 card border-0 shadow-sm rounded-4">
+            <div class="py-4">
+                <i class="bi bi-inbox text-muted display-4"></i>
+                <p class="text-muted mt-3">Không tìm thấy bài viết nào thuộc chủ đề này.</p>
+                <a th:href="@{/community/questions}" class="btn btn-link">Xem tất cả bài viết</a>
+            </div>
+        </div>
+
+        <div th:each="post : ${posts}" class="card community-post-card"
              th:style="'background-color:' + ${(post.themeColor != null and !#strings.isEmpty(post.themeColor)) ? post.themeColor : '#ffffff'}">
-            
+
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="avatar-circle"
-                             th:text="${post.fullName != null and !#strings.isEmpty(post.fullName)} ? ${#strings.substring(post.fullName,0,1)} : 'U'">
-                            U
-                        </div>
-                        
+                        <div class="avatar-circle" th:text="${post.fullName != null ? #strings.substring(post.fullName,0,1) : 'U'}">U</div>
                         <div>
-                            <div class="fw-bold text-dark" th:text="${post.fullName != null ? post.fullName : 'Người dùng'}">Người dùng</div>
+                            <div class="fw-bold text-dark" th:text="${post.fullName}">User</div>
                             <div class="small text-muted">
-                                <span th:text="${post.topicName}">Topic</span>
+                                <span class="text-primary fw-semibold" th:text="${post.topicName}">Topic</span>
                                 <span class="mx-1">•</span>
-                                <span th:text="${post.createdAt != null ? #temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm') : '---'}">12/04/2026 10:00</span>
+                                <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}">Time</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <span class="badge rounded-pill px-3 py-2"
-                          th:classappend="${post.status == 'VISIBLE'} ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle'"
-                          th:text="${post.status}">
-                        VISIBLE
-                    </span>
                 </div>
-                
+
                 <h5 class="fw-bold mb-3">
                     <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
-                       class="text-decoration-none text-dark"
-                       th:text="${post.title}">
-                        Tiêu đề bài viết
-                    </a>
+                       class="text-decoration-none text-dark" th:text="${post.title}">Tiêu đề</a>
                 </h5>
-                
-                <div class="text-muted post-content-summary mb-3" th:text="${post.content}">
-                    Nội dung bài viết
-                </div>
-                
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <div class="d-flex flex-wrap gap-4 align-items-center">
-                        <span class="post-meta-text">
-                            <i class="bi bi-hand-thumbs-up"></i>
-                            <span th:text="${post.likeCount != null ? post.likeCount : 0}">0</span> lượt thích
-                        </span>
-                        
-                        <span class="post-meta-text">
-                            <i class="bi bi-chat-left-text"></i>
-                            <span th:text="${post.commentCount}">0</span> bình luận
-                        </span>
+
+                <div class="text-muted post-content-summary mb-3" th:text="${post.content}">Content</div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-4 small text-muted">
+                        <span><i class="bi bi-hand-thumbs-up me-1"></i> <span th:text="${post.likeCount ?: 0}">0</span></span>
+                        <span><i class="bi bi-chat-left-text me-1"></i> <span th:text="${post.commentCount}">0</span></span>
                     </div>
-                    
-                    <div class="d-flex gap-2">
-                        <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
-                           class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                            <i class="bi bi-eye me-1"></i> Xem chi tiết
-                        </a>
-                    </div>
+
+                    <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
+                       class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                        <i class="bi bi-eye me-1"></i> Xem chi tiết
+                    </a>
                 </div>
             </div>
         </div>
