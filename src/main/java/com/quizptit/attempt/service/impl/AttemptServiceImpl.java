@@ -19,7 +19,6 @@ import com.quizptit.review.dto.ReviewItemResult;
 import com.quizptit.review.service.ReviewService;
 import com.quizptit.quiz.entity.Quiz;
 import com.quizptit.quiz.entity.QuizQuestion;
-import com.quizptit.quiz.entity.enums.QuizType;
 import com.quizptit.quiz.repository.QuizQuestionRepository;
 import com.quizptit.quiz.repository.QuizRepository;
 import com.quizptit.user.entity.User;
@@ -56,7 +55,7 @@ public class AttemptServiceImpl implements AttemptService {
                 Quiz quiz = quizRepository.findById(quizId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài Quiz"));
 
-                if (quiz.getQuizType() == QuizType.MANUAL && !quiz.getIsPublished()) {
+                if (!quiz.getIsPublished() && !CurrentUserUtils.isAdmin()) {
                         throw new RuntimeException("Bài Quiz này chưa được mở");
                 }
 
