@@ -8,7 +8,10 @@
 <body>
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Quản lý Môn học (Admin)</h2>
+        <div class="d-flex align-items-center gap-3">
+            <a href="/admin" class="btn btn-outline-secondary">&lt; Quay lại</a>
+            <h2 class="mb-0">Quản lý Môn học (Admin)</h2>
+        </div>
         <a href="/admin/subjects/create" class="btn btn-success fw-bold px-4">+ Tạo mới</a>
     </div>
 
@@ -67,5 +70,17 @@
         </table>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const backBtn = document.querySelector('a.btn-outline-secondary');
+        if (backBtn && backBtn.textContent.includes('Quay lại')) {
+            if (document.referrer.includes('subject')) {
+                backBtn.href = '/';
+            } else {
+                backBtn.href = '/admin';
+            }
+        }
+    });
+</script>
 </body>
 </html>
