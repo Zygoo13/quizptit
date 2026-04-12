@@ -15,7 +15,6 @@
             </div>
             <div class="card-body">
                 <form id="form-sua-de">
-                    <!-- Hidden input to store quizId -->
                     <input type="hidden" id="quizId" th:value="${quizId}">
 
                     <div class="mb-3">
@@ -81,14 +80,14 @@
             try {
                 const res = await fetch(`/api/quizzes/${quizId}/edit-data`);
                 currentQuizData = await res.json();
-                
+
                 document.getElementById('title').value = currentQuizData.title;
                 document.getElementById('durationMinutes').value = currentQuizData.durationMinutes;
-                
+
                 subjectSelect.value = currentQuizData.subjectId;
-                
+
                 await loadTopics(currentQuizData.subjectId, currentQuizData.topicId);
-                
+
                 if (currentQuizData.topicId) {
                     await loadQuestions(currentQuizData.topicId, currentQuizData.questionIds);
                 }
@@ -99,7 +98,7 @@
             }
 
             topicSelect.addEventListener('change', function () {
-                loadQuestions(this.value, []); 
+                loadQuestions(this.value, []);
             });
 
             async function loadTopics(subjectId, selectedTopicId) {
@@ -122,7 +121,7 @@
                     questionContainer.innerHTML = '<div class="text-warning text-center py-3">Chọn chủ đề để xem câu hỏi.</div>';
                     return;
                 }
-                
+
                 questionContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Đang tải câu hỏi...</div>';
 
                 try {
@@ -163,7 +162,7 @@
                 let title = document.getElementById('title').value;
                 let durationMinutes = parseInt(document.getElementById('durationMinutes').value);
                 let topicId = parseInt(topicSelect.value);
-                
+
                 let checkedBoxes = document.querySelectorAll('.question-checkbox:checked');
                 let questionIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
 
@@ -189,22 +188,22 @@
                         "questionIds": questionIds
                     })
                 })
-                .then(res => {
-                    if (res.ok) {
-                        alert("Cập nhật đề thi thành công!");
-                        window.location.href = "/admin/quizzes";
-                    } else {
-                        alert("Sửa đề thi thất bại!");
+                    .then(res => {
+                        if (res.ok) {
+                            alert("Cập nhật đề thi thành công!");
+                            window.location.href = "/admin/quizzes";
+                        } else {
+                            alert("Sửa đề thi thất bại!");
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = '<i class="bi bi-save me-1"></i> Lưu Thay Đổi';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error saving:", err);
+                        alert("Lỗi kết nối mạng.");
                         btnSubmit.disabled = false;
                         btnSubmit.innerHTML = '<i class="bi bi-save me-1"></i> Lưu Thay Đổi';
-                    }
-                })
-                .catch(err => {
-                    console.error("Error saving:", err);
-                    alert("Lỗi kết nối mạng.");
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<i class="bi bi-save me-1"></i> Lưu Thay Đổi';
-                });
+                    });
             });
         });
     </script>

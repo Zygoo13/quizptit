@@ -48,7 +48,7 @@ public class Attempt {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AttemptStatus status; // IN_PROGRESS, SUBMITTED, GRADED
+    private AttemptStatus status;
 
     @Column(name = "duration_seconds", nullable = false)
     @Builder.Default

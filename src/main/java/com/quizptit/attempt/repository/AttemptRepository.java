@@ -12,12 +12,9 @@ import com.quizptit.attempt.entity.enums.AttemptStatus;
 
 public interface AttemptRepository extends JpaRepository<Attempt, Long> {
 
-    // Dùng JOIN FETCH để load Quiz trong cùng 1 query, tránh
-    // LazyInitializationException
     @Query("SELECT a FROM Attempt a JOIN FETCH a.quiz WHERE a.user.userId = :userId ORDER BY a.startedAt DESC")
     List<Attempt> findByUser_UserIdOrderByStartedAtDesc(@Param("userId") Long userId);
 
-    // Load quiz eagerly khi lấy 1 attempt cụ thể
     @Query("SELECT a FROM Attempt a JOIN FETCH a.quiz WHERE a.attemptId = :attemptId")
     Optional<Attempt> findByIdWithQuiz(@Param("attemptId") Long attemptId);
 
