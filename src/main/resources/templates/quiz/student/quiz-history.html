@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Lịch sử làm bài', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Lịch sử làm bài</h3>
+            <p class="text-muted mb-0">
+                Xem lại các lượt làm bài, điểm số và truy cập nhanh tới kết quả.
+            </p>
+        </div>
+        
+        <a th:href="@{/quizzes}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách quiz
+        </a>
+    </div>
+    
+    <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tên quiz</th>
+                        <th>Thời gian bắt đầu</th>
+                        <th>Thời gian nộp</th>
+                        <th>Điểm</th>
+                        <th>Đúng / Tổng</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            Đang tải lịch sử làm bài...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function loadAttemptHistory() {
+            const tbody = document.getElementById('historyTableBody');
+
+            try {
+                const response = await fetch('/api/attempts/history');
+                const history = await response.json();
+
+                if (!response.ok) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-danger">
+                                Không thể tải lịch sử làm bài.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                if (!history || history.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                Bạn chưa có lượt làm bài nào.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = history.map(item => `
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">${item.attemptId ?? ''}</td>
+                        <td>
+                            <div class="fw-semibold">${item.quizTitle ?? ''}</div>
+                        </td>
+                        <td>${formatDateTime(item.startedAt)}</td>
+                        <td>${formatDateTime(item.submittedAt)}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                                ${item.totalScore ?? 0}
+                            </span>
+                        </td>
+                        <td>${item.correctCount ?? 0} / ${item.totalQuestions ?? 0}</td>
+                        <td>${renderStatus(item.status)}</td>
+                        <td class="text-end pe-4">
+                            <a href="/quizzes/attempts/${item.attemptId}/result"
+                               class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                <i class="bi bi-eye me-1"></i> Xem kết quả
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-danger">
+                            Không thể tải lịch sử làm bài.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '---';
+
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return value;
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        function renderStatus(status) {
+            if (status === 'COMPLETED' || status === 'GRADED') {
+                return `<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">${status}</span>`;
+            }
+
+            if (status === 'IN_PROGRESS') {
+                return `<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2">${status}</span>`;
+            }
+
+            return `<span class="badge bg-light text-dark border rounded-pill px-3 py-2">${status ?? '---'}</span>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAttemptHistory);
+    </script>
+</div>
+</body>
+</html>

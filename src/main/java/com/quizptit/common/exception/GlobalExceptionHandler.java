@@ -2,11 +2,15 @@ package com.quizptit.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,12 +22,16 @@ public class GlobalExceptionHandler {
     // Resource Not Found
     // =========================
     @ExceptionHandler(ResourceNotFoundException.class)
-    public String handleResourceNotFound(
+    public Object handleResourceNotFound(
             ResourceNotFoundException ex,
             HttpServletRequest request,
             Model model
     ) {
         log.warn("Resource not found: {}", ex.getMessage());
+
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+        }
 
         model.addAttribute("errorTitle", "Not Found");
         model.addAttribute("errorMessage", ex.getMessage());
@@ -36,12 +44,16 @@ public class GlobalExceptionHandler {
     // Business Exception
     // =========================
     @ExceptionHandler(BusinessException.class)
-    public String handleBusinessException(
+    public Object handleBusinessException(
             BusinessException ex,
             HttpServletRequest request,
             Model model
     ) {
         log.warn("Business exception: {}", ex.getMessage());
+
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        }
 
         model.addAttribute("errorTitle", "Bad Request");
         model.addAttribute("errorMessage", ex.getMessage());
@@ -54,12 +66,16 @@ public class GlobalExceptionHandler {
     // Access Denied (custom)
     // =========================
     @ExceptionHandler(AccessDeniedBusinessException.class)
-    public String handleAccessDeniedBusinessException(
+    public Object handleAccessDeniedBusinessException(
             AccessDeniedBusinessException ex,
             HttpServletRequest request,
             Model model
     ) {
         log.warn("Access denied: {}", ex.getMessage());
+
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+        }
 
         model.addAttribute("errorTitle", "Forbidden");
         model.addAttribute("errorMessage", ex.getMessage());
@@ -72,7 +88,7 @@ public class GlobalExceptionHandler {
     // Validation Exception (Form)
     // =========================
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public String handleValidationException(
+    public Object handleValidationException(
             MethodArgumentNotValidException ex,
             HttpServletRequest request,
             Model model
@@ -82,6 +98,18 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(fieldError ->
                 validationErrors.put(fieldError.getField(), fieldError.getDefaultMessage())
         );
+
+        if (isApiRequest(request)) {
+            ApiError apiError = ApiError.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                    .message("Validation failed")
+                    .path(request.getRequestURI())
+                    .validationErrors(validationErrors)
+                    .build();
+            return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+        }
 
         model.addAttribute("errorTitle", "Validation Error");
         model.addAttribute("errorMessage", "Validation failed.");
@@ -95,12 +123,16 @@ public class GlobalExceptionHandler {
     // File Storage Exception
     // =========================
     @ExceptionHandler(FileStorageException.class)
-    public String handleFileStorageException(
+    public Object handleFileStorageException(
             FileStorageException ex,
             HttpServletRequest request,
             Model model
     ) {
         log.warn("File error: {}", ex.getMessage());
+
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        }
 
         model.addAttribute("errorTitle", "File Error");
         model.addAttribute("errorMessage", ex.getMessage());
@@ -113,12 +145,16 @@ public class GlobalExceptionHandler {
     // Illegal Argument
     // =========================
     @ExceptionHandler(IllegalArgumentException.class)
-    public String handleIllegalArgumentException(
+    public Object handleIllegalArgumentException(
             IllegalArgumentException ex,
             HttpServletRequest request,
             Model model
     ) {
         log.warn("Illegal argument: {}", ex.getMessage());
+
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        }
 
         model.addAttribute("errorTitle", "Bad Request");
         model.addAttribute("errorMessage", ex.getMessage());
@@ -131,17 +167,37 @@ public class GlobalExceptionHandler {
     // Generic Exception
     // =========================
     @ExceptionHandler(Exception.class)
-    public String handleGenericException(
+    public Object handleGenericException(
             Exception ex,
             HttpServletRequest request,
             Model model
     ) {
         log.error("Unexpected error", ex);
 
+        if (isApiRequest(request)) {
+            return buildApiError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+        }
+
         model.addAttribute("errorTitle", "Internal Server Error");
         model.addAttribute("errorMessage", "An unexpected error occurred.");
         model.addAttribute("path", request.getRequestURI());
 
         return "error/500";
+    }
+
+    private boolean isApiRequest(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path != null && path.startsWith("/api/");
+    }
+
+    private ResponseEntity<ApiError> buildApiError(HttpStatus status, String message, HttpServletRequest request) {
+        ApiError apiError = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(apiError, status);
     }
 }

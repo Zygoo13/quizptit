@@ -1,13 +1,17 @@
 package com.quizptit.community.dto;
 
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter @Setter
+@Getter
+@Setter
 @Builder
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommentResponse {
+
     private Long commentId;
     private String content;
     private Long postId;
@@ -16,7 +20,6 @@ public class CommentResponse {
     private String userFullName;
     private LocalDateTime createdAt;
     private String status;
-
-    private Long parentId; // Để biết đây là phản hồi của cmt nào (nếu cần xử lý logic ở JS)
-    private List<CommentResponse> replies; // Chứa các phản hồi con (cấp 2)
+    private Long parentId;
+    private List<CommentResponse> replies;
 }

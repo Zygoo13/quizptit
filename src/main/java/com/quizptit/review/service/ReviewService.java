@@ -1,21 +1,24 @@
 package com.quizptit.review.service;
 
+import com.quizptit.content.entity.AnswerOption;
 import com.quizptit.content.entity.Question;
 import com.quizptit.content.repository.QuestionRepository;
 import com.quizptit.common.exception.ResourceNotFoundException;
 import com.quizptit.review.dto.*;
 import com.quizptit.review.entity.UserQuestionMemory;
 import com.quizptit.review.repository.UserQuestionMemoryRepository;
-import com.quizptit.progress.dto.QuestionReviewDTO;
+import com.quizptit.progress.dto.*;
 import com.quizptit.user.entity.User;
 import com.quizptit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,13 +42,10 @@ public class ReviewService {
                         .nextReviewAt(LocalDateTime.now().plusDays(1))
                         .build());
 
-        // 2. Cập nhật các chỉ số cơ bản
         memory.setLastResult(isCorrect);
-        memory.setReviewCount(memory.getReviewCount() + 1);
         memory.setLastReviewedAt(LocalDateTime.now());
 
         if (isCorrect) {
-            // Logic khi trả lời ĐÚNG
             memory.setCorrectStreak(memory.getCorrectStreak() + 1);
             memory.setWrongStreak(0);
             
@@ -60,9 +60,8 @@ public class ReviewService {
 
             // Tính ngày ôn tập tiếp theo (Sử dụng hàm mũ để giãn cách ngày ôn)
             long daysToAdd = Math.round(Math.pow(2, memory.getCorrectStreak() - 1) * (1 + memory.getMemoryScore().doubleValue()));
-            memory.setNextReviewAt(LocalDateTime.now().plusDays(daysToAdd));
+            memory.setNextReviewAt(LocalDateTime.now().plusDays(daysToAdd).truncatedTo(ChronoUnit.DAYS));
         } else {
-            // Logic khi trả lời SAI
             memory.setCorrectStreak(0);
             memory.setWrongStreak(memory.getWrongStreak() + 1);
             
@@ -72,7 +71,6 @@ public class ReviewService {
             // Buộc ôn lại ngay vào ngày mai
             memory.setNextReviewAt(LocalDateTime.now().plusDays(1));
         }
-
         memoryRepository.save(memory);
     }
 
@@ -99,7 +97,11 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<QuestionReviewDTO> getQuestionsBySubject(Long userId, Long subjectId) {
-        return memoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+        List<UserQuestionMemory> memories = memoryRepository.findQuestionsToReviewBySubject(userId, subjectId, LocalDateTime.now());
+        
+        return memories.stream()
+                .map(this::mapToQuestionReviewDTO)
+                .collect(Collectors.toList());
     }
 
     private ReviewSuggestionDTO mapToSuggestionDTO(UserQuestionMemory entity) {
@@ -110,6 +112,19 @@ public class ReviewService {
                 .memoryScore(entity.getMemoryScore() != null ? entity.getMemoryScore().doubleValue() : 0.0)
                 .nextReviewAt(entity.getNextReviewAt())
                 .isOverdue(entity.getNextReviewAt().isBefore(LocalDateTime.now()))
+                .build();
+    }
+
+    private QuestionReviewDTO mapToQuestionReviewDTO(UserQuestionMemory entity) {
+        return QuestionReviewDTO.builder()
+                .questionId(entity.getQuestion().getQuestionId())
+                .content(entity.getQuestion().getContent())
+                // Lấy tên môn học thông qua Topic -> Subject
+                .subjectName(entity.getQuestion().getTopic().getSubject().getSubjectName())
+                // Các thông tin bổ trợ từ bản ghi bộ nhớ
+                .memoryScore(entity.getMemoryScore() != null ? entity.getMemoryScore().doubleValue() : 0.0)
+                .nextReviewAt(entity.getNextReviewAt())
+                .correctStreak(entity.getCorrectStreak())
                 .build();
     }
 
@@ -136,17 +151,27 @@ public class ReviewService {
     }
 
     @Transactional
-    public void processReviewResponse(Long userId, Long questionId, Long chosenOptionId) {
+    public ReviewResultResponse processReviewResponse(Long userId, Long questionId, Long chosenOptionId) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy câu hỏi"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        AnswerOption correctOpt = question.getOptions().stream()
+                .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Câu hỏi thiếu đáp án đúng"));
 
-        // Kiểm tra đúng/sai: Sử dụng phương thức getter chuẩn của Lombok cho kiểu boolean (isCorrect())
-        boolean isCorrect = question.getOptions().stream()
-                .anyMatch(opt -> opt.getOptionId().equals(chosenOptionId) && opt.getIsCorrect());
+        // Đảm bảo so sánh chính xác ID (ép kiểu về Long nếu cần)
+        boolean isCorrect = Objects.equals(correctOpt.getOptionId(), chosenOptionId);
 
-        this.updateQuestionMemory(user, question, isCorrect);
+        // Cập nhật trí nhớ
+        this.updateQuestionMemory(userRepository.getReferenceById(userId), question, isCorrect);
+
+        // QUAN TRỌNG: Kiểm tra kỹ thứ tự gán isCorrect ở đây
+        return ReviewResultResponse.builder()
+                .isCorrect(isCorrect) // Biến này phải đúng là true/false
+                .correctOptionId(correctOpt.getOptionId())
+                .correctContent(correctOpt.getContent())
+                .feedbackMessage(isCorrect ? "Chính xác! Bạn ghi nhớ rất tốt." : "Rất tiếc! Đáp án đúng phải là: " + correctOpt.getContent())
+                .build();
     }
 }

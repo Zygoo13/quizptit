@@ -45,4 +45,34 @@ public final class CurrentUserUtils {
     public static boolean isLoggedIn() {
         return getCurrentUser() != null;
     }
+
+    public static boolean isAdmin() {
+        CustomUserDetails currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return false;
+        }
+
+        return currentUser.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    public static boolean isStudent() {
+        CustomUserDetails currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return false;
+        }
+
+        return currentUser.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_STUDENT".equals(a.getAuthority()));
+    }
+
+    public static String resolveHomeByRole() {
+        if (!isLoggedIn()) {
+            return "/";
+        }
+        if (isAdmin()) {
+            return "/admin";
+        }
+        return "/student/dashboard";
+    }
 }

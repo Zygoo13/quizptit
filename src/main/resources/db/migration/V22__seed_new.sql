@@ -1,0 +1,659 @@
+-- =========================================================
+-- SEED BỔ SUNG CÁC BẢNG CÒN THIẾU
+-- copy chạy sau khi đã có: role, users, subject, topic, question, answer_option
+-- =========================================================
+
+SET @admin_id = (SELECT user_id FROM users WHERE email = 'admin@quizptit.local' LIMIT 1);
+SET @student_id = (SELECT user_id FROM users WHERE email = 'student@quizptit.local' LIMIT 1);
+SET @subject_id = (SELECT subject_id FROM subject WHERE subject_name = 'An toàn bảo mật hệ thống thông tin' LIMIT 1);
+SET @topic_id = (
+    SELECT t.topic_id
+    FROM topic t
+    WHERE t.subject_id = @subject_id
+      AND t.topic_name = 'Tổng hợp đại cương'
+    LIMIT 1
+);
+
+-- =========================================================
+-- QUIZ
+-- =========================================================
+INSERT INTO quiz (
+    subject_id, topic_id, title, description, quiz_type,
+    duration_minutes, total_questions, created_by, is_published
+)
+SELECT
+    @subject_id, @topic_id,
+    'Quiz tổng hợp ATBMHTTT - Đề 1',
+    'Bộ đề luyện tập tổng hợp chương đại cương',
+    'MANUAL',
+    15, 5, @admin_id, TRUE
+    WHERE NOT EXISTS (
+    SELECT 1 FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Đề 1'
+);
+
+INSERT INTO quiz (
+    subject_id, topic_id, title, description, quiz_type,
+    duration_minutes, total_questions, created_by, is_published
+)
+SELECT
+    @subject_id, @topic_id,
+    'Quiz tổng hợp ATBMHTTT - Đề 2',
+    'Bộ đề luyện tập ngẫu nhiên chương đại cương',
+    'RANDOM',
+    20, 8, @admin_id, TRUE
+    WHERE NOT EXISTS (
+    SELECT 1 FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Đề 2'
+);
+
+INSERT INTO quiz (
+    subject_id, topic_id, title, description, quiz_type,
+    duration_minutes, total_questions, created_by, is_published
+)
+SELECT
+    @subject_id, @topic_id,
+    'Quiz tổng hợp ATBMHTTT - Bản nháp',
+    'Quiz nháp để test luồng unpublished',
+    'MANUAL',
+    10, 3, @admin_id, FALSE
+    WHERE NOT EXISTS (
+    SELECT 1 FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Bản nháp'
+);
+
+SET @quiz1_id = (SELECT quiz_id FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Đề 1' LIMIT 1);
+SET @quiz2_id = (SELECT quiz_id FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Đề 2' LIMIT 1);
+SET @quiz3_id = (SELECT quiz_id FROM quiz WHERE title = 'Quiz tổng hợp ATBMHTTT - Bản nháp' LIMIT 1);
+
+-- =========================================================
+-- LẤY QUESTION ID MẪU
+-- =========================================================
+SET @q1 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 0);
+SET @q2 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 1);
+SET @q3 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 2);
+SET @q4 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 3);
+SET @q5 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 4);
+SET @q6 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 5);
+SET @q7 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 6);
+SET @q8 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 7);
+SET @q9 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 8);
+SET @q10 = (SELECT question_id FROM question WHERE topic_id = @topic_id ORDER BY question_id LIMIT 1 OFFSET 9);
+
+-- =========================================================
+-- QUIZ_QUESTION
+-- =========================================================
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz1_id, @q1, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz1_id AND question_id = @q1);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz1_id, @q2, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz1_id AND question_id = @q2);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz1_id, @q3, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz1_id AND question_id = @q3);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz1_id, @q4, 4, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz1_id AND question_id = @q4);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz1_id, @q5, 5, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz1_id AND question_id = @q5);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q3, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q3);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q4, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q4);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q5, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q5);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q6, 4, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q6);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q7, 5, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q7);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q8, 6, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q8);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q9, 7, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q9);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz2_id, @q10, 8, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz2_id AND question_id = @q10);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz3_id, @q1, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz3_id AND question_id = @q1);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz3_id, @q2, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz3_id AND question_id = @q2);
+
+INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
+SELECT @quiz3_id, @q3, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz3_id AND question_id = @q3);
+
+-- =========================================================
+-- ATTEMPT
+-- =========================================================
+INSERT INTO attempt (
+    user_id, quiz_id, started_at, submitted_at,
+    total_score, correct_count, status, duration_seconds
+)
+SELECT
+    @student_id, @quiz1_id,
+    DATE_SUB(NOW(), INTERVAL 2 DAY),
+    DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 12 MINUTE,
+    4.00, 4, 'GRADED', 720
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM attempt
+    WHERE user_id = @student_id
+  AND quiz_id = @quiz1_id
+  AND started_at = DATE_SUB(NOW(), INTERVAL 2 DAY)
+    );
+
+INSERT INTO attempt (
+    user_id, quiz_id, started_at, submitted_at,
+    total_score, correct_count, status, duration_seconds
+)
+SELECT
+    @student_id, @quiz2_id,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 16 MINUTE,
+    6.00, 6, 'SUBMITTED', 960
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM attempt
+    WHERE user_id = @student_id
+  AND quiz_id = @quiz2_id
+  AND started_at = DATE_SUB(NOW(), INTERVAL 1 DAY)
+    );
+
+INSERT INTO attempt (
+    user_id, quiz_id, started_at, submitted_at,
+    total_score, correct_count, status, duration_seconds
+)
+SELECT
+    @student_id, @quiz2_id,
+    NOW() - INTERVAL 20 MINUTE,
+    NULL,
+    0.00, 0, 'IN_PROGRESS', 1200
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM attempt
+    WHERE user_id = @student_id
+  AND quiz_id = @quiz2_id
+  AND status = 'IN_PROGRESS'
+    );
+
+SET @attempt1_id = (
+    SELECT attempt_id
+    FROM attempt
+    WHERE user_id = @student_id AND quiz_id = @quiz1_id
+    ORDER BY attempt_id ASC
+    LIMIT 1
+);
+
+SET @attempt2_id = (
+    SELECT attempt_id
+    FROM attempt
+    WHERE user_id = @student_id AND quiz_id = @quiz2_id AND status = 'SUBMITTED'
+    ORDER BY attempt_id ASC
+    LIMIT 1
+);
+
+SET @attempt3_id = (
+    SELECT attempt_id
+    FROM attempt
+    WHERE user_id = @student_id AND quiz_id = @quiz2_id AND status = 'IN_PROGRESS'
+    ORDER BY attempt_id ASC
+    LIMIT 1
+);
+
+-- =========================================================
+-- ATTEMPT_QUESTION
+-- =========================================================
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt1_id, @q1, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q1);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt1_id, @q2, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q2);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt1_id, @q3, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q3);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt1_id, @q4, 4, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q4);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt1_id, @q5, 5, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q5);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q3, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q3);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q4, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q4);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q5, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q5);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q6, 4, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q6);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q7, 5, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q7);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q8, 6, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q8);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q9, 7, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q9);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt2_id, @q10, 8, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q10);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt3_id, @q3, 1, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt3_id AND question_id = @q3);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt3_id, @q4, 2, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt3_id AND question_id = @q4);
+
+INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
+SELECT @attempt3_id, @q5, 3, 1.00
+    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt3_id AND question_id = @q5);
+
+-- =========================================================
+-- ATTEMPT_ANSWER
+-- attempt 1: 4 đúng, 1 sai
+-- =========================================================
+SET @aq1_1 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q1 LIMIT 1);
+SET @aq1_2 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q2 LIMIT 1);
+SET @aq1_3 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q3 LIMIT 1);
+SET @aq1_4 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q4 LIMIT 1);
+SET @aq1_5 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt1_id AND question_id = @q5 LIMIT 1);
+
+SET @q1_correct = (SELECT option_id FROM answer_option WHERE question_id = @q1 AND is_correct = TRUE LIMIT 1);
+SET @q2_correct = (SELECT option_id FROM answer_option WHERE question_id = @q2 AND is_correct = TRUE LIMIT 1);
+SET @q3_correct = (SELECT option_id FROM answer_option WHERE question_id = @q3 AND is_correct = TRUE LIMIT 1);
+SET @q4_wrong   = (SELECT option_id FROM answer_option WHERE question_id = @q4 AND is_correct = FALSE ORDER BY option_id LIMIT 1);
+SET @q5_correct = (SELECT option_id FROM answer_option WHERE question_id = @q5 AND is_correct = TRUE LIMIT 1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq1_1, @q1_correct, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 2 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq1_1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq1_2, @q2_correct, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 4 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq1_2);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq1_3, @q3_correct, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 6 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq1_3);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq1_4, @q4_wrong, FALSE, 0.00, DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 8 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq1_4);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq1_5, @q5_correct, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 10 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq1_5);
+
+-- =========================================================
+-- ATTEMPT_ANSWER
+-- attempt 2: 6 đúng, 2 sai
+-- =========================================================
+SET @aq2_1 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q3 LIMIT 1);
+SET @aq2_2 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q4 LIMIT 1);
+SET @aq2_3 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q5 LIMIT 1);
+SET @aq2_4 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q6 LIMIT 1);
+SET @aq2_5 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q7 LIMIT 1);
+SET @aq2_6 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q8 LIMIT 1);
+SET @aq2_7 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q9 LIMIT 1);
+SET @aq2_8 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt2_id AND question_id = @q10 LIMIT 1);
+
+SET @q3_correct_2  = (SELECT option_id FROM answer_option WHERE question_id = @q3  AND is_correct = TRUE  LIMIT 1);
+SET @q4_correct_2  = (SELECT option_id FROM answer_option WHERE question_id = @q4  AND is_correct = TRUE  LIMIT 1);
+SET @q5_correct_2  = (SELECT option_id FROM answer_option WHERE question_id = @q5  AND is_correct = TRUE  LIMIT 1);
+SET @q6_correct_2  = (SELECT option_id FROM answer_option WHERE question_id = @q6  AND is_correct = TRUE  LIMIT 1);
+SET @q7_wrong_2    = (SELECT option_id FROM answer_option WHERE question_id = @q7  AND is_correct = FALSE ORDER BY option_id LIMIT 1);
+SET @q8_correct_2  = (SELECT option_id FROM answer_option WHERE question_id = @q8  AND is_correct = TRUE  LIMIT 1);
+SET @q9_wrong_2    = (SELECT option_id FROM answer_option WHERE question_id = @q9  AND is_correct = FALSE ORDER BY option_id LIMIT 1);
+SET @q10_correct_2 = (SELECT option_id FROM answer_option WHERE question_id = @q10 AND is_correct = TRUE  LIMIT 1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_1, @q3_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 2 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_2, @q4_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 4 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_2);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_3, @q5_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 6 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_3);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_4, @q6_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 8 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_4);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_5, @q7_wrong_2, FALSE, 0.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 10 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_5);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_6, @q8_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 12 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_6);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_7, @q9_wrong_2, FALSE, 0.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 14 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_7);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq2_8, @q10_correct_2, TRUE, 1.00, DATE_SUB(NOW(), INTERVAL 1 DAY) + INTERVAL 16 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq2_8);
+
+-- =========================================================
+-- ATTEMPT_ANSWER
+-- attempt 3: đang làm dở, trả lời 2/3 câu
+-- =========================================================
+SET @aq3_1 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt3_id AND question_id = @q3 LIMIT 1);
+SET @aq3_2 = (SELECT attempt_question_id FROM attempt_question WHERE attempt_id = @attempt3_id AND question_id = @q4 LIMIT 1);
+
+SET @q3_correct_3 = (SELECT option_id FROM answer_option WHERE question_id = @q3 AND is_correct = TRUE LIMIT 1);
+SET @q4_wrong_3   = (SELECT option_id FROM answer_option WHERE question_id = @q4 AND is_correct = FALSE ORDER BY option_id LIMIT 1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq3_1, @q3_correct_3, TRUE, 1.00, NOW() - INTERVAL 15 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq3_1);
+
+INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
+SELECT @aq3_2, @q4_wrong_3, FALSE, 0.00, NOW() - INTERVAL 10 MINUTE
+WHERE NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = @aq3_2);
+
+-- =========================================================
+-- LEARNING_PROGRESS
+-- =========================================================
+INSERT INTO learning_progress (
+    user_id, topic_id,
+    total_quizzes, completed_quizzes, progress_percentage,
+    total_attempts, correct_rate, mastery_score,
+    last_practiced_at, updated_at
+)
+SELECT
+    @student_id, @topic_id,
+    3, 2, 66.67,
+    3, 71.43, 7.20,
+    NOW() - INTERVAL 10 MINUTE, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM learning_progress
+    WHERE user_id = @student_id AND topic_id = @topic_id
+    );
+
+-- =========================================================
+-- USER_QUESTION_MEMORY
+-- =========================================================
+INSERT INTO user_question_memory (
+    user_id, question_id, last_result, correct_streak, wrong_streak,
+    review_count, memory_score, last_reviewed_at, next_review_at,
+    created_at, updated_at
+)
+SELECT
+    @student_id, @q1, TRUE, 2, 0,
+    2, 8.50, NOW() - INTERVAL 2 DAY, NOW() + INTERVAL 3 DAY,
+    NOW() - INTERVAL 2 DAY, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q1
+    );
+
+INSERT INTO user_question_memory (
+    user_id, question_id, last_result, correct_streak, wrong_streak,
+    review_count, memory_score, last_reviewed_at, next_review_at,
+    created_at, updated_at
+)
+SELECT
+    @student_id, @q4, FALSE, 0, 2,
+    2, 3.20, NOW() - INTERVAL 1 DAY, NOW() + INTERVAL 1 DAY,
+    NOW() - INTERVAL 2 DAY, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q4
+    );
+
+INSERT INTO user_question_memory (
+    user_id, question_id, last_result, correct_streak, wrong_streak,
+    review_count, memory_score, last_reviewed_at, next_review_at,
+    created_at, updated_at
+)
+SELECT
+    @student_id, @q5, TRUE, 1, 0,
+    1, 6.70, NOW() - INTERVAL 1 DAY, NOW() + INTERVAL 4 DAY,
+    NOW() - INTERVAL 1 DAY, NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q5
+    );
+
+-- =========================================================
+-- USER_QUIZ_PROGRESS
+-- highest_score <= 1 theo CHECK hiện tại
+-- =========================================================
+INSERT INTO user_quiz_progress (
+    user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at
+)
+SELECT
+    @student_id, @quiz1_id, @topic_id, 0.80, 1, NOW() - INTERVAL 2 DAY
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_quiz_progress WHERE user_id = @student_id AND quiz_id = @quiz1_id
+    );
+
+INSERT INTO user_quiz_progress (
+    user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at
+)
+SELECT
+    @student_id, @quiz2_id, @topic_id, 0.75, 2, NOW() - INTERVAL 10 MINUTE
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_quiz_progress WHERE user_id = @student_id AND quiz_id = @quiz2_id
+    );
+
+-- =========================================================
+-- QUESTION_POST
+-- =========================================================
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, created_at, updated_at
+)
+SELECT
+    @student_id, @topic_id,
+    'Em chưa hiểu rõ sự khác nhau giữa DoS và DDoS',
+    'Em đang học phần tấn công từ chối dịch vụ nhưng chưa phân biệt rõ DoS và DDoS. Mọi người có thể giải thích ngắn gọn giúp em với ví dụ dễ hiểu được không?',
+    'VISIBLE', 12, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY
+WHERE NOT EXISTS (
+    SELECT 1 FROM question_post
+    WHERE user_id = @student_id
+  AND title = 'Em chưa hiểu rõ sự khác nhau giữa DoS và DDoS'
+    );
+
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, created_at, updated_at
+)
+SELECT
+    @student_id, @topic_id,
+    'Phân biệt virus, worm và trojan như thế nào?',
+    'Em hay bị nhầm giữa virus, sâu mạng và trojan. Nhờ mọi người cho em cách phân biệt nhanh để đi thi trắc nghiệm.',
+    'VISIBLE', 8, NOW() - INTERVAL 12 HOUR, NOW() - INTERVAL 12 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM question_post
+    WHERE user_id = @student_id
+  AND title = 'Phân biệt virus, worm và trojan như thế nào?'
+    );
+
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, created_at, updated_at
+)
+SELECT
+    @student_id, @topic_id,
+    'Bài đăng test bị ẩn',
+    'Đây là bài đăng mẫu để test moderation và trạng thái ẩn.',
+    'HIDDEN', 3, NOW() - INTERVAL 6 HOUR, NOW() - INTERVAL 6 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM question_post
+    WHERE user_id = @student_id
+  AND title = 'Bài đăng test bị ẩn'
+    );
+
+SET @post1_id = (
+    SELECT question_post_id
+    FROM question_post
+    WHERE title = 'Em chưa hiểu rõ sự khác nhau giữa DoS và DDoS'
+    LIMIT 1
+);
+
+SET @post2_id = (
+    SELECT question_post_id
+    FROM question_post
+    WHERE title = 'Phân biệt virus, worm và trojan như thế nào?'
+    LIMIT 1
+);
+
+SET @post3_id = (
+    SELECT question_post_id
+    FROM question_post
+    WHERE title = 'Bài đăng test bị ẩn'
+    LIMIT 1
+);
+
+-- =========================================================
+-- COMMENT
+-- =========================================================
+INSERT INTO comment (
+    question_post_id, user_id, content, status, created_at, updated_at
+)
+SELECT
+    @post1_id, @admin_id,
+    'DoS thường đến từ một nguồn hoặc một nhóm nhỏ nguồn tấn công, còn DDoS là phân tán từ rất nhiều máy bị kiểm soát. Khi làm trắc nghiệm em cứ nhớ chữ D là Distributed.',
+    'VISIBLE', NOW() - INTERVAL 20 HOUR, NOW() - INTERVAL 20 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post1_id
+  AND user_id = @admin_id
+  AND content LIKE 'DoS thường đến từ một nguồn%'
+    );
+
+INSERT INTO comment (
+    question_post_id, user_id, content, status, created_at, updated_at
+)
+SELECT
+    @post1_id, @student_id,
+    'Em cảm ơn ạ, giờ em hiểu hơn rồi.',
+    'VISIBLE', NOW() - INTERVAL 19 HOUR, NOW() - INTERVAL 19 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post1_id
+  AND user_id = @student_id
+  AND content = 'Em cảm ơn ạ, giờ em hiểu hơn rồi.'
+    );
+
+INSERT INTO comment (
+    question_post_id, user_id, content, status, created_at, updated_at
+)
+SELECT
+    @post2_id, @admin_id,
+    'Virus thường cần vật chủ hoặc thao tác người dùng để lây, worm có thể tự lan qua mạng, còn trojan thường giả dạng phần mềm hợp lệ để đánh lừa người dùng.',
+    'VISIBLE', NOW() - INTERVAL 10 HOUR, NOW() - INTERVAL 10 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post2_id
+  AND user_id = @admin_id
+  AND content LIKE 'Virus thường cần vật chủ%'
+    );
+
+INSERT INTO comment (
+    question_post_id, user_id, content, status, created_at, updated_at
+)
+SELECT
+    @post3_id, @student_id,
+    'Nội dung không phù hợp để test hide comment.',
+    'HIDDEN', NOW() - INTERVAL 5 HOUR, NOW() - INTERVAL 5 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post3_id
+  AND user_id = @student_id
+  AND content = 'Nội dung không phù hợp để test hide comment.'
+    );
+
+SET @hidden_comment_id = (
+    SELECT comment_id
+    FROM comment
+    WHERE question_post_id = @post3_id
+      AND content = 'Nội dung không phù hợp để test hide comment.'
+    LIMIT 1
+);
+
+-- =========================================================
+-- MODERATION_RECORD
+-- =========================================================
+INSERT INTO moderation_record (
+    moderator_id, target_type, target_id, action, reason, created_at
+)
+SELECT
+    @admin_id, 'QUESTION_POST', @post3_id, 'HIDE',
+    'Bài đăng mẫu dùng để test chức năng ẩn nội dung cộng đồng',
+    NOW() - INTERVAL 4 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM moderation_record
+    WHERE target_type = 'QUESTION_POST'
+  AND target_id = @post3_id
+  AND action = 'HIDE'
+    );
+
+INSERT INTO moderation_record (
+    moderator_id, target_type, target_id, action, reason, created_at
+)
+SELECT
+    @admin_id, 'COMMENT', @hidden_comment_id, 'HIDE',
+    'Bình luận mẫu dùng để test moderation comment',
+    NOW() - INTERVAL 3 HOUR
+WHERE NOT EXISTS (
+    SELECT 1 FROM moderation_record
+    WHERE target_type = 'COMMENT'
+  AND target_id = @hidden_comment_id
+  AND action = 'HIDE'
+    );
+
+INSERT INTO moderation_record (
+    moderator_id, target_type, target_id, action, reason, created_at
+)
+SELECT
+    @admin_id, 'QUESTION', @q4, 'APPROVE',
+    'Câu hỏi đã được rà soát và duyệt hiển thị',
+    NOW() - INTERVAL 2 DAY
+WHERE NOT EXISTS (
+    SELECT 1 FROM moderation_record
+    WHERE target_type = 'QUESTION'
+  AND target_id = @q4
+  AND action = 'APPROVE'
+    );

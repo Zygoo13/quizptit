@@ -13,4 +13,5 @@ public class TopicProgressDTO {
     private Integer totalQuizzes;
     private Integer completedQuizzes; // Số quiz đã làm ít nhất 1 lần
     private BigDecimal averageScore;   // Điểm trung bình của các quiz trong topic
+    private BigDecimal progressPercentage;
 }

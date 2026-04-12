@@ -1,99 +1,62 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Bảng điều khiển Ôn tập - QuizPTIT</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        :root { --ptit-red: #ce0707; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .review-card { border: none; border-radius: 15px; transition: transform 0.2s, box-shadow 0.2s; background: #fff; }
-        .review-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .mastery-progress { height: 8px; border-radius: 5px; background-color: #e9ecef; }
-        .subject-title { color: #333; font-weight: 700; height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .stat-label { font-size: 0.85rem; color: #6c757d; }
-        .stat-value { font-weight: 600; color: #333; }
-        .empty-state { padding: 80px 0; text-align: center; color: #6c757d; }
-        .border-need-review { border-top: 5px solid #ffc107 !important; }
-        .border-completed { border-top: 5px solid #198754 !important; }
-    </style>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Dashboard ôn tập', ~{::content})}">
+<head></head>
 <body>
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
-
-    <div class="container py-5">
-        <div class="row mb-5">
-            <div class="col-md-8">
-                <h2 class="fw-bold"><i class="bi bi-journal-check text-primary me-2"></i>Trung tâm Ôn tập kiến thức</h2>
-                <p class="text-muted">Hệ thống tự động phân tích những phần bạn còn yếu để gợi ý ôn luyện theo từng môn học.</p>
-            </div>
-            <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
-                <div class="bg-white p-3 rounded-3 shadow-sm border">
-                    <span class="stat-label d-block">Tổng số môn đã học</span>
-                    <span class="fs-4 fw-bold text-primary" th:text="${subjects.size()}">0</span>
-                </div>
-            </div>
+<div th:fragment="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Dashboard ôn tập</h3>
+            <p class="text-muted mb-0">
+                Theo dõi số câu cần ôn theo từng môn học và bắt đầu phiên ôn tập nhanh.
+            </p>
         </div>
-
-        <div th:if="${subjects == null || subjects.isEmpty()}" class="empty-state card shadow-sm">
-            <i class="bi bi-book-half fs-1 mb-3 text-muted"></i>
-            <h3>Chưa có dữ liệu học tập</h3>
-            <p>Hãy tham gia làm các bài Quiz để hệ thống bắt đầu theo dõi tiến độ của bạn nhé!</p>
-            <a th:href="@{/subjects}" class="btn btn-primary mt-3">Khám phá các môn học</a>
+        
+        <a th:href="@{/review/suggestions}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-lightbulb me-1"></i> Xem gợi ý hôm nay
+        </a>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(subjects)}" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="display-6 text-muted mb-3">
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Chưa có dữ liệu ôn tập</h5>
+            <p class="text-muted mb-0">Sau khi làm bài và nộp bài, hệ thống sẽ sinh dữ liệu ôn tập cá nhân hóa.</p>
         </div>
-
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" th:unless="${subjects.isEmpty()}">
-            <div class="col" th:each="s : ${subjects}">
-                <div class="card h-100 review-card shadow-sm" 
-                     th:classappend="${s.totalReviewCount > 0} ? 'border-need-review' : 'border-completed'">
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-4" th:each="subject : ${subjects}">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 d-flex flex-column">
+                    <h5 class="fw-bold mb-2" th:text="${subject.subjectName}">Môn học</h5>
                     
-                    <div class="card-body p-4">
-                        <h5 class="subject-title mb-3" th:text="${s.subjectName}">Tên môn học</h5>
-                        
-                        <hr class="opacity-10">
-
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="stat-label">Độ thông thạo (Mastery)</span>
-                                <span class="stat-value" th:text="${#numbers.formatDecimal(s.averageMastery, 1, 1)} + '%'">0%</span>
-                            </div>
-                            <div class="progress mastery-progress">
-                                <div class="progress-bar" 
-                                     th:style="'width: ' + ${s.averageMastery.doubleValue()} + '%'"
-                                     th:classappend="${s.averageMastery.doubleValue() < 50} ? 'bg-danger' : (${s.averageMastery.doubleValue() < 80} ? 'bg-warning' : 'bg-success')">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="rounded-circle bg-light p-3 me-3">
-                                <i class="bi" th:classappend="${s.totalReviewCount > 0} ? 'bi-exclamation-triangle-fill text-warning' : 'bi-patch-check-fill text-success'"></i>
-                            </div>
-                            <div>
-                                <span class="stat-label d-block">Số chương/câu cần ôn</span>
-                                <span class="fs-5 fw-bold" 
-                                      th:classappend="${s.totalReviewCount > 0} ? 'text-danger' : 'text-success'"
-                                      th:text="${s.totalReviewCount}">0</span>
-                            </div>
-                        </div>
-
-                        <div th:if="${s.totalReviewCount > 0}">
-                            <a th:href="@{/review/subject/{id}(id=${s.subjectId})}" class="btn btn-primary w-100 py-2 fw-bold">
-                                <i class="bi bi-lightning-charge-fill me-1"></i> Bắt đầu ôn ngay
-                            </a>
-                        </div>
-                        <div th:unless="${s.totalReviewCount > 0}">
-                            <button class="btn btn-outline-success w-100 py-2 fw-bold" disabled>
-                                <i class="bi bi-check2-all me-1"></i> Đã vững kiến thức
-                            </button>
-                        </div>
+                    <div class="small text-muted mb-4">
+                        Cần ôn:
+                        <span class="fw-semibold" th:text="${subject.reviewCount != null ? subject.reviewCount : 0}">0</span>
+                        câu
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2"
+                              th:if="${subject.averageMastery != null}">
+                            Mastery:
+                            <span th:text="${subject.averageMastery}">0</span>
+                        </span>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/review/suggestions}"
+                           class="btn btn-outline-primary w-100 rounded-pill">
+                            Xem gợi ý ôn tập
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 </body>
 </html>

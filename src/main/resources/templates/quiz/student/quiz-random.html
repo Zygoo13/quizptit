@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Quiz ngẫu nhiên', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="mb-4">
+                        <h3 class="fw-bold mb-1">Tạo quiz ngẫu nhiên</h3>
+                        <p class="text-muted mb-0">
+                            Chọn môn học hoặc chủ đề để tạo nhanh một đề luyện tập mới.
+                        </p>
+                    </div>
+                    
+                    <form id="randomQuizForm">
+                        <div class="row g-4">
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Môn học</label>
+                                <select id="subjectId" class="form-select">
+                                    <option value="">-- Chọn môn học --</option>
+                                    <option th:each="subject : ${subjects}"
+                                            th:value="${subject.subjectId}"
+                                            th:text="${subject.subjectName}">
+                                        Subject
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Chủ đề</label>
+                                <select id="topicId" class="form-select">
+                                    <option value="">-- Chọn chủ đề (ưu tiên nếu có) --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-8">
+                                <label class="form-label fw-semibold">Tiêu đề quiz</label>
+                                <input type="text" id="title" class="form-control" value="Quiz luyện tập ngẫu nhiên">
+                            </div>
+                            
+                            <div class="col-lg-2">
+                                <label class="form-label fw-semibold">Thời lượng</label>
+                                <input type="number" id="durationMinutes" class="form-control" min="1" value="30">
+                            </div>
+                            
+                            <div class="col-lg-2">
+                                <label class="form-label fw-semibold">Số câu hỏi</label>
+                                <input type="number" id="requiredQuestions" class="form-control" min="1" value="10">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-shuffle me-1"></i> Tạo quiz
+                            </button>
+                            
+                            <a th:href="@{/quizzes}" class="btn btn-outline-secondary px-4">Quay lại</a>
+                        </div>
+                    </form>
+                    
+                    <div id="randomMessage" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const subjectSelect = document.getElementById('subjectId');
+        const topicSelect = document.getElementById('topicId');
+        const randomQuizForm = document.getElementById('randomQuizForm');
+        const randomMessage = document.getElementById('randomMessage');
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+        async function loadTopics(subjectId) {
+            topicSelect.innerHTML = '<option value="">-- Chọn chủ đề (ưu tiên nếu có) --</option>';
+            if (!subjectId) return;
+
+            const response = await fetch(`/api/quiz-data/topics?subjectId=${subjectId}`);
+            const topics = await response.json();
+
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic.topicId;
+                option.textContent = topic.topicName;
+                topicSelect.appendChild(option);
+            });
+        }
+
+        subjectSelect.addEventListener('change', async () => {
+            await loadTopics(subjectSelect.value);
+        });
+
+        randomQuizForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                subjectId: subjectSelect.value ? Number(subjectSelect.value) : null,
+                topicId: topicSelect.value ? Number(topicSelect.value) : null,
+                title: document.getElementById('title').value,
+                durationMinutes: Number(document.getElementById('durationMinutes').value),
+                requiredQuestions: Number(document.getElementById('requiredQuestions').value)
+            };
+
+            try {
+                const response = await fetch('/api/quizzes/random', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(csrfHeader && csrfToken ? {[csrfHeader]: csrfToken} : {})
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    randomMessage.innerHTML = `<div class="alert alert-danger mb-0">${data.message || 'Không thể tạo quiz ngẫu nhiên.'}</div>`;
+                    return;
+                }
+
+                randomMessage.innerHTML = `<div class="alert alert-success mb-0">${data.message || 'Tạo quiz thành công.'}</div>`;
+
+                if (data.quizId) {
+                    setTimeout(() => {
+                        window.location.href = `/quizzes/${data.quizId}`;
+                    }, 800);
+                }
+            } catch (e) {
+                randomMessage.innerHTML = `<div class="alert alert-danger mb-0">Không thể tạo quiz ngẫu nhiên.</div>`;
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -10,11 +10,24 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import com.quizptit.content.entity.Topic;
+import com.quizptit.content.repository.TopicRepository;
+import com.quizptit.content.entity.Question;
+import com.quizptit.content.repository.QuestionRepository;
+
 @Service
 public class SubjectServiceImpl implements SubjectService {
 
     @Autowired
     private SubjectRepository subjectRepository;
+
+    @Autowired
+    private TopicRepository topicRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
 
     @Override
     public Page<Subject> searchSubjects(String keyword, Boolean isActive, Pageable pageable) {
@@ -53,9 +66,43 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
+    @Transactional
     public void toggleStatus(Long subjectId) {
         Subject subject = getSubjectById(subjectId);
-        subject.setIsActive(!subject.getIsActive());
+        boolean newStatus = !subject.getIsActive();
+        subject.setIsActive(newStatus);
         subjectRepository.save(subject);
+
+        if (!newStatus) {
+            List<Topic> topics = topicRepository.findBySubject_SubjectId(subjectId);
+            for (Topic t : topics) {
+                t.setIsActive(false);
+                topicRepository.save(t);
+
+                List<Question> questions = questionRepository.findByTopic_TopicId(t.getTopicId());
+                for (Question q : questions) {
+                    q.setStatus(com.quizptit.common.constant.QuestionStatus.HIDDEN);
+                    questionRepository.save(q);
+                }
+            }
+        } else {
+            List<Topic> topics = topicRepository.findBySubject_SubjectId(subjectId);
+            for (Topic t : topics) {
+                t.setIsActive(true);
+                topicRepository.save(t);
+
+                List<Question> questions = questionRepository.findByTopic_TopicId(t.getTopicId());
+                for (Question q : questions) {
+                    q.setStatus(com.quizptit.common.constant.QuestionStatus.APPROVED);
+                    questionRepository.save(q);
+                }
+            }
+        }
     }
+
+    @Override
+    public List<Subject> getAllSubjects() {
+        return subjectRepository.findAll();
+    }
+
 }

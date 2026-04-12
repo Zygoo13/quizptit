@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Chi tiết tiến độ sinh viên', ~{::content}, ~{})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Chi tiết tiến độ sinh viên</h3>
+            <p class="text-muted mb-0">
+                Theo dõi tiến độ theo chương và các lượt làm bài gần nhất.
+            </p>
+        </div>
+        
+        <a th:href="@{/admin/progress}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại
+        </a>
+    </div>
+    
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Thông tin sinh viên</h5>
+                    
+                    <div class="d-flex flex-column gap-3">
+                        <div class="border rounded-4 p-3">
+                            <div class="small text-muted mb-1">Họ và tên</div>
+                            <div class="fw-semibold" th:text="${user.fullName}">Nguyễn Văn A</div>
+                        </div>
+                        
+                        <div class="border rounded-4 p-3">
+                            <div class="small text-muted mb-1">Email</div>
+                            <div class="fw-semibold" th:text="${user.email}">email@example.com</div>
+                        </div>
+                        
+                        <div class="border rounded-4 p-3">
+                            <div class="small text-muted mb-1">Môn học</div>
+                            <div class="fw-semibold" th:text="${subject.subjectName}">Subject</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Tiến độ theo chương</h5>
+                    
+                    <div th:if="${#lists.isEmpty(topicDetails)}" class="text-muted">
+                        Chưa có dữ liệu tiến độ theo chương.
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-3" th:if="${!#lists.isEmpty(topicDetails)}">
+                        <div th:each="topic : ${topicDetails}" class="border rounded-4 p-3">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-2">
+                                <div>
+                                    <div class="fw-semibold" th:text="${topic.topicName}">Tên chương</div>
+                                    <div class="small text-muted">
+                                        <span th:text="${topic.completedQuizzes}">0</span> /
+                                        <span th:text="${topic.totalQuizzes}">0</span>
+                                        quiz đã làm
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2">
+                                        TB:
+                                        <span th:text="${topic.averageScore}">0</span>
+                                    </span>
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-2"
+                                          th:if="${topic.progressPercentage != null}">
+                                        <span th:text="${topic.progressPercentage}">0</span>%
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="progress" style="height: 10px; border-radius: 999px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     th:style="'width:' + ${(topic.totalQuizzes != null and topic.totalQuizzes > 0) ? (topic.completedQuizzes * 100.0 / topic.totalQuizzes) : 0} + '%;'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">5 lượt làm bài gần nhất</h5>
+            
+            <div th:if="${#lists.isEmpty(recentAttempts)}" class="text-muted">
+                Chưa có lượt làm bài nào trong môn học này.
+            </div>
+            
+            <div class="table-responsive" th:if="${!#lists.isEmpty(recentAttempts)}">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên quiz</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian bắt đầu</th>
+                            <th>Điểm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="attempt : ${recentAttempts}">
+                            <td th:text="${attempt.quiz.title}">Quiz</td>
+                            <td>
+                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
+                                  th:text="${attempt.status}">
+                                COMPLETED
+                            </span>
+                            </td>
+                            <td th:text="${attempt.startedAt != null ? #temporals.format(attempt.startedAt, 'dd/MM/yyyy HH:mm') : '---'}">
+                                12/04/2026 10:00
+                            </td>
+                            <td>
+                                <span th:text="${attempt.score != null ? attempt.score : '---'}">8.5</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

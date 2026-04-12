@@ -30,13 +30,11 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     @Override
     public List<ModerationRecordResponse> getRecordsByType(String type) {
-        // 1. Lấy danh sách Entity từ Repository
         List<ModerationRecord> list = moderationRecordRepository.findByTargetTypeOrderByCreatedAtDesc(type);
 
-        // 2. Chuyển đổi từ Entity sang DTO dùng mapToResponse
         return list.stream()
                 .filter(Objects::nonNull)
-                .map(this::mapToResponse) // Dòng này cực kỳ quan trọng
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -46,15 +44,10 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin không tồn tại ID: " + adminId));
 
-        // Xác định loại target và ID tương ứng
         String targetType = (postId != null) ? "QUESTION_POST" : "COMMENT";
         Long targetId = (postId != null) ? postId : commentId;
 
-        // Quan trọng: Đảm bảo request.getAction() không bị null
-        String actionValue = request.getAction();
-        if (actionValue == null) {
-            actionValue = "HIDE"; // Giá trị mặc định nếu lỡ quên gửi từ Postman
-        }
+        String actionValue = normalizeAction(request.getAction());
 
         ModerationRecord record = ModerationRecord.builder()
                 .targetType(targetType)
@@ -70,7 +63,6 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
 
     @Override
     public List<ModerationRecordResponse> getHistoryByPost(Long postId) {
-        // Tìm theo targetId = postId và targetType = 'QUESTION_POST'
         return moderationRecordRepository.findAll().stream()
                 .filter(r -> "QUESTION_POST".equals(r.getTargetType()) && postId.equals(r.getTargetId()))
                 .map(this::mapToResponse)
@@ -83,10 +75,12 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Admin ID: " + adminId));
 
+        String actionValue = normalizeAction(action);
+
         ModerationRecord record = ModerationRecord.builder()
                 .targetId(postId)
                 .targetType("QUESTION_POST")
-                .action(action) // Đảm bảo truyền "RESTORE" khi khôi phục
+                .action(actionValue)
                 .reason(reason)
                 .moderator(admin)
                 .createdAt(LocalDateTime.now())
@@ -101,10 +95,12 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Admin ID: " + adminId));
 
+        String actionValue = normalizeAction(action);
+
         ModerationRecord record = ModerationRecord.builder()
                 .targetId(commentId)
                 .targetType("COMMENT")
-                .action(action) // Truyền "RESTORE", "HIDE" hoặc "DELETE"
+                .action(actionValue)
                 .reason(reason)
                 .moderator(admin)
                 .createdAt(LocalDateTime.now())
@@ -116,10 +112,27 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
     @Override
     @Transactional(readOnly = true)
     public List<ModerationRecordResponse> getAllRecords() {
-        // Lấy toàn bộ log, sắp xếp cái mới nhất lên đầu cho dễ xem
         return moderationRecordRepository.findAll().stream()
-                .map(this::mapToResponse) // Dùng hàm mapToResponse để chuyển sang DTO
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private String normalizeAction(String action) {
+        if (action == null || action.isBlank()) {
+            return "HIDE";
+        }
+
+        String actionValue = action.toUpperCase().trim();
+
+        if ("HIDDEN".equals(actionValue) || "DELETED".equals(actionValue)) {
+            return "HIDE";
+        }
+
+        if ("VISIBLE".equals(actionValue)) {
+            return "RESTORE";
+        }
+
+        return actionValue;
     }
 
     private ModerationRecordResponse mapToResponse(ModerationRecord record) {
@@ -131,8 +144,7 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
             content = questionPostRepository.findById(record.getTargetId())
                     .map(p -> p.getTitle())
                     .orElse("Bài viết đã bị xóa vĩnh viễn");
-        }
-        else if ("COMMENT".equals(record.getTargetType())) {
+        } else if ("COMMENT".equals(record.getTargetType())) {
             var commentOpt = commentRepository.findById(record.getTargetId());
             if (commentOpt.isPresent()) {
                 var comment = commentOpt.get();
@@ -148,9 +160,8 @@ public class ModerationRecordServiceImpl implements ModerationRecordService {
                 .postId(finalPostId)
                 .commentId("COMMENT".equals(record.getTargetType()) ? record.getTargetId() : null)
                 .content(content)
-                .action(record.getAction()) // Sẽ mang giá trị HIDE, DELETE, hoặc RESTORE
+                .action(record.getAction())
                 .reason(record.getReason())
-                // Thêm ID người xử lý để hiện ở cột thứ 4 như bạn muốn
                 .moderatorName(record.getModerator() != null
                         ? "[" + record.getModerator().getUserId() + "] " + record.getModerator().getFullName()
                         : "N/A")

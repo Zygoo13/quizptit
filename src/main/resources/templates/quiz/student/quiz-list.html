@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Danh sách quiz', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        .quiz-card {
+            border-radius: 18px;
+            transition: all 0.2s ease;
+            border: 0;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+        }
+
+        .quiz-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+    </style>
+    
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Danh sách quiz</h3>
+            <p class="text-muted mb-0">
+                Chọn đề thi phù hợp để bắt đầu luyện tập.
+            </p>
+        </div>
+        
+        <a th:href="@{/quizzes/random}" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="bi bi-shuffle me-1"></i> Tạo quiz ngẫu nhiên
+        </a>
+    </div>
+    
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form th:action="@{/quizzes}" method="get" class="row g-3 align-items-end">
+                <div class="col-lg-8">
+                    <label class="form-label fw-semibold">Lọc theo môn học</label>
+                    <select name="subjectId" class="form-select">
+                        <option value="">Tất cả môn học</option>
+                        <option th:each="subject : ${subjects}"
+                                th:value="${subject.subjectId}"
+                                th:text="${subject.subjectName}"
+                                th:selected="${selectedSubjectId == subject.subjectId}">
+                            Subject
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="col-lg-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i> Lọc
+                    </button>
+                    <a th:href="@{/quizzes}" class="btn btn-outline-secondary flex-fill">Làm mới</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(quizzes)}" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="display-6 text-muted mb-3">
+                <i class="bi bi-journal-x"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Chưa có quiz nào</h5>
+            <p class="text-muted mb-0">Hiện chưa có đề thi phù hợp với bộ lọc bạn chọn.</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-4" th:each="quiz : ${quizzes}">
+            <div class="card quiz-card h-100">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2"
+                              th:text="${quiz.subject != null ? quiz.subject.subjectName : 'Quiz'}">
+                            Subject
+                        </span>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
+                              th:text="${quiz.totalQuestions} + ' câu'">
+                            20 câu
+                        </span>
+                    </div>
+                    
+                    <h5 class="fw-bold mb-3" th:text="${quiz.title}">Tên quiz</h5>
+                    
+                    <div class="small text-muted mb-4">
+                        <div class="mb-2">
+                            <i class="bi bi-clock me-2"></i>
+                            <span th:text="${quiz.durationMinutes} + ' phút'">45 phút</span>
+                        </div>
+                        <div>
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <span th:text="${#temporals.format(quiz.createdAt, 'dd/MM/yyyy HH:mm')}">12/04/2026 10:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/quizzes/{id}(id=${quiz.quizId})}"
+                           class="btn btn-primary w-100 rounded-pill">
+                            <i class="bi bi-eye me-1"></i> Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

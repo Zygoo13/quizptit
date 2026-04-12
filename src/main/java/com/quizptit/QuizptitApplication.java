@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 @SpringBootApplication
+@org.springframework.scheduling.annotation.EnableScheduling
 public class QuizptitApplication {
 
 	public static void main(String[] args) {

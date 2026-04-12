@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import com.quizptit.content.entity.Question;
+import com.quizptit.content.repository.QuestionRepository;
+
 @Service
 public class TopicServiceImpl implements TopicService {
 
@@ -19,6 +24,9 @@ public class TopicServiceImpl implements TopicService {
 
     @Autowired
     private SubjectRepository subjectRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
 
     @Override
     public Page<Topic> searchTopics(Long subjectId, String keyword, Boolean isActive, Pageable pageable) {
@@ -38,7 +46,8 @@ public class TopicServiceImpl implements TopicService {
 
     @Override
     public Topic createTopic(Topic topic) {
-        if (topicRepository.existsBySubjectSubjectIdAndTopicName(topic.getSubject().getSubjectId(), topic.getTopicName())) {
+        if (topicRepository.existsBySubjectSubjectIdAndTopicName(topic.getSubject().getSubjectId(),
+                topic.getTopicName())) {
             throw new RuntimeException("Topic name already exists for this subject");
         }
         return topicRepository.save(topic);
@@ -55,18 +64,45 @@ public class TopicServiceImpl implements TopicService {
         topic.setDescription(topicDetails.getDescription());
         topic.setOrderNo(topicDetails.getOrderNo());
         topic.setIsActive(topicDetails.getIsActive());
-        
+
         // Subject may be moved
-        if (topicDetails.getSubject() != null && !topic.getSubject().getSubjectId().equals(topicDetails.getSubject().getSubjectId())) {
-             topic.setSubject(subjectRepository.findById(topicDetails.getSubject().getSubjectId()).orElseThrow());
+        if (topicDetails.getSubject() != null
+                && !topic.getSubject().getSubjectId().equals(topicDetails.getSubject().getSubjectId())) {
+            topic.setSubject(subjectRepository.findById(topicDetails.getSubject().getSubjectId()).orElseThrow());
         }
         return topicRepository.save(topic);
     }
 
     @Override
+    @Transactional
     public void toggleStatus(Long topicId) {
         Topic topic = getTopicById(topicId);
-        topic.setIsActive(!topic.getIsActive());
+        boolean newStatus = !topic.getIsActive();
+
+        if (newStatus && !topic.getSubject().getIsActive()) {
+            throw new RuntimeException("Không thể bật Chủ đề này vì Môn học mẹ đang bị ẩn. Vui lòng bật Môn học trước!");
+        }
+
+        topic.setIsActive(newStatus);
         topicRepository.save(topic);
+
+        if (!newStatus) {
+            List<Question> questions = questionRepository.findByTopic_TopicId(topicId);
+            for (Question q : questions) {
+                q.setStatus(com.quizptit.common.constant.QuestionStatus.HIDDEN);
+                questionRepository.save(q);
+            }
+        } else {
+            List<Question> questions = questionRepository.findByTopic_TopicId(topicId);
+            for (Question q : questions) {
+                q.setStatus(com.quizptit.common.constant.QuestionStatus.APPROVED);
+                questionRepository.save(q);
+            }
+        }
+    }
+
+    @Override
+    public List<Topic> getAllTopics() {
+        return topicRepository.findAll();
     }
 }

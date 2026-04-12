@@ -48,14 +48,13 @@ public class ModerationRecordController {
                                        Principal principal,
                                        RedirectAttributes redirectAttributes) {
 
-        String status = action.equalsIgnoreCase("restore") ? "VISIBLE" :
-                action.equalsIgnoreCase("hide") ? "HIDDEN" : "DELETED";
+        String status = action.equalsIgnoreCase("restore") ? "VISIBLE"
+                : action.equalsIgnoreCase("hide") ? "HIDDEN"
+                : "DELETED";
 
         questionService.updatePostStatus(id, status, reason, principal.getName());
-
         redirectAttributes.addFlashAttribute("message", "Thao tác bài viết thành công!");
 
-        // Nếu là khôi phục thì về trang Nhật ký, nếu là Ẩn/Xóa thì về danh sách bài viết
         if ("restore".equalsIgnoreCase(action)) {
             return "redirect:/admin/community/moderation-records?type=QUESTION_POST";
         }
@@ -69,14 +68,14 @@ public class ModerationRecordController {
                                       Principal principal,
                                       RedirectAttributes redirectAttributes) {
 
-        String status = action.equalsIgnoreCase("restore") ? "VISIBLE" :
-                action.equalsIgnoreCase("hide") ? "HIDDEN" : "DELETED";
+        String status = action.equalsIgnoreCase("restore") ? "VISIBLE"
+                : action.equalsIgnoreCase("hide") ? "HIDDEN"
+                : "DELETED";
 
         User admin = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Admin không tồn tại"));
 
         commentService.updateCommentStatus(id, status, reason, admin.getUserId());
-
         redirectAttributes.addFlashAttribute("message", "Thao tác bình luận thành công!");
 
         if ("restore".equalsIgnoreCase(action)) {
