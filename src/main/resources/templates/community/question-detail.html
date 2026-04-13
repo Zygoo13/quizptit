@@ -60,17 +60,6 @@
             color: #0d6efd;
         }
 
-        .comment-hidden {
-            background-color: #f8f9fa !important;
-            border: 1px dashed #dee2e6 !important;
-            opacity: 0.85;
-        }
-
-        .comment-hidden p {
-            color: #6c757d !important;
-            font-style: italic;
-        }
-
         .comment-wrapper {
             position: relative;
         }
@@ -106,6 +95,51 @@
 
         .interaction-btn.liked {
             color: #0d6efd;
+        }
+
+        .comment-system-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+            color: #6c757d;
+            max-width: 100%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .comment-system-state i {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .comment-system-state.admin-hidden {
+            background: #fff8e1;
+            border-color: #ffe08a;
+            color: #8a6d1d;
+        }
+
+        .comment-system-state.admin-deleted {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #b42318;
+        }
+
+        .comment-system-state.self-deleted {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+
+        .comment-meta-muted {
+            margin-top: 6px;
+            margin-left: 4px;
+            font-size: 0.85rem;
+            color: #9aa0a6;
         }
     </style>
     
@@ -157,19 +191,29 @@
                                 
                                 <th:block sec:authorize="hasRole('ADMIN')">
                                     <li th:if="${post.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                    
                                     <li>
-                                        <button type="button"
-                                                class="dropdown-item text-warning"
-                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', ''hide'')'">
-                                            <i class="bi bi-eye-slash me-2"></i>Ẩn bài (Admin)
-                                        </button>
+                                        <form th:action="@{/admin/community/questions/{id}/hide(id=${post.questionPostId})}"
+                                              method="post"
+                                              class="m-0">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            <input type="hidden" name="reason" value="Admin ẩn bài viết từ trang chi tiết" />
+                                            <button type="submit" class="dropdown-item text-warning">
+                                                <i class="bi bi-eye-slash me-2"></i>Ẩn bài (Admin)
+                                            </button>
+                                        </form>
                                     </li>
+                                    
                                     <li>
-                                        <button type="button"
-                                                class="dropdown-item text-danger fw-bold"
-                                                th:onclick="'openAdminPostActionDetail(' + ${post.questionPostId} + ', ''delete'')'">
-                                            <i class="bi bi-shield-x me-2"></i>Xóa bài (Admin)
-                                        </button>
+                                        <form th:action="@{/admin/community/questions/{id}/delete(id=${post.questionPostId})}"
+                                              method="post"
+                                              class="m-0">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            <input type="hidden" name="reason" value="Admin xóa bài viết từ trang chi tiết" />
+                                            <button type="submit" class="dropdown-item text-danger fw-bold">
+                                                <i class="bi bi-shield-x me-2"></i>Xóa bài (Admin)
+                                            </button>
+                                        </form>
                                     </li>
                                 </th:block>
                             </ul>
@@ -249,17 +293,16 @@
                              th:id="'comment-' + ${comment.commentId}"
                              th:classappend="${comment.commentId == targetCommentId} ? 'bg-warning-subtle border-start border-4 border-warning' : ''"
                              class="mb-4 comment-item p-3 rounded">
-                            <div class="d-flex gap-2 align-items-start"
-                                 th:classappend="${comment.status != 'VISIBLE'} ? 'opacity-75 fst-italic' : ''">
+                            <div class="d-flex gap-2 align-items-start">
                                 <div class="avatar-circle avatar-circle-sm"
                                      th:text="${comment.userFullName != null and !comment.userFullName.isEmpty() ? #strings.substring(comment.userFullName,0,1) : 'U'}">
                                     U
                                 </div>
                                 
                                 <div class="flex-grow-1">
-                                    <div class="comment-wrapper d-inline-block">
-                                        <div class="comment-bubble shadow-sm"
-                                             th:classappend="${comment.status != 'VISIBLE'} ? 'comment-hidden' : ''">
+                                    
+                                    <div th:if="${comment.status == 'VISIBLE'}" class="comment-wrapper d-inline-block">
+                                        <div class="comment-bubble shadow-sm">
                                             <div class="fw-bold mb-0" style="font-size:0.85rem;" th:text="${comment.userFullName}">User</div>
                                             <p class="mb-0 text-dark" th:text="${comment.content}">Comment content</p>
                                         </div>
@@ -287,22 +330,41 @@
                                                 
                                                 <th:block sec:authorize="hasRole('ADMIN')">
                                                     <li th:if="${comment.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                                    
                                                     <li>
-                                                        <a class="dropdown-item text-warning"
-                                                           href="javascript:void(0)"
-                                                           th:onclick="'openAdminCommentAction(' + ${comment.commentId} + ', ''hide'')'">
-                                                            <i class="bi bi-eye-slash me-2"></i>Ẩn (Admin)
-                                                        </a>
+                                                        <form th:action="@{/admin/community/comments/{id}/hide(id=${comment.commentId})}"
+                                                              method="post"
+                                                              class="m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="reason" value="Admin ẩn bình luận từ trang chi tiết" />
+                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                <i class="bi bi-eye-slash me-2"></i>Ẩn (Admin)
+                                                            </button>
+                                                        </form>
                                                     </li>
+                                                    
                                                     <li>
-                                                        <a class="dropdown-item text-danger fw-bold"
-                                                           href="javascript:void(0)"
-                                                           th:onclick="'openAdminCommentAction(' + ${comment.commentId} + ', ''delete'')'">
-                                                            <i class="bi bi-shield-x me-2"></i>Xóa (Admin)
-                                                        </a>
+                                                        <form th:action="@{/admin/community/comments/{id}/delete(id=${comment.commentId})}"
+                                                              method="post"
+                                                              class="m-0">
+                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                            <input type="hidden" name="reason" value="Admin xóa bình luận từ trang chi tiết" />
+                                                            <button type="submit" class="dropdown-item text-danger fw-bold">
+                                                                <i class="bi bi-shield-x me-2"></i>Xóa (Admin)
+                                                            </button>
+                                                        </form>
                                                     </li>
                                                 </th:block>
                                             </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div th:if="${comment.status != 'VISIBLE'}">
+                                        <div th:class="${'comment-system-state ' + (comment.hiddenType == 'ADMIN_HIDDEN' ? 'admin-hidden' : (comment.hiddenType == 'ADMIN_DELETED' ? 'admin-deleted' : 'self-deleted'))}">
+                                            <i th:class="${comment.hiddenType == 'ADMIN_HIDDEN' ? 'bi bi-eye-slash' : (comment.hiddenType == 'ADMIN_DELETED' ? 'bi bi-trash3' : 'bi bi-dash-circle')}"></i>
+                                            <span th:text="${comment.hiddenType == 'ADMIN_HIDDEN' ? 'Bình luận đã bị ẩn bởi quản trị viên' : (comment.hiddenType == 'ADMIN_DELETED' ? 'Bình luận đã bị xóa bởi quản trị viên' : 'Người dùng đã xóa bình luận này')}">
+                                                Bình luận đã bị ẩn
+                                            </span>
                                         </div>
                                     </div>
                                     
@@ -325,17 +387,16 @@
                                              th:id="'comment-' + ${reply.commentId}"
                                              th:classappend="${reply.commentId == targetCommentId} ? 'bg-warning-subtle border-start border-4 border-warning' : ''"
                                              class="mb-2 comment-item p-2 rounded">
-                                            <div class="d-flex gap-2 align-items-start"
-                                                 th:classappend="${reply.status != 'VISIBLE'} ? 'opacity-75 fst-italic' : ''">
+                                            <div class="d-flex gap-2 align-items-start">
                                                 <div class="avatar-circle avatar-circle-sm"
                                                      th:text="${reply.userFullName != null and !reply.userFullName.isEmpty() ? #strings.substring(reply.userFullName,0,1) : 'U'}">
                                                     U
                                                 </div>
                                                 
                                                 <div class="flex-grow-1">
-                                                    <div class="comment-wrapper d-inline-block">
-                                                        <div class="reply-bubble border shadow-sm"
-                                                             th:classappend="${reply.status != 'VISIBLE'} ? 'comment-hidden' : ''">
+                                                    
+                                                    <div th:if="${reply.status == 'VISIBLE'}" class="comment-wrapper d-inline-block">
+                                                        <div class="reply-bubble border shadow-sm">
                                                             <div class="fw-bold mb-0" style="font-size:0.8rem;" th:text="${reply.userFullName}">User</div>
                                                             <p class="mb-0 small text-dark" th:text="${reply.content}">Reply content</p>
                                                         </div>
@@ -363,63 +424,56 @@
                                                                 
                                                                 <th:block sec:authorize="hasRole('ADMIN')">
                                                                     <li th:if="${reply.email == #authentication.name}"><hr class="dropdown-divider"></li>
+                                                                    
                                                                     <li>
-                                                                        <a class="dropdown-item text-warning"
-                                                                           href="javascript:void(0)"
-                                                                           th:onclick="'openAdminCommentAction(' + ${reply.commentId} + ', ''hide'')'">
-                                                                            <i class="bi bi-eye-slash me-2"></i>Ẩn (Admin)
-                                                                        </a>
+                                                                        <form th:action="@{/admin/community/comments/{id}/hide(id=${reply.commentId})}"
+                                                                              method="post"
+                                                                              class="m-0">
+                                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                                            <input type="hidden" name="reason" value="Admin ẩn phản hồi từ trang chi tiết" />
+                                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                                <i class="bi bi-eye-slash me-2"></i>Ẩn (Admin)
+                                                                            </button>
+                                                                        </form>
                                                                     </li>
+                                                                    
                                                                     <li>
-                                                                        <a class="dropdown-item text-danger fw-bold"
-                                                                           href="javascript:void(0)"
-                                                                           th:onclick="'openAdminCommentAction(' + ${reply.commentId} + ', ''delete'')'">
-                                                                            <i class="bi bi-shield-x me-2"></i>Xóa (Admin)
-                                                                        </a>
+                                                                        <form th:action="@{/admin/community/comments/{id}/delete(id=${reply.commentId})}"
+                                                                              method="post"
+                                                                              class="m-0">
+                                                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                                            <input type="hidden" name="reason" value="Admin xóa phản hồi từ trang chi tiết" />
+                                                                            <button type="submit" class="dropdown-item text-danger fw-bold">
+                                                                                <i class="bi bi-shield-x me-2"></i>Xóa (Admin)
+                                                                            </button>
+                                                                        </form>
                                                                     </li>
                                                                 </th:block>
                                                             </ul>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="ms-2">
-                                                        <small class="text-muted me-2"
-                                                               style="font-size:0.7rem;"
-                                                               th:text="${#temporals.format(reply.createdAt, 'dd/MM HH:mm')}">
-                                                            12/04 10:00
-                                                        </small>
+                                                    <div th:if="${reply.status != 'VISIBLE'}">
+                                                        <div th:class="${'comment-system-state ' + (reply.hiddenType == 'ADMIN_HIDDEN' ? 'admin-hidden' : (reply.hiddenType == 'ADMIN_DELETED' ? 'admin-deleted' : 'self-deleted'))}">
+                                                            <i th:class="${reply.hiddenType == 'ADMIN_HIDDEN' ? 'bi bi-eye-slash' : (reply.hiddenType == 'ADMIN_DELETED' ? 'bi bi-trash3' : 'bi bi-dash-circle')}"></i>
+                                                            <span th:text="${reply.hiddenType == 'ADMIN_HIDDEN' ? 'Phản hồi đã bị ẩn bởi quản trị viên' : (reply.hiddenType == 'ADMIN_DELETED' ? 'Phản hồi đã bị xóa bởi quản trị viên' : 'Người dùng đã xóa phản hồi này')}">
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                    
+                                                    <div class="comment-meta-muted"
+                                                         th:text="${#temporals.format(reply.createdAt, 'dd/MM HH:mm')}">13/04 15:23</div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                
                                 </div>
                             </div>
                         </div>
                     </div>
                 
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="adminActionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow" style="border-radius: 15px;">
-                <form id="adminActionForm" method="post">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="fw-bold" id="adminModalTitle">Lý do xử lý</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <textarea name="reason" class="form-control rounded-3" rows="3" placeholder="Nhập lý do xử lý..." required></textarea>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="adminSubmitBtn">Xác nhận</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -537,46 +591,6 @@
             deleteForm.action = '/community/comments/' + id + '/delete';
             document.getElementById('deleteModalTitle').innerText = 'Xóa bình luận này?';
             new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
-        }
-
-        function openAdminCommentAction(id, actionType) {
-            const adminForm = document.getElementById('adminActionForm');
-            const title = document.getElementById('adminModalTitle');
-            const btn = document.getElementById('adminSubmitBtn');
-
-            adminForm.action = '/admin/community/comments/' + id + '/' + actionType;
-
-            if (actionType === 'hide') {
-                title.innerText = 'Lý do ẩn bình luận';
-                btn.innerText = 'Xác nhận ẩn';
-                btn.className = 'btn btn-warning rounded-pill px-4';
-            } else {
-                title.innerText = 'Lý do xóa bình luận';
-                btn.innerText = 'Xác nhận xóa';
-                btn.className = 'btn btn-danger rounded-pill px-4';
-            }
-
-            new bootstrap.Modal(document.getElementById('adminActionModal')).show();
-        }
-
-        function openAdminPostActionDetail(id, actionType) {
-            const adminForm = document.getElementById('adminActionForm');
-            const title = document.getElementById('adminModalTitle');
-            const btn = document.getElementById('adminSubmitBtn');
-
-            adminForm.action = '/admin/community/questions/' + id + '/' + actionType;
-
-            if (actionType === 'hide') {
-                title.innerText = 'Lý do ẩn bài viết';
-                btn.innerText = 'Xác nhận ẩn';
-                btn.className = 'btn btn-warning rounded-pill px-4';
-            } else {
-                title.innerText = 'Lý do xóa bài viết';
-                btn.innerText = 'Xác nhận xóa';
-                btn.className = 'btn btn-danger rounded-pill px-4';
-            }
-
-            new bootstrap.Modal(document.getElementById('adminActionModal')).show();
         }
 
         document.addEventListener('DOMContentLoaded', function () {

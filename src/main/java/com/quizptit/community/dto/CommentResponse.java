@@ -1,6 +1,10 @@
 package com.quizptit.community.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,13 +17,21 @@ import java.util.List;
 public class CommentResponse {
 
     private Long commentId;
-    private String content;
     private Long postId;
+    private Long parentId;
+
     private Long userId;
     private String email;
     private String userFullName;
-    private LocalDateTime createdAt;
+
+    private String content;
     private String status;
-    private Long parentId;
+
+    // VISIBLE | ADMIN_HIDDEN | ADMIN_DELETED | SELF_DELETED
+    private String hiddenType;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     private List<CommentResponse> replies;
 }

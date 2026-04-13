@@ -166,9 +166,9 @@ public class QuestionPostServiceImpl implements QuestionPostService {
         String action = mapModerationAction(normalizedStatus);
 
         post.setStatus(normalizedStatus);
-        questionPostRepository.save(post);
+        questionPostRepository.saveAndFlush(post);
 
-        if ("HIDDEN".equalsIgnoreCase(normalizedStatus)) {
+        if ("HIDDEN".equalsIgnoreCase(normalizedStatus) || "DELETED".equalsIgnoreCase(normalizedStatus)) {
             try {
                 commentRepository.updateStatusByPostId(postId, "HIDDEN");
             } catch (Exception e) {
@@ -227,22 +227,31 @@ public class QuestionPostServiceImpl implements QuestionPostService {
 
         String value = status.trim().toUpperCase();
 
-        if ("DELETED".equals(value)) {
-            return "HIDDEN";
+        if ("VISIBLE".equals(value)) {
+            return "VISIBLE";
         }
 
-        if ("VISIBLE".equals(value) || "HIDDEN".equals(value)) {
-            return value;
+        if ("HIDDEN".equals(value) || "DELETED".equals(value) || "DELETE".equals(value)) {
+            return "HIDDEN";
         }
 
         return "HIDDEN";
     }
 
     private String mapModerationAction(String status) {
-        if ("VISIBLE".equalsIgnoreCase(status)) {
+        if (status == null || status.isBlank()) {
+            return "HIDE";
+        }
+
+        String value = status.trim().toUpperCase();
+
+        if ("VISIBLE".equals(value)) {
             return "RESTORE";
         }
-        if ("HIDDEN".equalsIgnoreCase(status)) {
+        if ("DELETED".equals(value) || "DELETE".equals(value)) {
+            return "DELETE";
+        }
+        if ("HIDDEN".equals(value)) {
             return "HIDE";
         }
         return "HIDE";
