@@ -11,5 +11,7 @@ public class SubjectProgressDTO {
     private String subjectName;
     private int totalTopics;
     private int completedTopics;
+    private int totalQuizzes;
+    private int completedQuizzes;
     private double overallPercentage;
 }

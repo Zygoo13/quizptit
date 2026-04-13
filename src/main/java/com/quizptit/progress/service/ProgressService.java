@@ -82,27 +82,29 @@ public class ProgressService {
         List<UserQuizProgress> topicProgresses = userQuizProgressRepository
             .findAllByUserUserIdAndTopicTopicId(user.getUserId(), topic.getTopicId())
             .stream()
-            .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL)
+            .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL && p.getQuiz().getIsPublished())
             .collect(Collectors.toList());
 
-        int totalQuizzesInTopic = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
+        int totalPublishedInTopic = quizRepository.countByTopicTopicIdAndQuizTypeAndIsPublishedTrue(topic.getTopicId(), QuizType.MANUAL);
         int totalAttempts = topicProgresses.stream().mapToInt(UserQuizProgress::getTotalAttempts).sum();
+        long completedCount = topicProgresses.stream()
+                                .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4) 
+                                .count();
 
-        // Tính điểm trung bình (averageScore) của các quiz đã làm trong topic
-        BigDecimal averageScore = topicProgresses.isEmpty() ? BigDecimal.ZERO
-                : topicProgresses.stream()
-                        .map(UserQuizProgress::getHighestScore)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(BigDecimal.valueOf(topicProgresses.size()), 2, RoundingMode.HALF_UP);
+        // Tính điểm trung bình (averageScore) giữa điểm cao nhất của các quiz
+        BigDecimal totalHighestScores = topicProgresses.stream()
+            .map(UserQuizProgress::getHighestScore)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal masteryScore = totalPublishedInTopic == 0 ? BigDecimal.ZERO 
+            : totalHighestScores.divide(BigDecimal.valueOf(totalPublishedInTopic), 2, RoundingMode.HALF_UP);
 
-        // Tính % hoàn thành dựa trên số lượng quiz đã làm / tổng quiz trong hệ thống
-        // của topic đó
-        double percentage = totalQuizzesInTopic == 0 ? 0 : ((double) topicProgresses.size() / totalQuizzesInTopic) * 100;
+        double percentage = totalPublishedInTopic == 0 ? 0 : ((double) completedCount / totalPublishedInTopic) * 100;
 
         learningProgress.setTotalAttempts(totalAttempts);
-        learningProgress.setTotalQuizzes(totalQuizzesInTopic);
-        learningProgress.setCompletedQuizzes(topicProgresses.size());
-        learningProgress.setMasteryScore(averageScore);
+        learningProgress.setTotalQuizzes(totalPublishedInTopic);
+        learningProgress.setCompletedQuizzes((int) completedCount);
+        learningProgress.setMasteryScore(masteryScore);
         learningProgress.setProgressPercentage(BigDecimal.valueOf(percentage));
         learningProgress.setLastPracticedAt(LocalDateTime.now());
 
@@ -120,14 +122,16 @@ public class ProgressService {
             int totalPassedQuizzesInSubject = 0;
 
             for (Topic topic : topics) {
-                int quizzesInTopic = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
+                int quizzesInTopic = quizRepository.countByTopicTopicIdAndQuizTypeAndIsPublishedTrue(topic.getTopicId(), QuizType.MANUAL);
                 totalQuizzesInSubject += quizzesInTopic;
 
                 // Đếm số bài trong chương đạt điểm >= 0.4
                 long passedInTopic = userQuizProgressRepository
                     .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
                     .stream()
-                    .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL && p.getHighestScore().doubleValue() >= 0.4)
+                    .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL 
+                            && p.getQuiz().getIsPublished() 
+                            && p.getHighestScore().doubleValue() >= 0.4)
                     .count();
                 
                 totalPassedQuizzesInSubject += passedInTopic;
@@ -146,6 +150,8 @@ public class ProgressService {
                 .totalTopics(totalTopics)
                 .completedTopics(completedTopicsCount)
                 .overallPercentage(Math.round(overallPercent * 10) / 10.0)
+                .totalQuizzes(totalQuizzesInSubject)
+                .completedQuizzes(totalPassedQuizzesInSubject)
                 .build();
         }).collect(Collectors.toList());
     }
@@ -155,7 +161,7 @@ public class ProgressService {
         List<Topic> topics = topicRepository.findBySubjectSubjectId(subjectId);
 
         return topics.stream().map(topic -> {
-            int actualTotalQuizzes = quizRepository.countByTopicTopicIdAndQuizType(topic.getTopicId(), QuizType.MANUAL);
+            int actualTotalQuizzes = quizRepository.countByTopicTopicIdAndQuizTypeAndIsPublishedTrue(topic.getTopicId(), QuizType.MANUAL);
 
             List<UserQuizProgress> userProgresses = userQuizProgressRepository
                 .findAllByUserUserIdAndTopicTopicId(userId, topic.getTopicId())
@@ -164,7 +170,7 @@ public class ProgressService {
                 .collect(Collectors.toList());
             
             long passedQuizzes = userProgresses.stream()
-                .filter(p -> p.getHighestScore() != null && p.getHighestScore().doubleValue() >= 0.4)
+                .filter(p -> p.getQuiz().getQuizType() == QuizType.MANUAL && p.getQuiz().getIsPublished() && p.getHighestScore().doubleValue() >= 0.4)
                 .count();
 
             double percent = actualTotalQuizzes == 0 ? 0 : ((double) passedQuizzes / actualTotalQuizzes) * 100;
@@ -194,7 +200,7 @@ public class ProgressService {
                 .quizId(quiz.getQuizId())
                 .title(quiz.getTitle())
                 .highestScore(up.map(UserQuizProgress::getHighestScore).orElse(BigDecimal.ZERO))
-                .isCompleted(up.map(p -> p.getHighestScore().doubleValue() >= 5.0).orElse(false))
+                .isCompleted(up.map(p -> p.getHighestScore().doubleValue() >= 0.4).orElse(false))
                 .build();
         }).collect(Collectors.toList());
     }

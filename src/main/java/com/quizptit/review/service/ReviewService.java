@@ -39,7 +39,7 @@ public class ReviewService {
                         .wrongStreak(0)
                         .reviewCount(0) // Khởi tạo để tránh NPE
                         .memoryScore(BigDecimal.valueOf(0.1))
-                        .nextReviewAt(LocalDateTime.now().plusDays(1))
+                        .nextReviewAt(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS))
                         .build());
 
         memory.setLastResult(isCorrect);
@@ -69,7 +69,7 @@ public class ReviewService {
             memory.setMemoryScore(memory.getMemoryScore().multiply(BigDecimal.valueOf(0.5)));
 
             // Buộc ôn lại ngay vào ngày mai
-            memory.setNextReviewAt(LocalDateTime.now().plusDays(1));
+            memory.setNextReviewAt(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS));
         }
         memoryRepository.save(memory);
     }

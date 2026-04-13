@@ -24,4 +24,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByQuizTypeOrderByCreatedAtDesc(QuizType quizType);
 
     int countByTopicTopicIdAndQuizType(Long topicId, QuizType quizType);
+
+    int countByTopicTopicIdAndQuizTypeAndIsPublishedTrue(Long topicId, QuizType quizType);
 }

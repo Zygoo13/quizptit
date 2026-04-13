@@ -53,14 +53,10 @@
                     <div class="d-flex justify-content-between align-items-start mb-3 gap-3">
                         <div>
                             <h5 class="fw-bold mb-1" th:text="${subject.subjectName}">Môn học</h5>
-                            <div class="small text-muted">
-                                <span th:text="${subject.completedTopics}">0</span> /
-                                <span th:text="${subject.totalTopics}">0</span>
-                                chương đạt yêu cầu
-                            </div>
                         </div>
                         
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2">
+                            <small class="text-muted d-block" style="font-size: 0.7rem; margin-bottom: 4px;">Hoàn thành:</small>
                             <span th:text="${subject.overallPercentage}">0</span>%
                         </span>
                     </div>
@@ -80,15 +76,17 @@
                     <div class="row g-3 mb-4">
                         <div class="col-6">
                             <div class="border rounded-4 p-3 text-center h-100">
-                                <div class="small text-muted mb-1">Tổng chương</div>
-                                <div class="fw-bold fs-5" th:text="${subject.totalTopics}">0</div>
+                                <div class="small text-muted mb-1">Hoàn thành</div>
+                                <div class="fw-bold fs-5" th:text="${subject.completedTopics} +'/'+ ${subject.totalTopics}">0</div>
+                                <div class="small text-muted mb-1">chương</div>
                             </div>
                         </div>
                         
                         <div class="col-6">
                             <div class="border rounded-4 p-3 text-center h-100">
-                                <div class="small text-muted mb-1">Đã hoàn thành</div>
-                                <div class="fw-bold fs-5 text-success" th:text="${subject.completedTopics}">0</div>
+                                <div class="small text-muted mb-1">Hoàn thành</div>
+                                <div class="fw-bold fs-5" th:text="${subject.completedQuizzes} +'/'+ ${subject.totalQuizzes}">0</div>
+                                <div class="small text-muted mb-1">quiz</div>
                             </div>
                         </div>
                     </div>

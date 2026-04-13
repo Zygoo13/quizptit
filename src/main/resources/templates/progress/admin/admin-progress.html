@@ -8,6 +8,16 @@
         .progress-percent-cell {
             min-width: 140px;
         }
+        .col-subject {
+            width: 1%;
+            white-space: nowrap;
+        }
+        
+        .progress-percent-cell {
+            min-width: 200px;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
     </style>
     
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
@@ -59,12 +69,11 @@
                 <thead class="table-light">
                     <tr>
                         <th class="ps-4">Sinh viên</th>
-                        <th>Môn học</th>
-                        <th>Tiến độ</th>
-                        <th>Chương hoàn thành</th>
-                        <th>Điểm TB</th>
-                        <th>Đánh giá</th>
-                        <th class="text-end pe-4">Chi tiết</th>
+                        <th class="col-subject">Môn học</th>
+                        <th class="text-center px-4">Tiến độ</th>
+                        <th class="text-center">Điểm TB</th>
+                        <th class="text-center">Đánh giá</th>
+                        <th class="text-end pe-4"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,7 +89,7 @@
                             <div class="small text-muted" th:text="${row.email}">email@example.com</div>
                         </td>
                         
-                        <td th:text="${row.subjectName}">Subject</td>
+                        <td class="col-subject" th:text="${row.subjectName}">Subject</td>
                         
                         <td class="progress-percent-cell">
                             <div class="small fw-semibold mb-1">
@@ -94,19 +103,15 @@
                             </div>
                         </td>
                         
-                        <td>
-                            <span th:text="${row.completedTopics}">0</span> /
-                            <span th:text="${row.totalTopics}">0</span>
-                        </td>
-                        
-                        <td>
+                        <td class="text-center">
                         <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
-                              th:text="${row.averageScore}">
-                            0
+                            th:with="score10=${row.averageScore != null ? row.averageScore.doubleValue() * 10 : 0.0}"
+                            th:text="${#numbers.formatDecimal(score10, 1, 1)}">
+                            0.0
                         </span>
                         </td>
                         
-                        <td>
+                        <td class="text-center">
                         <span th:if="${row.status == 'Xuất sắc'}"
                               class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                             Xuất sắc

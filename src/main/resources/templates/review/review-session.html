@@ -1,22 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/student-layout :: layout('Phiên ôn tập', ~{::content})}">
-<head></head>
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
 <body>
 <div th:fragment="content">
     <style>
-        .review-option-card {
-            border: 1px solid #e9ecef;
-            border-radius: 14px;
-            padding: 14px 16px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .review-option-card:hover {
-            border-color: #0d6efd;
-            background: #f8fbff;
-        }
+        .review-option-card { border: 2px solid #f0f0f0; transition: all 0.2s ease; cursor: pointer; }
+        .review-option-card:hover { border-color: #0d6efd; background-color: #f8fbff; }
+        .review-option-card.selected { border-color: #0d6efd; background-color: #e7f1ff; box-shadow: 0 4px 12px rgba(13,110,253,0.1); }
+        .review-option-card.correct { border-color: #198754; background-color: #d1e7dd; }
+        .review-option-card.incorrect { border-color: #dc3545; background-color: #f8d7da; }
     </style>
     
     <div class="row justify-content-center">
@@ -40,46 +36,43 @@
                         </a>
                     </div>
                     
-                    <div class="border rounded-4 p-4 mb-4 bg-light-subtle">
-                        <h5 class="fw-bold mb-0" th:text="${question.content}">
-                            Nội dung câu hỏi
-                        </h5>
-                    </div>
-                    
-                    <form th:action="@{/review/session/submit}" method="post">
-                        <input type="hidden" name="questionId" th:value="${question.questionId}">
-                        <input type="hidden" name="subjectId" th:value="${subjectId}">
-                        
-                        <div class="d-flex flex-column gap-3 mb-4">
-                            <label th:each="option : ${question.options}"
-                                   class="review-option-card d-flex align-items-start gap-3">
-                                <input class="form-check-input mt-1"
-                                       type="radio"
-                                       name="selectedOptionId"
-                                       th:value="${option.optionId}"
-                                       required>
-                                
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold mb-1"
-                                         th:text="${option.optionLabel} + '.'">
-                                        A.
+                    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="card-body p-4 p-lg-5">
+                            <h5 class="fw-bold text-muted mb-3 small text-uppercase">Câu hỏi:</h5>
+                            <div class="fs-4 mb-5 text-dark" th:text="${question.content}">Nội dung câu hỏi</div>
+
+                            <div class="row g-3" id="optionsGrid">
+                                <div th:each="option, iterStat : ${question.options}" class="col-12">
+                                    <div class="review-option-card p-3 rounded-4 d-flex align-items-center" 
+                                        th:data-option-id="${option.optionId}" onclick="selectOption(this)">
+                                        
+                                        <div class="option-num me-3 bg-white border rounded-circle d-flex align-items-center justify-content-center fw-bold text-muted" 
+                                            style="width: 36px; height: 36px;"
+                                            th:text="${#strings.substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', iterStat.index, iterStat.index + 1)}"></div>
+                                        
+                                        <div class="option-text flex-grow-1" th:text="${option.content}"></div>
+                                        <i class="bi bi-check-circle-fill text-success ms-2 d-none check-icon"></i>
                                     </div>
-                                    <div th:text="${option.content}">Nội dung đáp án</div>
                                 </div>
-                            </label>
+                            </div>
                         </div>
-                        
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-primary rounded-pill px-4">
-                                <i class="bi bi-check2-circle me-1"></i> Xác nhận đáp án
+
+                        <div id="feedbackSection" class="card-footer bg-white p-4 d-none border-top">
+                            <div id="feedbackAlert" class="alert mb-4 border-0 rounded-4"></div>
+                            <div class="d-flex gap-2">
+                                <a th:href="@{/review/session/next(subjectId=${subjectId})}" class="btn btn-primary rounded-pill px-4 fw-bold">
+                                    Câu tiếp theo <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                                <a href="/review" class="btn btn-light rounded-pill px-4">Kết thúc</a>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 p-4" id="submitAction">
+                            <button type="button" class="btn btn-dark w-100 py-3 rounded-pill fw-bold shadow-sm" onclick="handleReviewSubmit()">
+                                Xác nhận đáp án
                             </button>
-                            
-                            <a th:if="${subjectId != null}"
-                               th:href="@{/review/session/next(subjectId=${subjectId})}"
-                               class="btn btn-outline-secondary rounded-pill px-4">
-                                Bỏ qua câu này
-                            </a>
                         </div>
+                    </div>
                     </form>
                 </div>
             </div>
@@ -88,3 +81,88 @@
 </div>
 </body>
 </html>
+<script>
+    let currentSelectedId = null;
+
+    function selectOption(element) {
+        if (document.getElementById('submitAction').classList.contains('d-none')) return;
+
+        document.querySelectorAll('.review-option-card').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        currentSelectedId = element.getAttribute('data-option-id');
+    }
+
+    async function handleReviewSubmit() {
+        if (!currentSelectedId) {
+            alert("Vui lòng chọn một đáp án!");
+            return;
+        }
+
+        // Lấy CSRF Token từ Meta tags
+        const token = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const header = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        const questionId = [[${question.questionId}]];
+        
+        try {
+            const response = await fetch('/review/api/submit', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    [header]: token 
+                },
+                // Gửi JSON Body khớp với class ReviewRequest ở Backend
+                body: JSON.stringify({ 
+                    questionId: [[${question.questionId}]], 
+                    optionId: currentSelectedId 
+                })
+            });
+
+            // Nếu phản hồi không phải 200 OK (ví dụ 403 Forbidden hoặc 500 Error)
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("Server Error:", errorBody);
+                alert("Có lỗi xảy ra từ máy chủ (Mã lỗi: " + response.status + ")");
+                return;
+            }
+
+            const result = await response.json(); 
+
+            // Xử lý hiển thị giao diện (Giữ nguyên logic cũ của bạn)
+            renderResult(result);
+
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            alert("Không thể kết nối tới máy chủ.");
+        }
+    }
+
+    function renderResult(result) {
+        document.querySelectorAll('.review-option-card').forEach(card => {
+            const optId = card.getAttribute('data-option-id');
+            if (optId == result.correctOptionId) {
+                card.classList.add('correct');
+                card.querySelector('.check-icon').classList.remove('d-none');
+            } else if (optId == currentSelectedId && !result.isCorrect) {
+                card.classList.add('incorrect');
+            }
+        });
+
+        const alertBox = document.getElementById('feedbackAlert');
+        const icon = result.isCorrect ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill';
+        const statusText = result.isCorrect ? 'Chính xác!' : 'Chưa đúng!';
+        const alertClass = result.isCorrect ? 'alert-success' : 'alert-danger';
+
+        alertBox.className = `alert ${alertClass} border-0 shadow-sm p-3 rounded-4 d-flex align-items-start gap-3`;
+        alertBox.innerHTML = `
+            <i class="bi ${icon} fs-4"></i>
+            <div>
+                <div class="fw-bold mb-1">${statusText}</div>
+                <div class="small">${result.feedbackMessage}</div>
+            </div>
+        `;
+        
+        document.getElementById('feedbackSection').classList.remove('d-none');
+        document.getElementById('submitAction').classList.add('d-none');
+    }
+</script>
