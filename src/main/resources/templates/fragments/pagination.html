@@ -7,43 +7,33 @@
             </li>
             <!-- Previous -->
             <li class="page-item" th:classappend="${pageData.first} ? 'disabled'">
-                <a class="page-link" href="#" th:onclick="'gotoPage(' + ${pageData.number - 1} + '); return false;'">Trước</a>
+                <a class="page-link" href="#"
+                    th:onclick="'gotoPage(' + ${pageData.number - 1} + '); return false;'">Trước</a>
             </li>
-            
+
             <!-- Page Numbers: Display current, +/- 2 pages, and dots if needed. Simplified for now. -->
             <li class="page-item disabled bg-light">
-                <span class="page-link text-dark" th:text="'Trang ' + (${pageData.number} + 1) + ' / ' + ${pageData.totalPages}">Trang 1/5</span>
+                <span class="page-link text-dark"
+                    th:text="'Trang ' + (${pageData.number} + 1) + ' / ' + ${pageData.totalPages}">Trang 1/5</span>
             </li>
-            
+
             <!-- Next -->
             <li class="page-item" th:classappend="${pageData.last} ? 'disabled'">
-                <a class="page-link" href="#" th:onclick="'gotoPage(' + ${pageData.number + 1} + '); return false;'">Sau</a>
+                <a class="page-link" href="#"
+                    th:onclick="'gotoPage(' + ${pageData.number + 1} + '); return false;'">Sau</a>
             </li>
             <!-- Last -->
             <li class="page-item" th:classappend="${pageData.last} ? 'disabled'">
-                <a class="page-link" href="#" th:onclick="'gotoPage(' + ${pageData.totalPages - 1} + '); return false;'">Cuối &raquo;</a>
+                <a class="page-link" href="#"
+                    th:onclick="'gotoPage(' + ${pageData.totalPages - 1} + '); return false;'">Cuối &raquo;</a>
             </li>
         </ul>
     </nav>
     <script>
         function gotoPage(page) {
-            let form = document.querySelector('form');
-            if (form) {
-                let pageInput = document.getElementById('pageNumber');
-                if (!pageInput) {
-                    pageInput = document.createElement('input');
-                    pageInput.type = 'hidden';
-                    pageInput.name = 'page';
-                    pageInput.id = 'pageNumber';
-                    form.appendChild(pageInput);
-                }
-                pageInput.value = page;
-                form.submit();
-            } else {
-                let url = new URL(window.location.href);
-                url.searchParams.set('page', page);
-                window.location.href = url.toString();
-            }
+            let url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            window.location.href = url.toString();
         }
     </script>
 </div>
