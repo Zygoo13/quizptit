@@ -1,59 +1,115 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/student-layout :: layout(pageTitle='Kết Quả Làm Bài', content=~{::content})}">
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Kết quả bài làm', ~{::content})}">
 <head></head>
-
 <body>
-
-    <div th:fragment="content" class="container mt-5" style="max-width: 650px;">
-        <div class="card shadow-lg border-0 rounded-4 text-center overflow-hidden">
-
-            <div class="bg-success text-white py-5">
-                <i class="bi bi-trophy-fill text-warning mb-3"
-                    style="font-size: 5rem; filter: drop-shadow(0 0 15px rgba(255,215,0,0.5));"></i>
-                <h2 class="fw-bold text-uppercase">NỘP BÀI THÀNH CÔNG!</h2>
-                <h2 class="fw-bold text-white mt-2" th:text="${attempt.quiz.title}">Tên Quiz</h2>
-            </div>
-
-            <div class="card-body p-4 bg-white">
-                <div class="row text-center mb-4 align-items-center">
-                    <div class="col-4 border-end">
-                        <h1 class="display-4 fw-bold text-primary" th:text="${attempt.totalScore}">0.00</h1>
-                        <p class="text-muted fw-bold mb-0">Tổng Điểm</p>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-9">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 mb-3">
+                            Hoàn thành
+                        </span>
+                        <h2 class="fw-bold mb-2">Kết quả bài làm</h2>
+                        <p class="text-muted mb-0" th:text="${attempt.quiz.title}">Quiz title</p>
                     </div>
-
-                    <div class="col-4 border-end">
-                        <h1 class="display-4 fw-bold text-success"
-                            th:text="${attempt.correctCount} + '/' + ${attempt.totalQuestions}">
-                            0/0
-                        </h1>
-                        <p class="text-muted fw-bold mb-0">Số Câu Đúng</p>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="border rounded-4 p-4 text-center h-100">
+                                <div class="small text-muted mb-1">Điểm số</div>
+                                <div class="display-6 fw-bold text-primary"
+                                     th:text="${attempt.totalScore != null ? attempt.totalScore : 0}">
+                                    8.5
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="border rounded-4 p-4 text-center h-100">
+                                <div class="small text-muted mb-1">Số câu đúng</div>
+                                <div class="display-6 fw-bold text-success"
+                                     th:text="${attempt.correctCount != null ? attempt.correctCount : 0}">
+                                    10
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="border rounded-4 p-4 text-center h-100">
+                                <div class="small text-muted mb-1">Tổng số câu</div>
+                                <div class="display-6 fw-bold text-dark"
+                                     th:text="${attempt.totalQuestions != null ? attempt.totalQuestions : 0}">
+                                    20
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="border rounded-4 p-4 text-center h-100">
+                                <div class="small text-muted mb-1">Trạng thái</div>
+                                <div class="fw-bold fs-5 text-primary"
+                                     th:text="${attempt.status}">
+                                    COMPLETED
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="col-4">
-                        <h1 class="display-4 fw-bold text-info"
-                            th:text="${attempt.durationSeconds / 60} + ':' + ${#numbers.formatInteger(attempt.durationSeconds % 60, 2)}">
-                            0:00
-                        </h1>
-                        <p class="text-muted fw-bold mb-0">Thời Gian Làm Bài</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Bắt đầu</div>
+                                <div class="fw-semibold"
+                                     th:text="${attempt.startedAt != null ? #temporals.format(attempt.startedAt, 'dd/MM/yyyy HH:mm:ss') : '---'}">
+                                    12/04/2026 10:00:00
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Nộp bài</div>
+                                <div class="fw-semibold"
+                                     th:text="${attempt.submittedAt != null ? #temporals.format(attempt.submittedAt, 'dd/MM/yyyy HH:mm:ss') : '---'}">
+                                    12/04/2026 10:30:00
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="text-muted small mb-1">Thời gian làm</div>
+                                <div class="fw-semibold"
+                                     th:text="${attempt.durationSeconds != null ? attempt.durationSeconds + ' giây' : '---'}">
+                                    1200 giây
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <hr class="text-muted opacity-25 mb-4">
-
-                <div class="d-flex justify-content-center gap-3">
-                    <a th:href="@{/quizzes}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 py-2">
-                        <i class="bi bi-house-door me-2"></i> Trở về Danh sách
-                    </a>
-                    <a th:href="@{/quizzes/attempts/{id}/review(id=${attempt.attemptId})}" class="btn btn-primary fw-bold rounded-pill px-4 py-2">
-                        <i class="bi bi-card-checklist me-2"></i> Xem Lại Đáp Án
-                    </a>
+                    
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <a th:href="@{/quizzes/attempts/{attemptId}/review(attemptId=${attempt.attemptId})}"
+                           class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-journal-text me-1"></i> Xem lời giải
+                        </a>
+                        
+                        <a th:href="@{/quizzes/history}"
+                           class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="bi bi-clock-history me-1"></i> Lịch sử làm bài
+                        </a>
+                        
+                        <a th:href="@{/quizzes}"
+                           class="btn btn-outline-secondary rounded-pill px-4">
+                            Về danh sách quiz
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
+</div>
 </body>
-
 </html>

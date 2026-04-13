@@ -1,61 +1,186 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Chỉnh sửa Câu hỏi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Cập nhật câu hỏi', ~{::content}, ~{})}">
+<head></head>
 <body>
-<div class="container mt-5">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/admin/questions">Câu hỏi</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
-        </ol>
-    </nav>
-    <h2 class="mb-4">Chỉnh sửa Câu hỏi ID: [[${question.questionId}]]</h2>
-    
-    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-
-    <div class="card shadow-sm border-0 border-top border-4 border-warning">
-        <div class="card-body p-4">
-            <form th:action="@{/admin/questions/{id}/edit(id=${question.questionId})}" th:object="${question}" method="post">
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Thuộc Chủ đề</label>
-                    <select class="form-select shadow-sm" th:field="*{topic.topicId}" required>
-                        <option th:each="t : ${topics}" th:value="${t.topicId}" th:text="${t.topicName}"></option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Nội dung câu hỏi</label>
-                    <textarea class="form-control" th:field="*{content}" required rows="5"></textarea>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold font-monospace small">Độ khó</label>
-                        <select class="form-select" th:field="*{difficultyLevel}" required>
-                            <option th:each="d : ${difficultyLevels}" th:value="${d}" th:text="${d}"></option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold font-monospace small">Trạng thái</label>
-                        <select class="form-select" th:field="*{status}" required>
-                            <option th:each="s : ${questionStatuses}" th:value="${s}" th:text="${s}"></option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-muted small">Giải thích chi tiết</label>
-                    <textarea class="form-control" th:field="*{explanation}" rows="4"></textarea>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">Cập nhật câu hỏi</h3>
+                    <p class="text-muted mb-0">Chỉnh sửa nội dung câu hỏi, độ khó, chủ đề và đáp án.</p>
                 </div>
                 
-                <div class="pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-warning fw-bold px-5">Cập nhật ngay</button>
-                    <a href="/admin/questions" class="btn btn-outline-secondary px-4">Đóng</a>
+                <a th:href="@{/admin/questions}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <form th:action="@{/admin/questions/{id}/edit(id=${question.questionId})}"
+                          th:object="${question}"
+                          method="post">
+                        <div class="row g-4">
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Môn học</label>
+                                <select id="subjectSelect" class="form-select">
+                                    <option value="">-- Chọn môn học --</option>
+                                    <option th:each="subject : ${subjects}"
+                                            th:value="${subject.subjectId}"
+                                            th:text="${subject.subjectName}"
+                                            th:selected="${question.topic != null and question.topic.subject != null and question.topic.subject.subjectId == subject.subjectId}">
+                                        Subject
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Chủ đề</label>
+                                <select th:field="*{topic.topicId}" id="topicSelect" class="form-select" required>
+                                    <option value="">-- Chọn chủ đề --</option>
+                                    <option th:each="topic : ${topics}"
+                                            th:value="${topic.topicId}"
+                                            th:text="${topic.topicName}"
+                                            th:selected="${question.topic != null and question.topic.topicId == topic.topicId}">
+                                        Topic
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Độ khó</label>
+                                <select th:field="*{difficultyLevel}" class="form-select" required>
+                                    <option th:each="difficulty : ${difficultyLevels}"
+                                            th:value="${difficulty}"
+                                            th:text="${difficulty}">
+                                        EASY
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <label class="form-label fw-semibold">Trạng thái</label>
+                                <select th:field="*{status}" class="form-select" required>
+                                    <option th:each="statusItem : ${questionStatuses}"
+                                            th:value="${statusItem}"
+                                            th:text="${statusItem}">
+                                        APPROVED
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Nội dung câu hỏi</label>
+                                <textarea th:field="*{content}"
+                                          class="form-control"
+                                          rows="4"
+                                          required></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Giải thích</label>
+                                <textarea th:field="*{explanation}"
+                                          class="form-control"
+                                          rows="3"></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-label fw-semibold mb-0">Danh sách đáp án</label>
+                                    <span class="text-muted small">Chọn đúng 1 đáp án đúng</span>
+                                </div>
+                                
+                                <div class="d-flex flex-column gap-3">
+                                    <div th:each="option, stat : *{options}" class="border rounded-4 p-3 bg-light-subtle">
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-lg-1 col-md-2">
+                                                <label class="form-label fw-semibold mb-1">Nhãn</label>
+                                                <input type="text"
+                                                       th:field="*{options[__${stat.index}__].optionLabel}"
+                                                       class="form-control"
+                                                       readonly>
+                                            </div>
+                                            
+                                            <div class="col-lg-9 col-md-8">
+                                                <label class="form-label fw-semibold mb-1">Nội dung đáp án</label>
+                                                <input type="text"
+                                                       th:field="*{options[__${stat.index}__].content}"
+                                                       class="form-control"
+                                                       required>
+                                            </div>
+                                            
+                                            <div class="col-lg-2 col-md-2">
+                                                <label class="form-label fw-semibold mb-1 d-block">Đáp án đúng</label>
+                                                <div class="form-check mt-2">
+                                                    <input class="form-check-input"
+                                                           type="radio"
+                                                           name="correctOptionIndex"
+                                                           th:value="${stat.index}"
+                                                           th:checked="${option.isCorrect}">
+                                                    <label class="form-check-label">Chọn</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <input type="hidden" th:field="*{options[__${stat.index}__].optionId}">
+                                        <input type="hidden" th:field="*{options[__${stat.index}__].isCorrect}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> Lưu thay đổi
+                            </button>
+                            <a th:href="@{/admin/questions}" class="btn btn-outline-secondary px-4">Hủy</a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+    
+    <script>
+        const subjectSelect = document.getElementById('subjectSelect');
+        const topicSelect = document.getElementById('topicSelect');
+
+        async function loadTopicsBySubject(subjectId, selectedTopicId = '') {
+            if (!subjectId) {
+                topicSelect.innerHTML = '<option value="">-- Chọn chủ đề --</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/quiz-data/topics?subjectId=${subjectId}`);
+                const topics = await response.json();
+
+                let options = '<option value="">-- Chọn chủ đề --</option>';
+                topics.forEach(topic => {
+                    const selected = String(topic.topicId) === String(selectedTopicId) ? 'selected' : '';
+                    options += `<option value="${topic.topicId}" ${selected}>${topic.topicName}</option>`;
+                });
+
+                topicSelect.innerHTML = options;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const currentTopicId = topicSelect.value;
+            const initialSubjectId = subjectSelect.value;
+            if (initialSubjectId) {
+                await loadTopicsBySubject(initialSubjectId, currentTopicId);
+            }
+        });
+
+        subjectSelect?.addEventListener('change', async function () {
+            await loadTopicsBySubject(this.value, '');
+        });
+    </script>
 </div>
 </body>
 </html>

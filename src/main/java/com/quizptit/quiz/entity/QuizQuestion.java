@@ -26,8 +26,6 @@ public class QuizQuestion {
     @JoinColumn(name = "quiz_id", nullable = false)
     private Quiz quiz;
 
-    // Entity Question này thuộc về module Content do Người 2 phụ trách
-    // Bạn chỉ cần reference đến nó là được
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;

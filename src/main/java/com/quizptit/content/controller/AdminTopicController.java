@@ -28,7 +28,7 @@ public class AdminTopicController {
                              @RequestParam(required = false) Boolean isActive,
                              @RequestParam(defaultValue = "0") int page,
                              Model model) {
-        Page<Topic> topics = topicService.searchTopics(subjectId, keyword, isActive, PageRequest.of(page, 10));
+        Page<Topic> topics = topicService.searchTopics(subjectId, keyword, isActive, PageRequest.of(page, 50));
         model.addAttribute("topics", topics);
         model.addAttribute("subjects", subjectService.getActiveSubjects());
         model.addAttribute("keyword", keyword);
@@ -84,8 +84,12 @@ public class AdminTopicController {
 
     @PostMapping("/{topicId}/toggle-status")
     public String toggleStatus(@PathVariable Long topicId, RedirectAttributes redirectAttributes) {
-        topicService.toggleStatus(topicId);
-        redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái thành công");
+        try {
+            topicService.toggleStatus(topicId);
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái thành công");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/admin/topics";
     }
 }

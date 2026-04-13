@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Access Denied - QuizPTIT</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/public-layout :: layout('Từ chối truy cập', ~{::content})}">
+<head></head>
 <body>
-<h1>Access Denied</h1>
-<p>You do not have permission to access this page.</p>
-
-<div>
-    <a href="/">Back to Home</a>
+<div th:fragment="content" class="text-center">
+    <div class="display-1 fw-bold text-danger mb-3">403</div>
+    <h3 class="fw-bold mb-3">Bạn không có quyền truy cập</h3>
+    <p class="text-muted mb-4">
+        Tài khoản hiện tại không đủ quyền để mở trang này.
+    </p>
+    
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a th:href="@{/}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-house-door me-1"></i> Về trang chủ
+        </a>
+        
+        <a th:href="@{/auth/login}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập lại
+        </a>
+    </div>
 </div>
 </body>
 </html>

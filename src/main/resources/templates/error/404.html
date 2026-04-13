@@ -1,12 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('404 - Not Found')}"></head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/public-layout :: layout('Not Found', ~{::content})}">
+<head></head>
 <body>
-<div class="container py-5">
-    <div class="app-card">
-        <h1>404 - Not Found</h1>
-        <p th:text="${errorMessage != null ? errorMessage : 'Resource not found.'}">Resource not found.</p>
-        <a class="btn btn-primary btn-sm" th:href="@{/}">Back Home</a>
+<div th:fragment="content" class="text-center">
+    <div class="display-1 fw-bold text-primary mb-3">404</div>
+    <h3 class="fw-bold mb-3" th:text="${errorTitle != null ? errorTitle : 'Not Found'}">Not Found</h3>
+    <p class="text-muted mb-3"
+       th:text="${errorMessage != null ? errorMessage : 'Không tìm thấy tài nguyên bạn yêu cầu.'}">
+        Không tìm thấy tài nguyên.
+    </p>
+    <p class="small text-muted mb-4" th:if="${path != null}">
+        Path:
+        <code th:text="${path}">/path</code>
+    </p>
+    
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a th:href="@{/}" class="btn btn-primary rounded-pill px-4">Trang chủ</a>
+        <a th:href="@{/subjects}" class="btn btn-outline-primary rounded-pill px-4">Xem môn học</a>
     </div>
 </div>
 </body>

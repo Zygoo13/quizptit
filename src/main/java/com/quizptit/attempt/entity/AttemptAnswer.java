@@ -25,7 +25,6 @@ public class AttemptAnswer {
     @JoinColumn(name = "attempt_question_id", nullable = false, unique = true)
     private AttemptQuestion attemptQuestion;
 
-    // AnswerOption thuộc về module Content do Người 2 phụ trách
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_option_id")
     private AnswerOption selectedOption;

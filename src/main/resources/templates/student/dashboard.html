@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Bảng điều khiển học viên', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        .dashboard-hero {
+            border-radius: 18px;
+            padding: 2rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #eef1f4;
+        }
+
+        .dashboard-feature-card {
+            border-radius: 18px;
+            border: 1px solid #eef1f4;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .dashboard-feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07);
+        }
+
+        .dashboard-feature-card .badge {
+            font-size: 0.78rem;
+        }
+    </style>
+    
+    <div class="dashboard-hero mb-4">
+        <h2 class="fw-bold mb-2">Chào mừng trở lại</h2>
+        <p class="text-muted mb-0">
+            Xin chào,
+            <strong th:text="${currentUserEmail}">student@ptit.edu.vn</strong>
+        </p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card dashboard-feature-card h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="badge bg-primary-subtle text-primary">Học tập</span>
+                        <i class="bi bi-journal-check fs-4 text-primary"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold">Danh sách bài luyện</h5>
+                    <p class="text-muted small mb-4">
+                        Xem các bài luyện đã được công khai và bắt đầu làm bài.
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/quizzes}" class="btn btn-primary w-100">Vào bài luyện</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card dashboard-feature-card h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="badge bg-success-subtle text-success">Ngẫu nhiên</span>
+                        <i class="bi bi-shuffle fs-4 text-success"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold">Luyện tập ngẫu nhiên</h5>
+                    <p class="text-muted small mb-4">
+                        Tạo bài luyện nhanh theo môn học hoặc chủ đề bạn muốn ôn.
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/quizzes/random}" class="btn btn-success w-100">Bắt đầu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card dashboard-feature-card h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="badge bg-warning-subtle text-warning">Tiến độ</span>
+                        <i class="bi bi-graph-up-arrow fs-4 text-warning"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold">Tiến độ học tập</h5>
+                    <p class="text-muted small mb-4">
+                        Theo dõi quá trình học tập, kết quả và mức độ hoàn thành của bạn.
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/progress}" class="btn btn-warning w-100 text-dark">Xem tiến độ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="card dashboard-feature-card h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="badge bg-info-subtle text-info">Cộng đồng</span>
+                        <i class="bi bi-chat-dots fs-4 text-info"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold">Cộng đồng hỏi đáp</h5>
+                    <p class="text-muted small mb-4">
+                        Tham gia trao đổi, đặt câu hỏi và học hỏi từ cộng đồng QuizPTIT.
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <a th:href="@{/community/questions}" class="btn btn-info w-100 text-white">Vào cộng đồng</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

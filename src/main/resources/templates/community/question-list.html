@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/student-layout :: layout('Cộng đồng hỏi đáp', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        .community-post-card {
+            border: 0;
+            border-radius: 18px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .community-post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+
+        .avatar-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+        }
+
+        .post-content-summary {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .topic-filter-chip.active {
+            background: var(--bs-primary);
+            color: #fff;
+            border-color: var(--bs-primary);
+        }
+
+        .post-meta-text {
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .post-meta-text i {
+            margin-right: 4px;
+        }
+    </style>
+    
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Cộng đồng hỏi đáp</h3>
+            <p class="text-muted mb-0">
+                Đặt câu hỏi, trao đổi theo chủ đề và cùng nhau giải quyết vấn đề học tập.
+            </p>
+        </div>
+        
+        <a sec:authorize="isAuthenticated()"
+           th:href="@{/community/questions/create}"
+           class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-plus-circle me-1"></i> Đặt câu hỏi mới
+        </a>
+    </div>
+    
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{/community/questions}"
+                       class="btn rounded-pill px-4 topic-filter-chip"
+                       th:classappend="${currentTopic == null} ? 'active' : 'btn-outline-primary'">
+                        Tất cả
+                    </a>
+                    
+                    <a th:each="topic : ${topics}"
+                       th:href="@{/community/questions(topicId=${topic.topicId})}"
+                       class="btn btn-outline-primary rounded-pill px-4 topic-filter-chip"
+                       th:classappend="${currentTopic == topic.topicId} ? 'active' : ''"
+                       th:text="${topic.topicName}">
+                        Topic
+                    </a>
+                </div>
+                
+                <div class="small text-muted">
+                    Trang hiện tại:
+                    <strong th:text="${currentPage + 1}">1</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(posts)}" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="display-6 text-muted mb-3">
+                <i class="bi bi-chat-square-text"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Chưa có bài viết nào</h5>
+            <p class="text-muted mb-0">Hãy là người đầu tiên tạo thảo luận ở chủ đề này.</p>
+        </div>
+    </div>
+    
+    <div class="d-flex flex-column gap-4">
+        <div th:each="post : ${posts}"
+             class="card community-post-card"
+             th:style="'background-color:' + ${(post.themeColor != null and !#strings.isEmpty(post.themeColor)) ? post.themeColor : '#ffffff'}">
+            
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar-circle"
+                             th:text="${post.fullName != null and !#strings.isEmpty(post.fullName)} ? ${#strings.substring(post.fullName,0,1)} : 'U'">
+                            U
+                        </div>
+                        
+                        <div>
+                            <div class="fw-bold text-dark" th:text="${post.fullName != null ? post.fullName : 'Người dùng'}">Người dùng</div>
+                            <div class="small text-muted">
+                                <span th:text="${post.topicName}">Topic</span>
+                                <span class="mx-1">•</span>
+                                <span th:text="${post.createdAt != null ? #temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm') : '---'}">12/04/2026 10:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <span class="badge rounded-pill px-3 py-2"
+                          th:classappend="${post.status == 'VISIBLE'} ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle'"
+                          th:text="${post.status}">
+                        VISIBLE
+                    </span>
+                </div>
+                
+                <h5 class="fw-bold mb-3">
+                    <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
+                       class="text-decoration-none text-dark"
+                       th:text="${post.title}">
+                        Tiêu đề bài viết
+                    </a>
+                </h5>
+                
+                <div class="text-muted post-content-summary mb-3" th:text="${post.content}">
+                    Nội dung bài viết
+                </div>
+                
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex flex-wrap gap-4 align-items-center">
+                        <span class="post-meta-text">
+                            <i class="bi bi-hand-thumbs-up"></i>
+                            <span th:text="${post.likeCount != null ? post.likeCount : 0}">0</span> lượt thích
+                        </span>
+                        
+                        <span class="post-meta-text">
+                            <i class="bi bi-chat-left-text"></i>
+                            <span th:text="${post.commentCount}">0</span> bình luận
+                        </span>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/community/questions/{id}(id=${post.questionPostId})}"
+                           class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                            <i class="bi bi-eye me-1"></i> Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

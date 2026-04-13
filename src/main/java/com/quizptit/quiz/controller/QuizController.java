@@ -61,7 +61,6 @@ public class QuizController {
         Quiz quiz;
 
         if (request.getTopicId() != null) {
-            // Ưu tiên tạo theo Chủ đề nếu topicId được truyền vào
             quiz = quizService.createRandomQuizByTopic(
                     request.getTopicId(), creatorId, request.getTitle(),
                     request.getDurationMinutes(), request.getRequiredQuestions());
@@ -69,7 +68,6 @@ public class QuizController {
                     "message", "Tạo đề ngẫu nhiên theo chủ đề thành công",
                     "quizId", quiz.getQuizId()));
         } else if (request.getSubjectId() != null) {
-            // Tạo theo Môn học nếu chỉ có subjectId
             quiz = quizService.createRandomQuiz(
                     request.getSubjectId(), creatorId, request.getTitle(),
                     request.getDurationMinutes(), request.getRequiredQuestions());
@@ -88,7 +86,6 @@ public class QuizController {
 
         List<Quiz> quizzes = quizService.getAvailableQuizzes(subjectId);
 
-        // Map Entity sang DTO
         List<QuizResponse> responses = quizzes.stream()
                 .map(q -> QuizResponse.builder()
                         .quizId(q.getQuizId())

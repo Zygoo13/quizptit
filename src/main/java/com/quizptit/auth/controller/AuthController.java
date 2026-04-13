@@ -23,7 +23,7 @@ public class AuthController {
     @GetMapping("/auth/login")
     public String loginPage() {
         if (CurrentUserUtils.isLoggedIn()) {
-            return "redirect:/";
+            return "redirect:" + CurrentUserUtils.resolveHomeByRole();
         }
         return "auth/login";
     }
@@ -31,7 +31,7 @@ public class AuthController {
     @GetMapping("/auth/register")
     public String registerPage(Model model) {
         if (CurrentUserUtils.isLoggedIn()) {
-            return "redirect:/";
+            return "redirect:" + CurrentUserUtils.resolveHomeByRole();
         }
 
         if (!model.containsAttribute("registerForm")) {
@@ -59,7 +59,7 @@ public class AuthController {
             return "auth/register";
         }
 
-        redirectAttributes.addFlashAttribute("successMessage", "Register successful. Please login.");
+        redirectAttributes.addFlashAttribute("successMessage", "Đăng ký thành công. Vui lòng đăng nhập.");
         return "redirect:/auth/login";
     }
 }

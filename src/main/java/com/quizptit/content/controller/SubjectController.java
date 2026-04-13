@@ -23,7 +23,7 @@ public class SubjectController {
     public String listSubjects(@RequestParam(required = false) String keyword,
                                @RequestParam(defaultValue = "0") int page,
                                Model model) {
-        Page<Subject> subjects = subjectService.searchSubjects(keyword, true, PageRequest.of(page, 10));
+        Page<Subject> subjects = subjectService.searchSubjects(keyword, true, PageRequest.of(page, 50));
         model.addAttribute("subjects", subjects);
         model.addAttribute("keyword", keyword);
         return "content/subject-list";

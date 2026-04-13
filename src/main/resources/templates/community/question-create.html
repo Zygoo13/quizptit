@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/student-layout :: layout('Đặt câu hỏi mới', ~{::content})}">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        .color-selector input[type="radio"] {
+            display: none;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .color-selector input[type="radio"]:checked + .color-option {
+            border-color: #0d6efd;
+            transform: scale(1.15);
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.12);
+        }
+    </style>
+    
+    <div class="row justify-content-center">
+        <div class="col-xl-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">Đặt câu hỏi mới</h3>
+                    <p class="text-muted mb-0">Tạo bài viết mới để nhận hỗ trợ từ cộng đồng.</p>
+                </div>
+                
+                <a th:href="@{/community/questions}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <form th:action="@{/community/questions/create}" th:object="${postRequest}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tiêu đề</label>
+                            <input type="text"
+                                   th:field="*{title}"
+                                   class="form-control"
+                                   placeholder="Tóm tắt câu hỏi của bạn..."
+                                   required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Chủ đề</label>
+                            <select th:field="*{topicId}" class="form-select" required>
+                                <option value="">-- Chọn chủ đề --</option>
+                                <option th:each="topic : ${topics}"
+                                        th:value="${topic.topicId}"
+                                        th:text="${topic.topicName}">
+                                    Topic
+                                </option>
+                            </select>
+                            <div class="form-text">Chọn đúng chủ đề để câu hỏi tiếp cận đúng người đọc.</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Màu nền bài viết</label>
+                            <div class="color-selector d-flex gap-3 align-items-center flex-wrap">
+                                <label>
+                                    <input type="radio" th:field="*{themeColor}" value="#ffffff" checked>
+                                    <span class="color-option" style="background-color:#ffffff; border:1px solid #ddd;"></span>
+                                </label>
+                                
+                                <label>
+                                    <input type="radio" th:field="*{themeColor}" value="#e7f3ff">
+                                    <span class="color-option" style="background-color:#e7f3ff;"></span>
+                                </label>
+                                
+                                <label>
+                                    <input type="radio" th:field="*{themeColor}" value="#f2f2f2">
+                                    <span class="color-option" style="background-color:#f2f2f2;"></span>
+                                </label>
+                                
+                                <label>
+                                    <input type="radio" th:field="*{themeColor}" value="#fff8e1">
+                                    <span class="color-option" style="background-color:#fff8e1;"></span>
+                                </label>
+                                
+                                <label>
+                                    <input type="radio" th:field="*{themeColor}" value="#ffeef8">
+                                    <span class="color-option" style="background-color:#ffeef8;"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Nội dung chi tiết</label>
+                            <textarea th:field="*{content}"
+                                      class="form-control"
+                                      rows="8"
+                                      placeholder="Mô tả chi tiết vấn đề bạn đang gặp..."
+                                      required></textarea>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="bi bi-send me-1"></i> Đăng bài
+                            </button>
+                            <a th:href="@{/community/questions}" class="btn btn-outline-secondary rounded-pill px-4">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

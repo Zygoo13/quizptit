@@ -1,191 +1,117 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{layout/admin-layout :: layout(pageTitle='Quản Lý Kỳ Thi', content=~{::content}, script=~{::script})}">
-
-<head>
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/admin-layout :: layout('Quản lý quiz', ~{::content}, ~{})}">
+<head></head>
 <body>
-
-    <div th:fragment="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="m-0 fw-bold text-primary">
-                <i class="bi bi-journal-check me-2"></i>Danh sách Đề Thi / Kỳ Thi
-            </h5>
-            <div>
-                <a class="btn btn-primary shadow-sm" th:href="@{/admin/quizzes/create}">
-                    <i class="bi bi-plus-circle me-1"></i>Tạo Đề Thi Thủ Công
-                </a>
-            </div>
+<div th:fragment="content">
+    <style>
+        .quiz-title-cell {
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+    
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Quản lý quiz</h3>
+            <p class="text-muted mb-0">
+                Quản lý các đề thi thủ công, trạng thái công khai và chỉnh sửa nội dung đề.
+            </p>
         </div>
-
-        <div id="alert-box" class="alert d-none alert-dismissible fade show mb-3" role="alert">
-            <span id="alert-message"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Tiêu Đề</th>
-                                <th>Môn Học</th>
-                                <th class="text-center">Loại Đề</th>
-                                <th class="text-center">Câu Hỏi</th>
-                                <th class="text-center">Thời Gian</th>
-                                <th class="text-center">Trạng Thái</th>
-                                <th class="text-center">Người Tạo</th>
-                                <th class="text-end pe-4">Thao Tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:if="${#lists.isEmpty(quizzes)}">
-                                <td colspan="9" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                                    Chưa có đề thi nào trong hệ thống
-                                </td>
-                            </tr>
-
-                            <tr th:each="quiz : ${quizzes}" th:id="'quiz-row-' + ${quiz.quizId}">
-                                <td class="ps-4 fw-bold text-secondary" th:text="${quiz.quizId}">1</td>
-                                <td class="fw-semibold">
-                                    <span th:text="${quiz.title}">Đề thi thử</span>
-                                    <div th:if="${quiz.topic != null}" class="small text-muted mt-1">
-                                        <i class="bi bi-tag-fill me-1"></i><span th:text="${quiz.topic.topicName}">Chủ
-                                            đề</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info text-dark bg-opacity-10 border border-info"
-                                        th:if="${quiz.subject != null}"
-                                        th:text="${quiz.subject.subjectName}">Toán</span>
-                                </td>
-                                <td class="text-center">
-                                    <span th:if="${quiz.quizType.name() == 'MANUAL'}"
-                                        class="badge bg-primary text-white">Thủ công</span>
-                                    <span th:if="${quiz.quizType.name() == 'RANDOM'}"
-                                        class="badge bg-warning text-dark">Ngẫu nhiên</span>
-                                </td>
-                                <td class="text-center fw-bold" th:text="${quiz.totalQuestions}">50</td>
-                                <td class="text-center">
-                                    <span th:text="${quiz.durationMinutes}">45</span> phút
-                                </td>
-                                <td class="text-center status-col">
-                                    <span th:if="${quiz.isPublished}" class="badge bg-success bg-opacity-75"><i
-                                            class="bi bi-check-circle me-1"></i>Đã Xuất Bản</span>
-                                    <span th:unless="${quiz.isPublished}"
-                                        class="badge bg-secondary bg-opacity-50 text-dark"><i
-                                            class="bi bi-lock me-1"></i>Bản Nháp</span>
-                                </td>
-                                <td class="text-center small text-muted"
-                                    th:text="${quiz.createdBy != null ? quiz.createdBy.email : 'N/A'}">
-                                    admin@ptit.edu.vn
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="btn-group btn-group-sm">
-                                        <a th:if="${quiz.quizType.name() == 'MANUAL'}"
-                                           th:href="@{/admin/quizzes/{id}/edit(id=${quiz.quizId})}"
-                                           class="btn btn-outline-primary" title="Sửa đề thi">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <button th:unless="${quiz.quizType.name() == 'MANUAL'}"
-                                                type="button" class="btn btn-outline-secondary" title="Đề ngẫu nhiên không hỗ trợ sửa thủ công" disabled>
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-
-                                        <a th:href="@{/quizzes/{id}(id=${quiz.quizId})}"
-                                           class="btn btn-outline-info" title="Xem/Làm thử đề thi">
-                                            <i class="bi bi-search"></i>
-                                        </a>
-
-                                        <button type="button" class="btn btn-outline-warning btn-toggle-status" 
-                                                th:title="${quiz.isPublished ? 'Tạm ẩn đề thi' : 'Xuất bản đề thi'}"
-                                                th:data-id="${quiz.quizId}">
-                                            <i th:class="${quiz.isPublished ? 'bi bi-eye-slash' : 'bi bi-eye'}"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center"
-                    th:if="${not #lists.isEmpty(quizzes)}">
-                    <span class="text-muted small">Hiển thị <strong th:text="${#lists.size(quizzes)}"></strong> kết
-                        quả</span>
-                </div>
-            </div>
+        
+        <a th:href="@{/admin/quizzes/create}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Tạo quiz
+        </a>
+    </div>
+    
+    <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tiêu đề</th>
+                        <th>Môn học</th>
+                        <th>Chủ đề</th>
+                        <th>Loại</th>
+                        <th>Thời lượng</th>
+                        <th>Số câu</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(quizzes)}">
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            Chưa có quiz nào trong hệ thống.
+                        </td>
+                    </tr>
+                    
+                    <tr th:each="quiz : ${quizzes}">
+                        <td class="ps-4 fw-bold text-primary" th:text="${quiz.quizId}">1</td>
+                        
+                        <td>
+                            <div class="fw-semibold text-dark quiz-title-cell"
+                                 th:text="${quiz.title}"
+                                 th:title="${quiz.title}">
+                                Tên quiz
+                            </div>
+                            <div class="small text-muted"
+                                 th:text="${#temporals.format(quiz.createdAt, 'dd/MM/yyyy HH:mm')}">
+                                12/04/2026 10:00
+                            </div>
+                        </td>
+                        
+                        <td th:text="${quiz.subject != null ? quiz.subject.subjectName : 'N/A'}">Môn học</td>
+                        
+                        <td>
+                            <span th:text="${quiz.topic != null ? quiz.topic.topicName : '---'}">Topic</span>
+                        </td>
+                        
+                        <td>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2"
+                              th:text="${quiz.quizType}">
+                            MANUAL
+                        </span>
+                        </td>
+                        
+                        <td>
+                            <span th:text="${quiz.durationMinutes} + ' phút'">45 phút</span>
+                        </td>
+                        
+                        <td>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-2"
+                              th:text="${quiz.totalQuestions}">
+                            20
+                        </span>
+                        </td>
+                        
+                        <td>
+                        <span th:if="${quiz.isPublished}"
+                              class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                            <i class="bi bi-check-circle-fill me-1"></i> Published
+                        </span>
+                            <span th:unless="${quiz.isPublished}"
+                                  class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2">
+                            <i class="bi bi-eye-slash-fill me-1"></i> Draft
+                        </span>
+                        </td>
+                        
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-2">
+                                <a th:href="@{/admin/quizzes/{id}/edit(id=${quiz.quizId})}"
+                                   class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                    <i class="bi bi-pencil-square me-1"></i> Sửa
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <script th:fragment="script">
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.btn-toggle-status').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const quizId = this.dataset.id;
-                    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
-
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-
-                    try {
-                        const response = await fetch(`/api/quizzes/${quizId}/toggle-status`, {
-                            method: 'PATCH',
-                            headers: {
-                                [csrfHeader]: csrfToken
-                            }
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            updateRowStatus(quizId, data.isPublished);
-                            showAlert('success', data.message);
-                        } else {
-                            showAlert('danger', 'Cập nhật trạng thái thất bại!');
-                        }
-                    } catch (error) {
-                        console.error('Error toggling status:', error);
-                        showAlert('danger', 'Lỗi kết nối hệ thống!');
-                    } finally {
-                        this.disabled = false;
-                    }
-                });
-            });
-
-            function updateRowStatus(quizId, isPublished) {
-                const row = document.getElementById(`quiz-row-${quizId}`);
-                if (!row) return;
-
-                const statusCol = row.querySelector('.status-col');
-                const toggleBtn = row.querySelector('.btn-toggle-status');
-
-                if (isPublished) {
-                    statusCol.innerHTML = '<span class="badge bg-success bg-opacity-75"><i class="bi bi-check-circle me-1"></i>Đã Xuất Bản</span>';
-                    toggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
-                    toggleBtn.title = 'Tạm ẩn đề thi';
-                } else {
-                    statusCol.innerHTML = '<span class="badge bg-secondary bg-opacity-50 text-dark"><i class="bi bi-lock me-1"></i>Bản Nháp</span>';
-                    toggleBtn.innerHTML = '<i class="bi bi-eye"></i>';
-                    toggleBtn.title = 'Xuất bản đề thi';
-                }
-            }
-
-            function showAlert(type, message) {
-                const box = document.getElementById('alert-box');
-                const msg = document.getElementById('alert-message');
-                msg.textContent = message;
-                box.className = `alert alert-${type} alert-dismissible fade show mb-3`;
-                box.classList.remove('d-none');
-                setTimeout(() => box.classList.add('d-none'), 3000);
-            }
-        });
-    </script>
-
+</div>
 </body>
-
 </html>

@@ -44,5 +44,5 @@ public interface UserQuestionMemoryRepository extends JpaRepository<UserQuestion
         @Param("userId") Long userId, 
         @Param("subjectId") Long subjectId, 
         @Param("now") LocalDateTime now
-);
+    );
 }

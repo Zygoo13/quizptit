@@ -57,7 +57,7 @@ public class Quiz {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "quiz_type", nullable = false, length = 20)
-    private QuizType quizType; // MANUAL hoặc RANDOM
+    private QuizType quizType;
 
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
@@ -67,7 +67,7 @@ public class Quiz {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy; // Liên kết tới bảng users
+    private User createdBy;
 
     @Builder.Default
     @Column(name = "is_published", nullable = false)
