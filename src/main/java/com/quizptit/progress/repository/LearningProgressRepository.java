@@ -23,7 +23,9 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
     @Query("SELECT new com.quizptit.progress.dto.AdminProgressDTO(" +
        "u.userId, u.email, u.fullName, s.subjectId, s.subjectName, " +
        "COUNT(lp.topic.topicId), " + 
-       "CAST(AVG(lp.progressPercentage) AS java.math.BigDecimal), " +
+       "CAST(CASE WHEN SUM(lp.totalQuizzes) > 0 " +
+       "     THEN (SUM(lp.completedQuizzes) * 100.0 / SUM(lp.totalQuizzes)) " +
+       "     ELSE 0 END AS java.math.BigDecimal), " +
        "CAST(AVG(lp.masteryScore) AS java.math.BigDecimal)) " +
        "FROM LearningProgress lp " + 
        "JOIN lp.user u " +
