@@ -104,7 +104,7 @@ public class QuizServiceImpl implements QuizService {
                                 .durationMinutes(durationMinutes)
                                 .totalQuestions(requiredQuestions)
                                 .createdBy(creator)
-                                .isPublished(false)
+                                .isPublished(true)
                                 .build();
 
                 Quiz savedQuiz = quizRepository.save(quiz);
@@ -179,7 +179,7 @@ public class QuizServiceImpl implements QuizService {
                                 .durationMinutes(durationMinutes)
                                 .totalQuestions(requiredQuestions)
                                 .createdBy(creator)
-                                .isPublished(false)
+                                .isPublished(true)
                                 .build();
 
                 Quiz savedQuiz = quizRepository.save(quiz);
