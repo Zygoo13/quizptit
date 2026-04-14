@@ -50,9 +50,9 @@
                     </div>
                     
                     <div class="mt-auto">
-                        <a th:href="@{/review/suggestions}"
-                           class="btn btn-outline-primary w-100 rounded-pill">
-                            Xem gợi ý ôn tập
+                        <a th:href="@{/review/subject/{id}(id=${subject.subjectId})}"
+                        class="btn btn-outline-primary w-100 rounded-pill fw-bold">
+                            Chi tiết ôn tập <i class="bi bi-chevron-right ms-1"></i>
                         </a>
                     </div>
                 </div>

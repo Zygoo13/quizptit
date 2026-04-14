@@ -128,6 +128,7 @@ public class ReviewController {
 
         model.addAttribute("questions", questions);
         model.addAttribute("subjectName", subjectName);
+        model.addAttribute("subjectId", subjectId);
         return "review/question-list";
     }
 

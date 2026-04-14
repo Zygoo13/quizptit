@@ -57,15 +57,15 @@
                             <span>
                                 <i class="bi bi-calendar-event me-1"></i>
                                 Ôn tiếp:
-                                <span th:text="${item.nextReviewAt != null ? #temporals.format(item.nextReviewAt, 'dd/MM/yyyy HH:mm') : '---'}">
-                                    12/04/2026 10:00
+                                <span th:text="${item.nextReviewAt != null ? #temporals.format(item.nextReviewAt, 'dd/MM/yyyy') : '---'}">
+                                    12/04/2026
                                 </span>
                             </span>
                             
                             <span th:if="${item.memoryScore != null}">
                                 <i class="bi bi-graph-up-arrow me-1"></i>
                                 Memory score:
-                                <span th:text="${item.memoryScore}">0</span>
+                                <span th:text="${#numbers.formatDecimal(item.memoryScore * 100, 1, 2)} + '/100'">0/100</span>
                             </span>
                         </div>
                     </div>

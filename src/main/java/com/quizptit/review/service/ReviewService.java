@@ -44,6 +44,7 @@ public class ReviewService {
 
         memory.setLastResult(isCorrect);
         memory.setLastReviewedAt(LocalDateTime.now());
+        memory.setReviewCount(memory.getReviewCount() + 1);
 
         if (isCorrect) {
             memory.setCorrectStreak(memory.getCorrectStreak() + 1);
