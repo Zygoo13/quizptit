@@ -24,7 +24,7 @@ public class AttemptScheduler {
     @Scheduled(fixedRate = 120000)
     @Transactional
     public void autoSubmitExpiredAttempts() {
-        log.info("Bắt đầu quét các bài thi đã quá hạn...");
+        log.info("Bat dau quet cac bai thi da qua han...");
 
         List<Attempt> inProgressAttempts = attemptRepository.findByStatus(AttemptStatus.IN_PROGRESS);
         LocalDateTime now = LocalDateTime.now();
@@ -37,19 +37,19 @@ public class AttemptScheduler {
                 LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
 
                 if (now.isAfter(endTime.plusSeconds(30))) {
-                    log.info("Phát hiện bài thi hết hạn: ID={}, User={}, Quiz={}",
+                    log.info("Phat hien bai thi het han: ID={}, User={}, Quiz={}",
                             attempt.getAttemptId(), attempt.getUser().getUserId(), attempt.getQuiz().getTitle());
 
                     attemptService.submitAttempt(attempt.getAttemptId());
                     count++;
                 }
             } catch (Exception e) {
-                log.error("Lỗi khi tự động nộp bài thi ID={}: {}", attempt.getAttemptId(), e.getMessage());
+                log.error("Loi khi tu dong nop bai thi ID={}: {}", attempt.getAttemptId(), e.getMessage());
             }
         }
 
         if (count > 0) {
-            log.info("Hoàn tất tự động nộp {} bài thi.", count);
+            log.info("Hoan tat tu dong nop {} bai thi.", count);
         }
     }
 }
