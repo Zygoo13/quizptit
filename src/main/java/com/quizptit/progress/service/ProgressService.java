@@ -226,16 +226,19 @@ public class ProgressService {
         Page<AdminProgressDTO> page = learningProgressRepository.findAdminProgressSummary(subjectId, keyword, pageable);
 
         page.forEach(dto -> {
-            int total = topicRepository.countBySubjectSubjectId(dto.getSubjectId());
-            dto.setTotalTopics(total);
+            dto.setTotalTopics(topicRepository.countBySubjectSubjectId(dto.getSubjectId()));
+
+            int totalQuizzesInSubject = quizRepository.countTotalQuizzesBySubjectId(dto.getSubjectId());
+            
+            long completedQuizzes = dto.getProgressPercentage().longValue();
+            
+            double actualPercent = (totalQuizzesInSubject == 0) ? 0 
+                                : ((double) completedQuizzes / totalQuizzesInSubject) * 100;
+            
+            dto.setProgressPercentage(BigDecimal.valueOf(Math.round(actualPercent * 10) / 10.0));
 
             double score = dto.getAverageScore() != null ? dto.getAverageScore().doubleValue() : 0;
-            if (score >= 0.8)
-                dto.setStatus("Xuất sắc");
-            else if (score >= 0.5)
-                dto.setStatus("Đạt");
-            else
-                dto.setStatus("Cảnh báo");
+            dto.setStatus(score >= 0.8 ? "Xuất sắc" : (score >= 0.5 ? "Đạt" : "Cảnh báo"));
         });
         return page;
     }
@@ -244,7 +247,6 @@ public class ProgressService {
         return userQuestionMemoryRepository.findReviewDashboardData(userId, LocalDateTime.now());
     }
 
-    // Dòng 230
     public List<QuestionReviewDTO> getSpecificQuestionsToReview(Long userId, Long subjectId) {
         // 1. Lấy "nguyên liệu thô" (Entity) từ DB
         List<com.quizptit.review.entity.UserQuestionMemory> entities = 

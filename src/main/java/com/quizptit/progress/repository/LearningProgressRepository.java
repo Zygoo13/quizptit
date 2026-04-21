@@ -21,23 +21,21 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
     Optional<LearningProgress> findByUserUserIdAndTopicTopicId(Long userId, Long topicId);
 
     @Query("SELECT new com.quizptit.progress.dto.AdminProgressDTO(" +
-       "u.userId, u.email, u.fullName, s.subjectId, s.subjectName, " +
-       "COUNT(lp.topic.topicId), " + 
-       "CAST(CASE WHEN SUM(lp.totalQuizzes) > 0 " +
-       "     THEN (SUM(lp.completedQuizzes) * 100.0 / SUM(lp.totalQuizzes)) " +
-       "     ELSE 0 END AS java.math.BigDecimal), " +
-       "CAST(AVG(lp.masteryScore) AS java.math.BigDecimal)) " +
-       "FROM LearningProgress lp " + 
-       "JOIN lp.user u " +
-       "JOIN lp.topic t " +
-       "JOIN t.subject s " +
-       "WHERE (:subjectId IS NULL OR s.subjectId = :subjectId) " +
-       "AND (:keyword IS NULL OR :keyword = '' OR u.email LIKE %:keyword% OR u.fullName LIKE %:keyword%) " +
-       "GROUP BY u.userId, u.email, u.fullName, s.subjectId, s.subjectName")
+        "u.userId, u.email, u.fullName, s.subjectId, s.subjectName, " +
+        "COUNT(lp.topic.topicId), " + 
+        "SUM(lp.completedQuizzes), " + // Lấy tổng bài đã xong để Service tính % sau
+        "CAST(AVG(lp.masteryScore) AS java.math.BigDecimal)) " +
+        "FROM LearningProgress lp " + 
+        "JOIN lp.user u " +
+        "JOIN lp.topic t " +
+        "JOIN t.subject s " +
+        "WHERE (:subjectId IS NULL OR s.subjectId = :subjectId) " +
+        "AND (:keyword IS NULL OR :keyword = '' OR u.email LIKE %:keyword% OR u.fullName LIKE %:keyword%) " +
+        "GROUP BY u.userId, u.email, u.fullName, s.subjectId, s.subjectName")
     Page<AdminProgressDTO> findAdminProgressSummary(
-       @Param("subjectId") Long subjectId, 
-       @Param("keyword") String keyword, 
-       Pageable pageable
+        @Param("subjectId") Long subjectId, 
+        @Param("keyword") String keyword, 
+        Pageable pageable
     );
 
     @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +

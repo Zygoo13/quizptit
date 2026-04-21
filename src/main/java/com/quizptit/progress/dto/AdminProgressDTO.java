@@ -22,14 +22,14 @@ public class AdminProgressDTO {
     // Constructor bắt buộc phải đúng thứ tự để Query trong Repository hoạt động
     public AdminProgressDTO(Long userId, String email, String fullName, Long subjectId, 
                             String subjectName, Long completedTopics, 
-                            BigDecimal progressPercentage, BigDecimal averageScore) {
+                            Long totalCompletedQuizzes, BigDecimal averageScore) {
         this.userId = userId;
         this.email = email;
         this.fullName = fullName;
         this.subjectId = subjectId;
         this.subjectName = subjectName;
         this.completedTopics = completedTopics.intValue();
-        this.progressPercentage = progressPercentage;
+        this.progressPercentage = BigDecimal.valueOf(totalCompletedQuizzes != null ? totalCompletedQuizzes : 0L);
         this.averageScore = averageScore;
     }
 }
