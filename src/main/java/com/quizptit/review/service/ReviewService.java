@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -100,10 +101,11 @@ public class ReviewService {
             long totalQuestionsInSubject = questionRepository.countByTopicSubjectSubjectId(dto.getSubjectId());
             
             if (totalQuestionsInSubject > 0) {
-                double masteryScore = dto.getAverageScore() / totalQuestionsInSubject;
+                BigDecimal masteryScore = dto.getAverageScore()
+                    .divide(BigDecimal.valueOf(totalQuestionsInSubject), 4, RoundingMode.HALF_UP);
                 dto.setAverageScore(masteryScore);
             } else {
-                dto.setAverageScore(0.0);
+                dto.setAverageScore(BigDecimal.ZERO);
             }
         }
         return dtos;

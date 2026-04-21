@@ -53,4 +53,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findRandomQuestionsByTopicId(@Param("topicId") Long topicId, @Param("limit") int limit);
 
     List<Question> findByTopic_TopicId(Long topicId);
+
+    long countByTopicSubjectSubjectId(Long subjectId);
 }

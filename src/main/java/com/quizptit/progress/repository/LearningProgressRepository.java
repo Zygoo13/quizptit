@@ -42,12 +42,14 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
 
     @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +
         "s.subjectId, s.subjectName, " +
-        "SUM(CASE WHEN lp.masteryScore < 80 THEN 1L ELSE 0L END), " + // Kết quả trả về Long
-        "COALESCE(AVG(lp.masteryScore), 0.0)) " +                   // Trả về Double, khớp với DTO mới
+        // Sửa logic: Nếu masteryScore lưu dạng 0.x thì so sánh với 0.8 (tương đương 80%)
+        "SUM(CASE WHEN lp.masteryScore < 0.8 THEN 1L ELSE 0L END), " + 
+        // Sử dụng CAST để đảm bảo kết quả là BigDecimal khớp với DTO
+        "CAST(COALESCE(AVG(lp.masteryScore), 0) AS java.math.BigDecimal)) " +
         "FROM LearningProgress lp " +
         "JOIN lp.topic t " +
         "JOIN t.subject s " +
         "WHERE lp.user.userId = :userId " +
         "GROUP BY s.subjectId, s.subjectName")
     List<ReviewSubjectDTO> findAllSubjectsWithReviewCount(@Param("userId") Long userId);
-}
+    }
