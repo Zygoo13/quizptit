@@ -93,7 +93,20 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewSubjectDTO> getSubjectsReviewStatus(Long userId) {
-        return memoryRepository.findReviewDashboardData(userId, LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        List<ReviewSubjectDTO> dtos = memoryRepository.findReviewDashboardData(userId, now);
+
+        for (ReviewSubjectDTO dto : dtos) {
+            long totalQuestionsInSubject = questionRepository.countByTopicSubjectSubjectId(dto.getSubjectId());
+            
+            if (totalQuestionsInSubject > 0) {
+                double masteryScore = dto.getAverageScore() / totalQuestionsInSubject;
+                dto.setAverageScore(masteryScore);
+            } else {
+                dto.setAverageScore(0.0);
+            }
+        }
+        return dtos;
     }
 
     @Transactional(readOnly = true)

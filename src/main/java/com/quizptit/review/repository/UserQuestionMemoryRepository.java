@@ -25,7 +25,7 @@ public interface UserQuestionMemoryRepository extends JpaRepository<UserQuestion
     @Query("SELECT new com.quizptit.review.dto.ReviewSubjectDTO(" +
         "s.subjectId, s.subjectName, " +
         "SUM(CASE WHEN m.nextReviewAt <= :now THEN 1L ELSE 0L END), " + 
-        "AVG(m.memoryScore)) " + 
+        "SUM(m.memoryScore)) " + 
         "FROM UserQuestionMemory m " + // Bắt đầu từ bảng Memory
         "JOIN m.question q " +
         "JOIN q.topic t " +
