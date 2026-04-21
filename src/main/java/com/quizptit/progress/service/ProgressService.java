@@ -113,7 +113,7 @@ public class ProgressService {
 
     @Transactional(readOnly = true)
     public List<SubjectProgressDTO> getAllSubjectProgress(Long userId) {
-        return subjectRepository.findAll().stream().map(subject -> {
+        return subjectRepository.findByIsActiveTrue().stream().map(subject -> {
             List<Topic> topics = topicRepository.findBySubjectSubjectId(subject.getSubjectId());
             
             int totalTopics = topics.size();

@@ -31,6 +31,7 @@ public interface UserQuestionMemoryRepository extends JpaRepository<UserQuestion
         "JOIN q.topic t " +
         "JOIN t.subject s " +
         "WHERE m.user.userId = :userId " + // Chỉ lấy dữ liệu của chính user này
+        "AND s.isActive = true " +
         "GROUP BY s.subjectId, s.subjectName")
     List<ReviewSubjectDTO> findReviewDashboardData(
         @Param("userId") Long userId, 
