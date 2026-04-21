@@ -1,27 +1,39 @@
 -- =========================================================
--- V22__seed_demo_full.sql
--- Seed demo full chức năng cho QuizPTIT
--- Yêu cầu: chạy SAU V17__seed_roles_and_users.sql
--- Bám đúng schema hiện tại
+-- V23__new_seed.sql
+-- Seed sạch:
+-- - users bổ sung
+-- - content lớn: 3 subject, 5 topic, mỗi topic 16 question
+-- - quiz tối thiểu
+-- - community >= 5 bài đăng
+-- - KHÔNG có attempt / attempt_question / attempt_answer
+-- - KHÔNG có learning_progress / user_question_memory / user_quiz_progress
 -- =========================================================
 
--- =========================================================
--- 0) PRECHECK IDS
--- =========================================================
-SET @admin_id = (SELECT user_id FROM users WHERE email = 'admin@quizptit.local' LIMIT 1);
-SET @student_id = (SELECT user_id FROM users WHERE email = 'student@quizptit.local' LIMIT 1);
+SET @admin_id = COALESCE(
+    (SELECT user_id FROM users WHERE email = 'admin@quizptit.local' LIMIT 1),
+    (SELECT u.user_id
+     FROM users u
+     JOIN role r ON r.role_id = u.role_id
+     WHERE r.role_name = 'ADMIN'
+     ORDER BY u.user_id
+     LIMIT 1)
+);
 
--- Nếu V17 chưa chạy thì toàn bộ seed phía sau sẽ không có created_by hợp lệ
--- nên cần chắc chắn admin/student đã tồn tại trước.
+SET @student_id = COALESCE(
+    (SELECT user_id FROM users WHERE email = 'student@quizptit.local' LIMIT 1),
+    (SELECT u.user_id
+     FROM users u
+     JOIN role r ON r.role_id = u.role_id
+     WHERE r.role_name = 'STUDENT'
+     ORDER BY u.user_id
+     LIMIT 1)
+);
 
 -- =========================================================
 -- 1) USERS DEMO BỔ SUNG
--- password: 88888888
 -- =========================================================
 
-INSERT INTO users (
-    role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at
-)
+INSERT INTO users (role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at)
 SELECT r.role_id, 'Trần Minh Anh', 'minhanh@quizptit.local',
        '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG',
        NULL, 'ACTIVE', '2026-03-20 08:05:00', '2026-03-20 08:05:00'
@@ -29,9 +41,7 @@ FROM role r
 WHERE r.role_name = 'STUDENT'
   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'minhanh@quizptit.local');
 
-INSERT INTO users (
-    role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at
-)
+INSERT INTO users (role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at)
 SELECT r.role_id, 'Lê Hoàng Nam', 'hoangnam@quizptit.local',
        '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG',
        NULL, 'ACTIVE', '2026-03-20 08:10:00', '2026-03-20 08:10:00'
@@ -39,9 +49,7 @@ FROM role r
 WHERE r.role_name = 'STUDENT'
   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'hoangnam@quizptit.local');
 
-INSERT INTO users (
-    role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at
-)
+INSERT INTO users (role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at)
 SELECT r.role_id, 'Phạm Thu Hà', 'thuha@quizptit.local',
        '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG',
        NULL, 'ACTIVE', '2026-03-20 08:15:00', '2026-03-20 08:15:00'
@@ -49,9 +57,15 @@ FROM role r
 WHERE r.role_name = 'STUDENT'
   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'thuha@quizptit.local');
 
-INSERT INTO users (
-    role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at
-)
+INSERT INTO users (role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at)
+SELECT r.role_id, 'Nguyễn Gia Bảo', 'giabao@quizptit.local',
+       '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG',
+       NULL, 'ACTIVE', '2026-03-20 08:18:00', '2026-03-20 08:18:00'
+FROM role r
+WHERE r.role_name = 'STUDENT'
+  AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'giabao@quizptit.local');
+
+INSERT INTO users (role_id, full_name, email, password_hash, avatar_url, status, created_at, updated_at)
 SELECT r.role_id, 'Demo Banned User', 'banned@quizptit.local',
        '$2a$10$VSRZfFw6NZA.FM96VKJVveWxLN3LSSgM2grD8hBVJHORy9G1eK1LG',
        NULL, 'BANNED', '2026-03-20 08:20:00', '2026-03-20 08:20:00'
@@ -59,1149 +73,521 @@ FROM role r
 WHERE r.role_name = 'STUDENT'
   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'banned@quizptit.local');
 
--- refresh ids
-SET @minhanh_id  = (SELECT user_id FROM users WHERE email = 'minhanh@quizptit.local' LIMIT 1);
+SET @minhanh_id = (SELECT user_id FROM users WHERE email = 'minhanh@quizptit.local' LIMIT 1);
 SET @hoangnam_id = (SELECT user_id FROM users WHERE email = 'hoangnam@quizptit.local' LIMIT 1);
-SET @thuha_id    = (SELECT user_id FROM users WHERE email = 'thuha@quizptit.local' LIMIT 1);
+SET @thuha_id = (SELECT user_id FROM users WHERE email = 'thuha@quizptit.local' LIMIT 1);
+SET @giabao_id = (SELECT user_id FROM users WHERE email = 'giabao@quizptit.local' LIMIT 1);
 
 -- =========================================================
--- 2) SUBJECT
+-- 2) SUBJECT / TOPIC
 -- =========================================================
+
+CREATE TEMPORARY TABLE tmp_subjects (
+    subject_name VARCHAR(150),
+    description VARCHAR(500),
+    is_active BOOLEAN
+);
+
+INSERT INTO tmp_subjects (subject_name, description, is_active) VALUES
+                                                                    ('Lập trình Java', 'Java core, OOP, Collections Framework', TRUE),
+                                                                    ('Cấu trúc dữ liệu và giải thuật', 'Thuật toán sắp xếp, tìm kiếm và phân tích độ phức tạp', TRUE),
+                                                                    ('Cơ sở dữ liệu', 'SQL cơ bản, truy vấn và thao tác dữ liệu', TRUE);
 
 INSERT INTO subject (subject_name, description, is_active, created_at)
-SELECT 'Lập trình Java', 'Môn học về Java core, OOP, collections và xử lý ngoại lệ', TRUE, '2026-03-21 09:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM subject WHERE subject_name = 'Lập trình Java');
+SELECT s.subject_name, s.description, s.is_active, '2026-03-21 09:00:00'
+FROM tmp_subjects s
+WHERE NOT EXISTS (
+    SELECT 1 FROM subject x WHERE x.subject_name = s.subject_name
+);
 
-INSERT INTO subject (subject_name, description, is_active, created_at)
-SELECT 'Cấu trúc dữ liệu và giải thuật', 'Môn học về sorting, searching và phân tích độ phức tạp', TRUE, '2026-03-21 09:05:00'
-    WHERE NOT EXISTS (SELECT 1 FROM subject WHERE subject_name = 'Cấu trúc dữ liệu và giải thuật');
+CREATE TEMPORARY TABLE tmp_topics (
+    topic_key VARCHAR(50),
+    subject_name VARCHAR(150),
+    topic_name VARCHAR(150),
+    description VARCHAR(500),
+    order_no INT,
+    is_active BOOLEAN
+);
 
-INSERT INTO subject (subject_name, description, is_active, created_at)
-SELECT 'Cơ sở dữ liệu', 'Môn học về SQL cơ bản, join, index và tối ưu truy vấn', TRUE, '2026-03-21 09:10:00'
-    WHERE NOT EXISTS (SELECT 1 FROM subject WHERE subject_name = 'Cơ sở dữ liệu');
-
-INSERT INTO subject (subject_name, description, is_active, created_at)
-SELECT 'Mạng máy tính', 'Môn học đã tạo nhưng tạm ẩn để demo quản trị', FALSE, '2026-03-21 09:15:00'
-    WHERE NOT EXISTS (SELECT 1 FROM subject WHERE subject_name = 'Mạng máy tính');
-
-SET @java_subject_id = (SELECT subject_id FROM subject WHERE subject_name = 'Lập trình Java' LIMIT 1);
-SET @dsa_subject_id  = (SELECT subject_id FROM subject WHERE subject_name = 'Cấu trúc dữ liệu và giải thuật' LIMIT 1);
-SET @db_subject_id   = (SELECT subject_id FROM subject WHERE subject_name = 'Cơ sở dữ liệu' LIMIT 1);
-SET @net_subject_id  = (SELECT subject_id FROM subject WHERE subject_name = 'Mạng máy tính' LIMIT 1);
-
--- =========================================================
--- 3) TOPIC
--- =========================================================
+INSERT INTO tmp_topics (topic_key, subject_name, topic_name, description, order_no, is_active) VALUES
+                                                                                                   ('java_oop',         'Lập trình Java',                 'OOP cơ bản',                 'Class, object, encapsulation, inheritance, polymorphism', 1, TRUE),
+                                                                                                   ('java_collections', 'Lập trình Java',                 'Collections Framework',      'List, Set, Map, Queue và cấu trúc dữ liệu chuẩn của Java', 2, TRUE),
+                                                                                                   ('dsa_sorting',      'Cấu trúc dữ liệu và giải thuật', 'Sắp xếp cơ bản',             'Bubble, Selection, Insertion, Merge, Quick Sort', 1, TRUE),
+                                                                                                   ('dsa_searching',    'Cấu trúc dữ liệu và giải thuật', 'Tìm kiếm và độ phức tạp',    'Linear Search, Binary Search, Big-O', 2, TRUE),
+                                                                                                   ('db_sql',           'Cơ sở dữ liệu',                  'SQL cơ bản',                 'SELECT, WHERE, GROUP BY, HAVING, ORDER BY', 1, TRUE);
 
 INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @java_subject_id, 'OOP cơ bản', 'Class, object, encapsulation, inheritance, polymorphism', 1, TRUE, '2026-03-21 09:30:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @java_subject_id AND topic_name = 'OOP cơ bản'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @java_subject_id, 'Collections Framework', 'List, Set, Map, ArrayList, HashMap', 2, TRUE, '2026-03-21 09:31:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @java_subject_id AND topic_name = 'Collections Framework'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @dsa_subject_id, 'Sắp xếp cơ bản', 'Bubble Sort, Selection Sort, Insertion Sort', 1, TRUE, '2026-03-21 09:32:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @dsa_subject_id AND topic_name = 'Sắp xếp cơ bản'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @dsa_subject_id, 'Tìm kiếm và độ phức tạp', 'Binary Search, Big-O, tư duy phân tích', 2, TRUE, '2026-03-21 09:33:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @dsa_subject_id AND topic_name = 'Tìm kiếm và độ phức tạp'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @db_subject_id, 'SQL cơ bản', 'SELECT, WHERE, GROUP BY, ORDER BY', 1, TRUE, '2026-03-21 09:34:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @db_subject_id AND topic_name = 'SQL cơ bản'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @db_subject_id, 'JOIN và INDEX', 'INNER JOIN, LEFT JOIN, index và tối ưu', 2, TRUE, '2026-03-21 09:35:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @db_subject_id AND topic_name = 'JOIN và INDEX'
-);
-
-INSERT INTO topic (subject_id, topic_name, description, order_no, is_active, created_at)
-SELECT @net_subject_id, 'Mô hình OSI', 'Topic ẩn để demo bật/tắt trạng thái', 1, FALSE, '2026-03-21 09:36:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM topic WHERE subject_id = @net_subject_id AND topic_name = 'Mô hình OSI'
-);
-
-SET @oop_topic_id         = (SELECT topic_id FROM topic WHERE subject_id = @java_subject_id AND topic_name = 'OOP cơ bản' LIMIT 1);
-SET @collection_topic_id  = (SELECT topic_id FROM topic WHERE subject_id = @java_subject_id AND topic_name = 'Collections Framework' LIMIT 1);
-SET @sort_topic_id        = (SELECT topic_id FROM topic WHERE subject_id = @dsa_subject_id AND topic_name = 'Sắp xếp cơ bản' LIMIT 1);
-SET @sql_topic_id         = (SELECT topic_id FROM topic WHERE subject_id = @db_subject_id AND topic_name = 'SQL cơ bản' LIMIT 1);
-SET @join_topic_id        = (SELECT topic_id FROM topic WHERE subject_id = @db_subject_id AND topic_name = 'JOIN và INDEX' LIMIT 1);
-
--- =========================================================
--- 4) QUESTION
--- =========================================================
-
--- OOP
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @oop_topic_id, 'Tính đóng gói trong OOP nhằm mục đích chính là gì?', 'EASY',
-       'Đóng gói giúp ẩn dữ liệu nội bộ và kiểm soát truy cập thông qua method.',
-       'APPROVED', @admin_id, '2026-03-22 08:00:00', '2026-03-22 08:00:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @oop_topic_id AND content = 'Tính đóng gói trong OOP nhằm mục đích chính là gì?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @oop_topic_id, 'Trong Java, từ khóa nào dùng để kế thừa một class khác?', 'EASY',
-       'Class con dùng từ khóa extends để kế thừa class cha.',
-       'APPROVED', @admin_id, '2026-03-22 08:05:00', '2026-03-22 08:05:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @oop_topic_id AND content = 'Trong Java, từ khóa nào dùng để kế thừa một class khác?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @oop_topic_id, 'Đa hình trong Java thể hiện rõ nhất ở cơ chế nào?', 'MEDIUM',
-       'Đa hình thường thể hiện qua method overriding và gọi method theo kiểu đối tượng thực tế.',
-       'APPROVED', @admin_id, '2026-03-22 08:10:00', '2026-03-22 08:10:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @oop_topic_id AND content = 'Đa hình trong Java thể hiện rõ nhất ở cơ chế nào?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @oop_topic_id, 'Phát biểu nào đúng về abstract class trong Java?', 'MEDIUM',
-       'Abstract class có thể chứa cả abstract method lẫn non-abstract method.',
-       'APPROVED', @admin_id, '2026-03-22 08:15:00', '2026-03-22 08:15:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @oop_topic_id AND content = 'Phát biểu nào đúng về abstract class trong Java?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @oop_topic_id, 'Trong Java, từ khóa goto được sử dụng để nhảy đến nhãn bất kỳ.', 'EASY',
-       'Java không hỗ trợ goto như một từ khóa hoạt động thực tế; đây là câu sai để demo ẩn câu hỏi.',
-       'HIDDEN', @admin_id, '2026-03-22 09:20:00', '2026-03-22 09:20:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @oop_topic_id AND content = 'Trong Java, từ khóa goto được sử dụng để nhảy đến nhãn bất kỳ.'
-);
-
--- Collections
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @collection_topic_id, 'Collection nào cho phép phần tử trùng lặp và truy cập theo chỉ số?', 'EASY',
-       'List cho phép trùng lặp và truy cập theo index.',
-       'APPROVED', @admin_id, '2026-03-22 08:20:00', '2026-03-22 08:20:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @collection_topic_id AND content = 'Collection nào cho phép phần tử trùng lặp và truy cập theo chỉ số?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @collection_topic_id, 'HashMap lưu trữ dữ liệu theo cặp nào?', 'EASY',
-       'HashMap lưu dữ liệu theo cặp key-value.',
-       'APPROVED', @admin_id, '2026-03-22 08:25:00', '2026-03-22 08:25:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @collection_topic_id AND content = 'HashMap lưu trữ dữ liệu theo cặp nào?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @collection_topic_id, 'Collection nào không cho phép phần tử trùng lặp?', 'EASY',
-       'Set là collection không cho phép phần tử trùng lặp.',
-       'APPROVED', @admin_id, '2026-03-22 08:30:00', '2026-03-22 08:30:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @collection_topic_id AND content = 'Collection nào không cho phép phần tử trùng lặp?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @collection_topic_id, 'Khi cần duyệt theo thứ tự chèn và tra cứu nhanh key, lựa chọn phù hợp hơn là gì?', 'MEDIUM',
-       'LinkedHashMap vừa giữ thứ tự chèn vừa hỗ trợ map theo key.',
-       'APPROVED', @admin_id, '2026-03-22 08:35:00', '2026-03-22 08:35:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @collection_topic_id AND content = 'Khi cần duyệt theo thứ tự chèn và tra cứu nhanh key, lựa chọn phù hợp hơn là gì?'
-);
-
--- Sorting
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sort_topic_id, 'Bubble Sort hoạt động dựa trên nguyên tắc nào?', 'EASY',
-       'Bubble Sort so sánh các cặp phần tử kề nhau và đổi chỗ nếu sai thứ tự.',
-       'APPROVED', @admin_id, '2026-03-22 08:40:00', '2026-03-22 08:40:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sort_topic_id AND content = 'Bubble Sort hoạt động dựa trên nguyên tắc nào?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sort_topic_id, 'Selection Sort mỗi vòng lặp sẽ làm gì?', 'MEDIUM',
-       'Selection Sort chọn phần tử nhỏ nhất của đoạn chưa sắp xếp rồi đưa về đầu đoạn.',
-       'APPROVED', @admin_id, '2026-03-22 08:45:00', '2026-03-22 08:45:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sort_topic_id AND content = 'Selection Sort mỗi vòng lặp sẽ làm gì?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sort_topic_id, 'Insertion Sort hiệu quả tương đối tốt khi nào?', 'MEDIUM',
-       'Insertion Sort khá hiệu quả với dãy nhỏ hoặc gần như đã được sắp xếp.',
-       'APPROVED', @admin_id, '2026-03-22 08:50:00', '2026-03-22 08:50:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sort_topic_id AND content = 'Insertion Sort hiệu quả tương đối tốt khi nào?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sort_topic_id, 'Độ phức tạp thời gian trung bình của Bubble Sort là bao nhiêu?', 'HARD',
-       'Bubble Sort có độ phức tạp trung bình là O(n^2).',
-       'APPROVED', @admin_id, '2026-03-22 08:55:00', '2026-03-22 08:55:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sort_topic_id AND content = 'Độ phức tạp thời gian trung bình của Bubble Sort là bao nhiêu?'
-);
-
--- SQL
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sql_topic_id, 'Mệnh đề nào dùng để lọc bản ghi trong câu lệnh SELECT?', 'EASY',
-       'WHERE dùng để lọc bản ghi theo điều kiện.',
-       'APPROVED', @admin_id, '2026-03-22 09:00:00', '2026-03-22 09:00:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sql_topic_id AND content = 'Mệnh đề nào dùng để lọc bản ghi trong câu lệnh SELECT?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @sql_topic_id, 'Hàm COUNT(*) trong SQL dùng để làm gì?', 'EASY',
-       'COUNT(*) đếm số dòng thỏa điều kiện truy vấn.',
-       'APPROVED', @admin_id, '2026-03-22 09:05:00', '2026-03-22 09:05:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @sql_topic_id AND content = 'Hàm COUNT(*) trong SQL dùng để làm gì?'
-);
-
--- JOIN & INDEX
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @join_topic_id, 'INNER JOIN trả về dữ liệu như thế nào?', 'MEDIUM',
-       'INNER JOIN chỉ trả về các bản ghi có khóa khớp ở cả hai bảng.',
-       'APPROVED', @admin_id, '2026-03-22 09:10:00', '2026-03-22 09:10:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @join_topic_id AND content = 'INNER JOIN trả về dữ liệu như thế nào?'
-);
-
-INSERT INTO question (topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at)
-SELECT @join_topic_id, 'Index trong cơ sở dữ liệu chủ yếu giúp cải thiện điều gì?', 'MEDIUM',
-       'Index giúp tăng tốc truy vấn tìm kiếm/tra cứu, đổi lại tốn thêm chi phí ghi và bộ nhớ.',
-       'APPROVED', @admin_id, '2026-03-22 09:15:00', '2026-03-22 09:15:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM question WHERE topic_id = @join_topic_id AND content = 'Index trong cơ sở dữ liệu chủ yếu giúp cải thiện điều gì?'
+SELECT s.subject_id, t.topic_name, t.description, t.order_no, t.is_active, '2026-03-21 09:30:00'
+FROM tmp_topics t
+         JOIN subject s ON s.subject_name = t.subject_name
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM topic x
+    WHERE x.subject_id = s.subject_id
+      AND x.topic_name = t.topic_name
 );
 
 -- =========================================================
--- 5) ANSWER OPTION
+-- 3) QUESTION BANK
 -- =========================================================
 
-SET @q1  = (SELECT question_id FROM question WHERE topic_id = @oop_topic_id        AND content = 'Tính đóng gói trong OOP nhằm mục đích chính là gì?' LIMIT 1);
-SET @q2  = (SELECT question_id FROM question WHERE topic_id = @oop_topic_id        AND content = 'Trong Java, từ khóa nào dùng để kế thừa một class khác?' LIMIT 1);
-SET @q3  = (SELECT question_id FROM question WHERE topic_id = @oop_topic_id        AND content = 'Đa hình trong Java thể hiện rõ nhất ở cơ chế nào?' LIMIT 1);
-SET @q4  = (SELECT question_id FROM question WHERE topic_id = @oop_topic_id        AND content = 'Phát biểu nào đúng về abstract class trong Java?' LIMIT 1);
-SET @q5  = (SELECT question_id FROM question WHERE topic_id = @collection_topic_id AND content = 'Collection nào cho phép phần tử trùng lặp và truy cập theo chỉ số?' LIMIT 1);
-SET @q6  = (SELECT question_id FROM question WHERE topic_id = @collection_topic_id AND content = 'HashMap lưu trữ dữ liệu theo cặp nào?' LIMIT 1);
-SET @q7  = (SELECT question_id FROM question WHERE topic_id = @collection_topic_id AND content = 'Collection nào không cho phép phần tử trùng lặp?' LIMIT 1);
-SET @q8  = (SELECT question_id FROM question WHERE topic_id = @collection_topic_id AND content = 'Khi cần duyệt theo thứ tự chèn và tra cứu nhanh key, lựa chọn phù hợp hơn là gì?' LIMIT 1);
-SET @q9  = (SELECT question_id FROM question WHERE topic_id = @sort_topic_id       AND content = 'Bubble Sort hoạt động dựa trên nguyên tắc nào?' LIMIT 1);
-SET @q10 = (SELECT question_id FROM question WHERE topic_id = @sort_topic_id       AND content = 'Selection Sort mỗi vòng lặp sẽ làm gì?' LIMIT 1);
-SET @q11 = (SELECT question_id FROM question WHERE topic_id = @sort_topic_id       AND content = 'Insertion Sort hiệu quả tương đối tốt khi nào?' LIMIT 1);
-SET @q12 = (SELECT question_id FROM question WHERE topic_id = @sort_topic_id       AND content = 'Độ phức tạp thời gian trung bình của Bubble Sort là bao nhiêu?' LIMIT 1);
-SET @q13 = (SELECT question_id FROM question WHERE topic_id = @sql_topic_id        AND content = 'Mệnh đề nào dùng để lọc bản ghi trong câu lệnh SELECT?' LIMIT 1);
-SET @q14 = (SELECT question_id FROM question WHERE topic_id = @sql_topic_id        AND content = 'Hàm COUNT(*) trong SQL dùng để làm gì?' LIMIT 1);
-SET @q15 = (SELECT question_id FROM question WHERE topic_id = @join_topic_id       AND content = 'INNER JOIN trả về dữ liệu như thế nào?' LIMIT 1);
-SET @q16 = (SELECT question_id FROM question WHERE topic_id = @join_topic_id       AND content = 'Index trong cơ sở dữ liệu chủ yếu giúp cải thiện điều gì?' LIMIT 1);
-SET @q17 = (SELECT question_id FROM question WHERE topic_id = @oop_topic_id        AND content = 'Trong Java, từ khóa goto được sử dụng để nhảy đến nhãn bất kỳ.' LIMIT 1);
+CREATE TEMPORARY TABLE tmp_questions (
+    topic_key VARCHAR(50),
+    qno INT,
+    content TEXT,
+    difficulty_level VARCHAR(20),
+    explanation TEXT,
+    option_a VARCHAR(500),
+    option_b VARCHAR(500),
+    option_c VARCHAR(500),
+    option_d VARCHAR(500),
+    correct_label VARCHAR(10)
+);
 
--- helper pattern: mỗi câu 4 đáp án
--- q1
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q1, 'A', 'Ẩn dữ liệu và kiểm soát truy cập', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q1 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q1, 'B', 'Cho phép class có nhiều cha', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q1 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q1, 'C', 'Bắt buộc mọi method đều là static', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q1 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q1, 'D', 'Tăng tốc độ biên dịch', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q1 AND option_label = 'D');
-
--- q2
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q2, 'A', 'implements', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q2 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q2, 'B', 'extends', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q2 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q2, 'C', 'inherits', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q2 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q2, 'D', 'instanceof', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q2 AND option_label = 'D');
-
--- q3
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q3, 'A', 'Method overloading duy nhất', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q3 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q3, 'B', 'Method overriding', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q3 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q3, 'C', 'Đổi tên package', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q3 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q3, 'D', 'Dùng final class', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q3 AND option_label = 'D');
-
--- q4
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q4, 'A', 'Abstract class không thể có constructor', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q4 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q4, 'B', 'Abstract class có thể chứa method thường và method abstract', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q4 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q4, 'C', 'Mọi method trong abstract class đều phải là private', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q4 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q4, 'D', 'Abstract class có thể được new trực tiếp', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q4 AND option_label = 'D');
-
--- q5
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q5, 'A', 'Set', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q5 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q5, 'B', 'List', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q5 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q5, 'C', 'Map', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q5 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q5, 'D', 'Queue', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q5 AND option_label = 'D');
-
--- q6
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q6, 'A', 'key-value', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q6 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q6, 'B', 'index-value', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q6 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q6, 'C', 'key-key', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q6 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q6, 'D', 'value-value', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q6 AND option_label = 'D');
-
--- q7
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q7, 'A', 'List', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q7 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q7, 'B', 'Set', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q7 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q7, 'C', 'Array', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q7 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q7, 'D', 'StringBuilder', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q7 AND option_label = 'D');
-
--- q8
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q8, 'A', 'HashSet', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q8 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q8, 'B', 'TreeSet', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q8 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q8, 'C', 'LinkedHashMap', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q8 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q8, 'D', 'PriorityQueue', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q8 AND option_label = 'D');
-
--- q9
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q9, 'A', 'Chia đôi mảng rồi đệ quy', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q9 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q9, 'B', 'So sánh các phần tử kề nhau và đổi chỗ nếu cần', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q9 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q9, 'C', 'Chọn pivot rồi partition', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q9 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q9, 'D', 'Duyệt từ giữa ra hai đầu', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q9 AND option_label = 'D');
-
--- q10
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q10, 'A', 'Mỗi vòng chọn phần tử nhỏ nhất của đoạn chưa sắp xếp', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q10 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q10, 'B', 'Luôn hoán đổi hai phần tử ngẫu nhiên', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q10 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q10, 'C', 'Chèn phần tử vào cây nhị phân', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q10 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q10, 'D', 'Đếm số lần xuất hiện của phần tử', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q10 AND option_label = 'D');
-
--- q11
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q11, 'A', 'Khi dữ liệu hoàn toàn đảo ngược và cực lớn', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q11 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q11, 'B', 'Khi dữ liệu nhỏ hoặc gần như đã có thứ tự', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q11 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q11, 'C', 'Khi luôn cần chia để trị', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q11 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q11, 'D', 'Khi chỉ được dùng hash table', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q11 AND option_label = 'D');
-
--- q12
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q12, 'A', 'O(log n)', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q12 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q12, 'B', 'O(n)', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q12 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q12, 'C', 'O(n^2)', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q12 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q12, 'D', 'O(1)', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q12 AND option_label = 'D');
-
--- q13
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q13, 'A', 'GROUP BY', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q13 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q13, 'B', 'WHERE', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q13 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q13, 'C', 'ORDER BY', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q13 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q13, 'D', 'LIMIT', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q13 AND option_label = 'D');
-
--- q14
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q14, 'A', 'Đếm số cột của bảng', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q14 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q14, 'B', 'Đếm số dòng', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q14 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q14, 'C', 'Xóa dữ liệu NULL', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q14 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q14, 'D', 'Tạo index tự động', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q14 AND option_label = 'D');
-
--- q15
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q15, 'A', 'Trả về tất cả bản ghi của bảng trái', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q15 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q15, 'B', 'Chỉ trả về các bản ghi khớp ở cả hai bảng', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q15 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q15, 'C', 'Luôn trả về số dòng gấp đôi', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q15 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q15, 'D', 'Chỉ dùng được với 1 bảng', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q15 AND option_label = 'D');
-
--- q16
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q16, 'A', 'Tăng tốc độ truy vấn', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q16 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q16, 'B', 'Mã hóa toàn bộ dữ liệu', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q16 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q16, 'C', 'Tự động backup', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q16 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q16, 'D', 'Xóa bản ghi trùng lặp', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q16 AND option_label = 'D');
-
--- q17
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q17, 'A', 'Đúng', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q17 AND option_label = 'A');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q17, 'B', 'Sai', TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q17 AND option_label = 'B');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q17, 'C', 'Chỉ đúng với Java 17', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q17 AND option_label = 'C');
-INSERT INTO answer_option (question_id, option_label, content, is_correct)
-SELECT @q17, 'D', 'Chỉ đúng với JVM đặc biệt', FALSE
-    WHERE NOT EXISTS (SELECT 1 FROM answer_option WHERE question_id = @q17 AND option_label = 'D');
+INSERT INTO tmp_questions (topic_key, qno, content, difficulty_level, explanation, option_a, option_b, option_c, option_d, correct_label) VALUES
+-- =========================================================
+-- JAVA OOP (16)
+-- =========================================================
+('java_oop', 1, 'Tính đóng gói trong OOP nhằm mục đích chính là gì?', 'EASY', 'Đóng gói giúp ẩn dữ liệu nội bộ và kiểm soát truy cập qua method.', 'Ẩn dữ liệu và kiểm soát truy cập', 'Cho phép một class có nhiều class cha', 'Tăng tốc độ biên dịch', 'Bắt buộc mọi method đều static', 'A'),
+('java_oop', 2, 'Trong Java, từ khóa nào dùng để kế thừa một class khác?', 'EASY', 'Class con dùng từ khóa extends để kế thừa class cha.', 'implements', 'extends', 'inherits', 'instanceof', 'B'),
+('java_oop', 3, 'Đa hình trong Java thể hiện rõ nhất ở cơ chế nào?', 'MEDIUM', 'Đa hình thường thể hiện qua method overriding.', 'Đổi tên package', 'Method overriding', 'Dùng final class', 'Khai báo biến local', 'B'),
+('java_oop', 4, 'Phát biểu nào đúng về abstract class trong Java?', 'MEDIUM', 'Abstract class có thể có cả abstract method và non-abstract method.', 'Không thể có constructor', 'Có thể chứa method thường và method abstract', 'Mọi method đều phải private', 'Có thể khởi tạo trực tiếp bằng new', 'B'),
+('java_oop', 5, 'Interface trong Java thường được dùng khi nào?', 'EASY', 'Interface phù hợp để mô tả một năng lực/cam kết mà nhiều class khác nhau cùng triển khai.', 'Khi cần chia sẻ một cấu trúc dữ liệu tĩnh', 'Khi cần mô tả một capability chung', 'Khi muốn thay thế package', 'Khi chỉ có duy nhất một class dùng', 'B'),
+('java_oop', 6, 'Từ khóa super thường được dùng để làm gì?', 'EASY', 'super giúp truy cập thành phần của class cha.', 'Tham chiếu tới class con', 'Tham chiếu tới đối tượng hiện tại', 'Gọi constructor hoặc field của class cha', 'Đánh dấu method static', 'C'),
+('java_oop', 7, 'Từ khóa this trong Java đại diện cho điều gì?', 'EASY', 'this tham chiếu tới đối tượng hiện tại.', 'Class cha hiện tại', 'Đối tượng hiện tại', 'Package hiện tại', 'Phương thức hiện tại', 'B'),
+('java_oop', 8, 'Method overloading là gì?', 'MEDIUM', 'Overloading là nhiều method cùng tên nhưng khác tham số trong cùng một class.', 'Override method của class cha', 'Khai báo 2 class cùng tên', 'Nhiều method cùng tên nhưng khác tham số', 'Nhiều constructor ở nhiều package', 'C'),
+('java_oop', 9, 'Method overriding yêu cầu điều gì?', 'MEDIUM', 'Overriding cần cùng chữ ký method giữa cha và con.', 'Tên khác nhau nhưng cùng tham số', 'Cùng chữ ký method với class cha', 'Phải là method private', 'Chỉ dùng cho static method', 'B'),
+('java_oop', 10, 'Access modifier nào có phạm vi truy cập rộng nhất?', 'EASY', 'public cho phép truy cập rộng nhất.', 'private', 'protected', 'default', 'public', 'D'),
+('java_oop', 11, 'Phát biểu nào đúng về constructor?', 'EASY', 'Constructor có tên trùng với tên class và không có kiểu trả về.', 'Constructor bắt buộc trả về void', 'Constructor có tên bất kỳ', 'Constructor không có kiểu trả về', 'Constructor luôn là static', 'C'),
+('java_oop', 12, 'Từ khóa final khi áp dụng cho class có ý nghĩa gì?', 'MEDIUM', 'final class không thể bị kế thừa.', 'Class chỉ được tạo 1 object', 'Class không thể bị kế thừa', 'Class bắt buộc chứa final method', 'Class không thể có constructor', 'B'),
+('java_oop', 13, 'Quan hệ composition thường được hiểu như thế nào?', 'MEDIUM', 'Composition là quan hệ whole-part chặt chẽ, vòng đời phần phụ thuộc vào phần tổng thể.', 'Hai class luôn độc lập hoàn toàn', 'Một class chỉ gọi static method của class khác', 'Quan hệ whole-part chặt chẽ', 'Quan hệ kế thừa nhiều lớp', 'C'),
+('java_oop', 14, 'instanceof dùng để làm gì?', 'EASY', 'instanceof kiểm tra object có thuộc một kiểu dữ liệu nào đó hay không.', 'So sánh 2 chuỗi', 'Kiểm tra kiểu của object', 'Kiểm tra method có override chưa', 'Ép kiểu dữ liệu nguyên thủy', 'B'),
+('java_oop', 15, 'Nếu một field được khai báo private thì bên ngoài class truy cập phù hợp nhất bằng cách nào?', 'EASY', 'Nên truy cập qua getter/setter công khai nếu cần.', 'Truy cập trực tiếp từ mọi class', 'Dùng getter/setter', 'Đổi field thành protected ngay', 'Dùng instanceof', 'B'),
+('java_oop', 16, 'Static method thuộc về đối tượng hay class?', 'EASY', 'Static method thuộc về class.', 'Thuộc object cụ thể', 'Thuộc constructor', 'Thuộc class', 'Thuộc package', 'C'),
 
 -- =========================================================
--- 6) QUIZ
+-- JAVA COLLECTIONS (16)
 -- =========================================================
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @java_subject_id, @oop_topic_id, 'Java OOP cơ bản - Quiz 1',
-       'Bài luyện nhập môn OOP trong Java, phù hợp demo luồng làm bài thủ công.',
-       'MANUAL', 15, 4, @admin_id, TRUE, '2026-03-23 09:00:00', '2026-03-23 09:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'Java OOP cơ bản - Quiz 1');
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @java_subject_id, @collection_topic_id, 'Java Collections - Quiz 1',
-       'Bài luyện về List, Set, Map và lựa chọn cấu trúc dữ liệu phù hợp.',
-       'MANUAL', 15, 4, @admin_id, TRUE, '2026-03-23 09:05:00', '2026-03-23 09:05:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'Java Collections - Quiz 1');
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @dsa_subject_id, @sort_topic_id, 'DSA Sorting Foundations',
-       'Quiz về các thuật toán sắp xếp cơ bản và độ phức tạp.',
-       'MANUAL', 20, 4, @admin_id, TRUE, '2026-03-23 09:10:00', '2026-03-23 09:10:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'DSA Sorting Foundations');
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @db_subject_id, @sql_topic_id, 'SQL Basics and Join',
-       'Quiz về SQL cơ bản, COUNT, JOIN và INDEX.',
-       'MANUAL', 20, 4, @admin_id, TRUE, '2026-03-23 09:15:00', '2026-03-23 09:15:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'SQL Basics and Join');
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @java_subject_id, NULL, 'Java Random Practice 10 câu',
-       'Quiz random toàn môn Java để demo tạo đề ngẫu nhiên.',
-       'RANDOM', 25, 10, @admin_id, TRUE, '2026-03-23 09:20:00', '2026-03-23 09:20:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'Java Random Practice 10 câu');
-
-INSERT INTO quiz (subject_id, topic_id, title, description, quiz_type, duration_minutes, total_questions, created_by, is_published, created_at, updated_at)
-SELECT @java_subject_id, @oop_topic_id, 'Quiz nháp - Chưa publish',
-       'Quiz dùng để demo quản trị và trạng thái publish/unpublish.',
-       'MANUAL', 10, 2, @admin_id, FALSE, '2026-03-23 09:25:00', '2026-03-23 09:25:00'
-    WHERE NOT EXISTS (SELECT 1 FROM quiz WHERE title = 'Quiz nháp - Chưa publish');
-
-SET @quiz_oop_id       = (SELECT quiz_id FROM quiz WHERE title = 'Java OOP cơ bản - Quiz 1' LIMIT 1);
-SET @quiz_collection_id= (SELECT quiz_id FROM quiz WHERE title = 'Java Collections - Quiz 1' LIMIT 1);
-SET @quiz_dsa_id       = (SELECT quiz_id FROM quiz WHERE title = 'DSA Sorting Foundations' LIMIT 1);
-SET @quiz_sql_id       = (SELECT quiz_id FROM quiz WHERE title = 'SQL Basics and Join' LIMIT 1);
-SET @quiz_draft_id     = (SELECT quiz_id FROM quiz WHERE title = 'Quiz nháp - Chưa publish' LIMIT 1);
+('java_collections', 1, 'Collection nào cho phép phần tử trùng lặp và truy cập theo chỉ số?', 'EASY', 'List cho phép trùng lặp và truy cập theo index.', 'Set', 'List', 'Map', 'Queue', 'B'),
+('java_collections', 2, 'HashMap lưu trữ dữ liệu theo cấu trúc nào?', 'EASY', 'HashMap lưu theo cặp key-value.', 'value-value', 'index-value', 'key-value', 'key-key', 'C'),
+('java_collections', 3, 'Collection nào không cho phép phần tử trùng lặp?', 'EASY', 'Set không cho phép phần tử trùng lặp.', 'List', 'Queue', 'Set', 'ArrayList', 'C'),
+('java_collections', 4, 'Collection nào giữ thứ tự chèn của phần tử trong khi vẫn là Map?', 'MEDIUM', 'LinkedHashMap vừa là Map vừa giữ thứ tự chèn.', 'HashMap', 'TreeMap', 'LinkedHashMap', 'Hashtable', 'C'),
+('java_collections', 5, 'TreeSet sắp xếp phần tử theo gì?', 'MEDIUM', 'TreeSet giữ dữ liệu theo thứ tự tự nhiên hoặc Comparator.', 'Theo thứ tự chèn', 'Theo thứ tự ngẫu nhiên', 'Theo thứ tự tự nhiên hoặc Comparator', 'Không sắp xếp', 'C'),
+('java_collections', 6, 'ArrayList có ưu điểm rõ nhất ở thao tác nào?', 'EASY', 'ArrayList truy cập theo index nhanh.', 'Truy cập theo index', 'Chèn đầu danh sách nhanh nhất', 'Tìm key-value', 'Sắp xếp tự động', 'A'),
+('java_collections', 7, 'LinkedList phù hợp hơn ArrayList trong trường hợp nào?', 'MEDIUM', 'LinkedList thuận lợi hơn khi chèn/xóa nhiều ở đầu hoặc giữa danh sách.', 'Chỉ đọc theo index rất nhiều', 'Chèn/xóa thường xuyên', 'Lưu cặp key-value', 'Không bao giờ có phần tử trùng', 'B'),
+('java_collections', 8, 'Map có được coi là subtype trực tiếp của Collection không?', 'MEDIUM', 'Map là cấu trúc riêng, không kế thừa Collection.', 'Có', 'Không', 'Chỉ trong Java 8', 'Chỉ với HashMap', 'B'),
+('java_collections', 9, 'Queue thường tuân theo nguyên tắc nào?', 'EASY', 'Queue thường theo FIFO.', 'LIFO', 'FIFO', 'Ngẫu nhiên', 'Theo key-value', 'B'),
+('java_collections', 10, 'Deque cho phép thao tác ở đâu?', 'MEDIUM', 'Deque cho phép thêm/xóa ở cả hai đầu.', 'Chỉ ở đầu', 'Chỉ ở cuối', 'Ở cả hai đầu', 'Chỉ ở giữa', 'C'),
+('java_collections', 11, 'Comparator được dùng để làm gì?', 'MEDIUM', 'Comparator định nghĩa cách so sánh bên ngoài class.', 'Định nghĩa thứ tự so sánh tùy chỉnh', 'Dùng để clone object', 'Khóa mọi thao tác sort', 'Ép kiểu danh sách', 'A'),
+('java_collections', 12, 'Comparable thường được implement khi nào?', 'MEDIUM', 'Comparable dùng khi muốn đối tượng tự định nghĩa thứ tự tự nhiên của chính nó.', 'Khi muốn thứ tự tự nhiên của object', 'Khi cần lưu key-value', 'Khi cần duyệt ngẫu nhiên', 'Khi cần cấm sort', 'A'),
+('java_collections', 13, 'HashSet được xây dựng dựa trên cấu trúc nào để tra cứu nhanh?', 'MEDIUM', 'HashSet dựa trên hashing.', 'Cây AVL', 'Mảng 2 chiều', 'Hashing', 'Danh sách liên kết kép bắt buộc', 'C'),
+('java_collections', 14, 'ListIterator khác Iterator ở điểm nào nổi bật?', 'MEDIUM', 'ListIterator cho phép duyệt hai chiều trên List.', 'ListIterator chỉ dùng cho Set', 'ListIterator duyệt hai chiều', 'ListIterator không hỗ trợ remove', 'ListIterator bắt buộc là static', 'B'),
+('java_collections', 15, 'Phát biểu nào đúng về null trong HashMap?', 'MEDIUM', 'HashMap cho phép một key null và nhiều value null.', 'Không cho phép null nào', 'Cho phép 1 key null và nhiều value null', 'Cho phép nhiều key null nhưng không value null', 'Chỉ cho value null duy nhất', 'B'),
+('java_collections', 16, 'Phương thức size() thường trả về gì?', 'EASY', 'size() trả về số phần tử hiện có trong collection/map.', 'Dung lượng bộ nhớ', 'Số bucket nội bộ', 'Số phần tử hiện có', 'Độ sâu tối đa', 'C'),
 
 -- =========================================================
--- 7) QUIZ QUESTION
+-- DSA SORTING (16)
 -- =========================================================
+('dsa_sorting', 1, 'Bubble Sort hoạt động chủ yếu bằng cách nào?', 'EASY', 'Bubble Sort so sánh các phần tử kề nhau và đổi chỗ nếu sai thứ tự.', 'Chọn pivot rồi partition', 'So sánh cặp kề nhau và đổi chỗ', 'Chia mảng làm hai nửa', 'Dùng heap tối đa', 'B'),
+('dsa_sorting', 2, 'Selection Sort mỗi vòng lặp thường làm gì?', 'MEDIUM', 'Selection Sort chọn phần tử nhỏ nhất của đoạn chưa sắp xếp.', 'Đổi ngẫu nhiên hai phần tử', 'Chọn phần tử nhỏ nhất của đoạn chưa sắp xếp', 'Chia đôi mảng', 'Tạo cây nhị phân', 'B'),
+('dsa_sorting', 3, 'Insertion Sort phù hợp hơn khi nào?', 'MEDIUM', 'Insertion Sort khá tốt với dãy nhỏ hoặc gần như đã có thứ tự.', 'Dữ liệu cực lớn và ngẫu nhiên', 'Dãy nhỏ hoặc gần như có thứ tự', 'Bắt buộc ổn định trên file ngoài', 'Chỉ dùng cho số nguyên tố', 'B'),
+('dsa_sorting', 4, 'Merge Sort thuộc nhóm kỹ thuật nào?', 'MEDIUM', 'Merge Sort là thuật toán chia để trị.', 'Tham lam', 'Quy hoạch động', 'Chia để trị', 'Nhánh cận', 'C'),
+('dsa_sorting', 5, 'Quick Sort chọn phần tử nào để phân hoạch?', 'MEDIUM', 'Quick Sort chọn một pivot để partition.', 'Pivot', 'Root', 'Leaf', 'Median tuyệt đối bắt buộc', 'A'),
+('dsa_sorting', 6, 'Độ phức tạp trung bình của Quick Sort là gì?', 'MEDIUM', 'Quick Sort trung bình O(n log n).', 'O(n)', 'O(log n)', 'O(n log n)', 'O(n^2 log n)', 'C'),
+('dsa_sorting', 7, 'Độ phức tạp trung bình của Bubble Sort là gì?', 'EASY', 'Bubble Sort trung bình O(n^2).', 'O(1)', 'O(log n)', 'O(n)', 'O(n^2)', 'D'),
+('dsa_sorting', 8, 'Thuật toán nào sau đây là stable theo bản chất chuẩn?', 'MEDIUM', 'Merge Sort là stable theo triển khai chuẩn phổ biến.', 'Selection Sort', 'Quick Sort', 'Merge Sort', 'Heap Sort', 'C'),
+('dsa_sorting', 9, 'Heap Sort thường dựa trên cấu trúc gì?', 'MEDIUM', 'Heap Sort dựa trên heap.', 'Hash table', 'Heap', 'Queue tuyến tính', 'Danh sách liên kết đơn', 'B'),
+('dsa_sorting', 10, 'Thuật toán nào sau đây luôn chia mảng thành hai nửa rồi trộn lại?', 'EASY', 'Merge Sort chia mảng và sau đó merge.', 'Insertion Sort', 'Bubble Sort', 'Merge Sort', 'Selection Sort', 'C'),
+('dsa_sorting', 11, 'Selection Sort có tính stable mặc định không?', 'MEDIUM', 'Selection Sort thường không stable ở bản cài đặt cơ bản.', 'Có', 'Không', 'Chỉ với mảng số nguyên', 'Chỉ khi n < 10', 'B'),
+('dsa_sorting', 12, 'Thuật toán nào dưới đây thường là in-place?', 'MEDIUM', 'Insertion Sort thường là in-place.', 'Merge Sort', 'Counting Sort', 'Insertion Sort', 'Radix Sort', 'C'),
+('dsa_sorting', 13, 'Best case của Insertion Sort có thể là gì?', 'MEDIUM', 'Nếu mảng đã có thứ tự, Insertion Sort có thể đạt O(n).', 'O(n)', 'O(log n)', 'O(n log n)', 'O(n^2)', 'A'),
+('dsa_sorting', 14, 'Quick Sort có thể rơi vào worst case nào?', 'HARD', 'Worst case của Quick Sort là O(n^2).', 'O(1)', 'O(log n)', 'O(n)', 'O(n^2)', 'D'),
+('dsa_sorting', 15, 'Thuật toán nào phù hợp khi cần sort ổn định và hiệu quả trên linked list?', 'HARD', 'Merge Sort phù hợp tốt trên linked list.', 'Selection Sort', 'Merge Sort', 'Bubble Sort', 'Heap Sort', 'B'),
+('dsa_sorting', 16, 'Khái niệm in-place sort nghĩa là gì?', 'MEDIUM', 'In-place sort dùng rất ít bộ nhớ phụ ngoài đầu vào.', 'Luôn stable', 'Không dùng vòng lặp', 'Dùng rất ít bộ nhớ phụ', 'Chỉ dùng cho mảng đã sắp xếp', 'C'),
+
+-- =========================================================
+-- DSA SEARCHING (16)
+-- =========================================================
+('dsa_searching', 1, 'Linear Search có ý tưởng chính là gì?', 'EASY', 'Linear Search duyệt tuần tự từng phần tử.', 'Chia đôi dữ liệu liên tục', 'Duyệt tuần tự từng phần tử', 'Dùng heap', 'Dùng cây đỏ đen bắt buộc', 'B'),
+('dsa_searching', 2, 'Binary Search yêu cầu điều kiện tiên quyết nào?', 'EASY', 'Binary Search yêu cầu dữ liệu đã được sắp xếp.', 'Dữ liệu phải là số nguyên tố', 'Dữ liệu phải không có trùng lặp', 'Dữ liệu đã được sắp xếp', 'Dữ liệu phải nằm trong hash table', 'C'),
+('dsa_searching', 3, 'Độ phức tạp của Binary Search là gì?', 'EASY', 'Binary Search có độ phức tạp O(log n).', 'O(1)', 'O(log n)', 'O(n)', 'O(n log n)', 'B'),
+('dsa_searching', 4, 'Độ phức tạp của Linear Search trong worst case là gì?', 'EASY', 'Linear Search worst case O(n).', 'O(log n)', 'O(n)', 'O(n log n)', 'O(n^2)', 'B'),
+('dsa_searching', 5, 'Trong Binary Search, sau mỗi bước không gian tìm kiếm thay đổi thế nào?', 'MEDIUM', 'Mỗi bước thường loại bỏ khoảng một nửa dữ liệu.', 'Tăng gấp đôi', 'Giảm đi 1 phần tử', 'Giảm khoảng một nửa', 'Không đổi', 'C'),
+('dsa_searching', 6, 'Nếu dữ liệu chưa sắp xếp, lựa chọn đơn giản nhất để tìm kiếm trực tiếp là gì?', 'EASY', 'Linear Search là cách đơn giản nhất.', 'Binary Search', 'Linear Search', 'Interpolation Search', 'DFS', 'B'),
+('dsa_searching', 7, 'Hashing giúp hỗ trợ tìm kiếm nhanh nhờ điều gì?', 'MEDIUM', 'Hashing ánh xạ key tới bucket/ô lưu trữ.', 'Sắp xếp toàn bộ dữ liệu', 'Ánh xạ key tới vị trí lưu trữ', 'Loại bỏ mọi phần tử trùng', 'Chia đôi mảng liên tục', 'B'),
+('dsa_searching', 8, 'Nếu dùng cây nhị phân tìm kiếm cân bằng, thao tác tìm kiếm thường là?', 'MEDIUM', 'BST cân bằng thường cho tìm kiếm O(log n).', 'O(1)', 'O(log n)', 'O(n)', 'O(n^2)', 'B'),
+('dsa_searching', 9, 'BFS thường dùng cấu trúc nào?', 'MEDIUM', 'BFS thường dùng queue.', 'Stack', 'Queue', 'Heap', 'Map', 'B'),
+('dsa_searching', 10, 'DFS thường dùng cấu trúc nào?', 'MEDIUM', 'DFS thường dùng stack hoặc đệ quy.', 'Queue', 'Stack', 'HashSet', 'LinkedHashMap', 'B'),
+('dsa_searching', 11, 'Binary Search so sánh phần tử nào ở mỗi bước?', 'EASY', 'Binary Search so sánh với phần tử giữa.', 'Phần tử đầu', 'Phần tử cuối', 'Phần tử giữa', 'Phần tử ngẫu nhiên', 'C'),
+('dsa_searching', 12, 'Nếu mảng có nhiều phần tử trùng giá trị cần tìm, Binary Search chuẩn trả về gì?', 'MEDIUM', 'Binary Search chuẩn chỉ đảm bảo tìm được một vị trí hợp lệ, không mặc định là đầu hoặc cuối.', 'Luôn vị trí đầu tiên', 'Luôn vị trí cuối cùng', 'Một vị trí hợp lệ bất kỳ', 'Không tìm được', 'C'),
+('dsa_searching', 13, 'Visited set trong BFS/DFS chủ yếu để làm gì?', 'MEDIUM', 'Visited set tránh thăm lặp và vòng lặp vô hạn.', 'Lưu trọng số cạnh', 'Đếm số node lá', 'Tránh thăm lặp', 'Tính chiều cao cây', 'C'),
+('dsa_searching', 14, 'Big-O chủ yếu mô tả điều gì?', 'EASY', 'Big-O mô tả tốc độ tăng của chi phí theo kích thước đầu vào.', 'Giá trị chính xác tuyệt đối của thời gian chạy', 'Tốc độ tăng của chi phí theo input size', 'Số dòng code', 'Dung lượng ổ cứng', 'B'),
+('dsa_searching', 15, 'Phương pháp nào phù hợp để tìm kiếm nhanh trên dữ liệu key-value động?', 'MEDIUM', 'HashMap phù hợp tra cứu nhanh key-value động.', 'ArrayList tuần tự', 'HashMap', 'Bubble Sort', 'Selection Sort', 'B'),
+('dsa_searching', 16, 'Worst case của tìm kiếm trên BST không cân bằng có thể là gì?', 'HARD', 'Nếu BST lệch hoàn toàn, tìm kiếm có thể O(n).', 'O(1)', 'O(log n)', 'O(n)', 'O(n log n)', 'C'),
+
+-- =========================================================
+-- DB SQL (16)
+-- =========================================================
+('db_sql', 1, 'Mệnh đề nào dùng để lọc bản ghi trong câu lệnh SELECT?', 'EASY', 'WHERE dùng để lọc bản ghi theo điều kiện.', 'GROUP BY', 'WHERE', 'ORDER BY', 'LIMIT', 'B'),
+('db_sql', 2, 'Hàm COUNT(*) trong SQL dùng để làm gì?', 'EASY', 'COUNT(*) đếm số dòng.', 'Đếm số cột', 'Đếm số dòng', 'Xóa NULL', 'Tạo index', 'B'),
+('db_sql', 3, 'ORDER BY dùng để làm gì?', 'EASY', 'ORDER BY dùng để sắp xếp kết quả truy vấn.', 'Lọc dữ liệu', 'Nhóm dữ liệu', 'Sắp xếp kết quả', 'Xóa bản ghi', 'C'),
+('db_sql', 4, 'GROUP BY dùng để làm gì?', 'MEDIUM', 'GROUP BY dùng để nhóm các dòng theo một hoặc nhiều cột.', 'Sắp xếp dữ liệu', 'Nhóm dữ liệu', 'Đổi tên bảng', 'Giới hạn số dòng', 'B'),
+('db_sql', 5, 'HAVING khác WHERE ở điểm nào?', 'MEDIUM', 'HAVING lọc sau khi dữ liệu đã được nhóm.', 'HAVING lọc sau GROUP BY', 'HAVING chỉ dùng cho INSERT', 'HAVING luôn nhanh hơn WHERE', 'HAVING dùng để sort', 'A'),
+('db_sql', 6, 'DISTINCT dùng để làm gì?', 'EASY', 'DISTINCT loại bỏ dòng trùng trong kết quả.', 'Nhân đôi kết quả', 'Loại bỏ giá trị trùng', 'Đổi kiểu dữ liệu', 'Xóa bảng', 'B'),
+('db_sql', 7, 'LIKE ''A%'' có ý nghĩa gì?', 'EASY', 'Mẫu A% nghĩa là bắt đầu bằng A.', 'Kết thúc bằng A', 'Chứa đúng một ký tự A', 'Bắt đầu bằng A', 'Không chứa A', 'C'),
+('db_sql', 8, 'Toán tử IN thường dùng khi nào?', 'EASY', 'IN kiểm tra giá trị có thuộc một tập giá trị hay không.', 'So sánh lớn hơn', 'Kiểm tra thuộc một tập giá trị', 'Sắp xếp giảm dần', 'Nối bảng', 'B'),
+('db_sql', 9, 'BETWEEN thường dùng để làm gì?', 'EASY', 'BETWEEN kiểm tra giá trị nằm trong một khoảng.', 'So sánh khác nhau', 'Kiểm tra trong khoảng', 'Nhóm dữ liệu', 'Tạo khóa chính', 'B'),
+('db_sql', 10, 'Phát biểu nào đúng về NULL trong SQL?', 'MEDIUM', 'NULL biểu thị giá trị chưa biết/không có.', 'NULL bằng 0', 'NULL bằng chuỗi rỗng', 'NULL biểu thị thiếu hoặc chưa biết giá trị', 'NULL luôn nhỏ nhất', 'C'),
+('db_sql', 11, 'Muốn kiểm tra cột không có giá trị, nên dùng gì?', 'EASY', 'Dùng IS NULL thay vì = NULL.', '= NULL', 'IS NULL', '<> NULL', 'NOT = NULL', 'B'),
+('db_sql', 12, 'Câu lệnh nào dùng để thêm bản ghi mới?', 'EASY', 'INSERT dùng để thêm dữ liệu mới.', 'UPDATE', 'DELETE', 'INSERT', 'ALTER', 'C'),
+('db_sql', 13, 'Câu lệnh nào dùng để cập nhật dữ liệu đã có?', 'EASY', 'UPDATE dùng để cập nhật dữ liệu.', 'CREATE', 'UPDATE', 'DROP', 'TRUNCATE', 'B'),
+('db_sql', 14, 'Câu lệnh nào dùng để xóa bản ghi theo điều kiện?', 'EASY', 'DELETE FROM ... WHERE ... dùng để xóa bản ghi.', 'DELETE', 'REMOVE', 'DROP COLUMN', 'CLEAR', 'A'),
+('db_sql', 15, 'LIMIT trong MySQL thường dùng để làm gì?', 'EASY', 'LIMIT giới hạn số dòng trả về.', 'Đổi tên cột', 'Giới hạn số dòng trả về', 'Tạo chỉ mục', 'Khóa bảng', 'B'),
+('db_sql', 16, 'Alias trong SQL thường được tạo bằng từ khóa nào?', 'EASY', 'Alias thường dùng AS.', 'ON', 'INTO', 'AS', 'BY', 'C');
+
+INSERT INTO question (
+    topic_id, content, difficulty_level, explanation, status, created_by, created_at, updated_at
+)
+SELECT tp.topic_id,
+       q.content,
+       q.difficulty_level,
+       q.explanation,
+       'APPROVED',
+       @admin_id,
+       '2026-03-22 08:00:00',
+       '2026-03-22 08:00:00'
+FROM tmp_questions q
+         JOIN tmp_topics tt ON tt.topic_key = q.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM question x
+    WHERE x.topic_id = tp.topic_id
+      AND x.content = q.content
+);
+
+INSERT INTO answer_option (question_id, option_label, content, is_correct)
+SELECT qq.question_id, 'A', tq.option_a, (tq.correct_label = 'A')
+FROM tmp_questions tq
+         JOIN tmp_topics tt ON tt.topic_key = tq.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+         JOIN question qq ON qq.topic_id = tp.topic_id AND qq.content = tq.content
+WHERE NOT EXISTS (
+    SELECT 1 FROM answer_option ao WHERE ao.question_id = qq.question_id AND ao.option_label = 'A'
+);
+
+INSERT INTO answer_option (question_id, option_label, content, is_correct)
+SELECT qq.question_id, 'B', tq.option_b, (tq.correct_label = 'B')
+FROM tmp_questions tq
+         JOIN tmp_topics tt ON tt.topic_key = tq.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+         JOIN question qq ON qq.topic_id = tp.topic_id AND qq.content = tq.content
+WHERE NOT EXISTS (
+    SELECT 1 FROM answer_option ao WHERE ao.question_id = qq.question_id AND ao.option_label = 'B'
+);
+
+INSERT INTO answer_option (question_id, option_label, content, is_correct)
+SELECT qq.question_id, 'C', tq.option_c, (tq.correct_label = 'C')
+FROM tmp_questions tq
+         JOIN tmp_topics tt ON tt.topic_key = tq.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+         JOIN question qq ON qq.topic_id = tp.topic_id AND qq.content = tq.content
+WHERE NOT EXISTS (
+    SELECT 1 FROM answer_option ao WHERE ao.question_id = qq.question_id AND ao.option_label = 'C'
+);
+
+INSERT INTO answer_option (question_id, option_label, content, is_correct)
+SELECT qq.question_id, 'D', tq.option_d, (tq.correct_label = 'D')
+FROM tmp_questions tq
+         JOIN tmp_topics tt ON tt.topic_key = tq.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+         JOIN question qq ON qq.topic_id = tp.topic_id AND qq.content = tq.content
+WHERE NOT EXISTS (
+    SELECT 1 FROM answer_option ao WHERE ao.question_id = qq.question_id AND ao.option_label = 'D'
+);
+
+-- =========================================================
+-- 4) QUIZ TỐI THIỂU
+-- =========================================================
+
+CREATE TEMPORARY TABLE tmp_quizzes (
+    quiz_key VARCHAR(50),
+    topic_key VARCHAR(50),
+    title VARCHAR(255),
+    description VARCHAR(1000),
+    quiz_type VARCHAR(20),
+    duration_minutes INT,
+    total_questions INT,
+    is_published BOOLEAN
+);
+
+INSERT INTO tmp_quizzes (quiz_key, topic_key, title, description, quiz_type, duration_minutes, total_questions, is_published) VALUES
+                                                                                                                                  ('quiz_oop',         'java_oop',         'Java OOP cơ bản - Quiz 1',            'Quiz manual nền tảng OOP Java.', 'MANUAL', 15, 10, TRUE),
+                                                                                                                                  ('quiz_collection',  'java_collections', 'Java Collections - Quiz 1',           'Quiz manual về List, Set, Map.', 'MANUAL', 15, 10, TRUE),
+                                                                                                                                  ('quiz_sorting',     'dsa_sorting',      'DSA Sorting Foundations',             'Quiz manual về các thuật toán sắp xếp.', 'MANUAL', 20, 10, TRUE),
+                                                                                                                                  ('quiz_searching',   'dsa_searching',    'DSA Searching Fundamentals',          'Quiz manual về tìm kiếm và Big-O.', 'MANUAL', 20, 10, TRUE),
+                                                                                                                                  ('quiz_sql',         'db_sql',           'SQL Basics and Query Practice',       'Quiz manual về SQL cơ bản.', 'MANUAL', 20, 10, TRUE);
+
+INSERT INTO quiz (
+    subject_id, topic_id, title, description, quiz_type,
+    duration_minutes, total_questions, created_by, is_published, created_at, updated_at
+)
+SELECT s.subject_id,
+       tp.topic_id,
+       qz.title,
+       qz.description,
+       qz.quiz_type,
+       qz.duration_minutes,
+       qz.total_questions,
+       @admin_id,
+       qz.is_published,
+       '2026-03-23 09:00:00',
+       '2026-03-23 09:00:00'
+FROM tmp_quizzes qz
+         JOIN tmp_topics tt ON tt.topic_key = qz.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM quiz x WHERE x.title = qz.title
+);
 
 INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_oop_id, @q1, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_oop_id AND question_id = @q1);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_oop_id, @q2, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_oop_id AND question_id = @q2);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_oop_id, @q3, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_oop_id AND question_id = @q3);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_oop_id, @q4, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_oop_id AND question_id = @q4);
-
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_collection_id, @q5, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_collection_id AND question_id = @q5);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_collection_id, @q6, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_collection_id AND question_id = @q6);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_collection_id, @q7, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_collection_id AND question_id = @q7);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_collection_id, @q8, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_collection_id AND question_id = @q8);
-
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_dsa_id, @q9, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_dsa_id AND question_id = @q9);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_dsa_id, @q10, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_dsa_id AND question_id = @q10);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_dsa_id, @q11, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_dsa_id AND question_id = @q11);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_dsa_id, @q12, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_dsa_id AND question_id = @q12);
-
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_sql_id, @q13, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_sql_id AND question_id = @q13);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_sql_id, @q14, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_sql_id AND question_id = @q14);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_sql_id, @q15, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_sql_id AND question_id = @q15);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_sql_id, @q16, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_sql_id AND question_id = @q16);
-
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_draft_id, @q1, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_draft_id AND question_id = @q1);
-INSERT INTO quiz_question (quiz_id, question_id, order_no, score_weight)
-SELECT @quiz_draft_id, @q17, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM quiz_question WHERE quiz_id = @quiz_draft_id AND question_id = @q17);
-
--- =========================================================
--- 8) ATTEMPT
--- =========================================================
-
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @student_id, @quiz_oop_id, '2026-03-24 19:00:00', '2026-03-24 19:08:30', 3.00, 3, 'GRADED', 510, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @student_id AND quiz_id = @quiz_oop_id AND started_at = '2026-03-24 19:00:00'
+SELECT q.quiz_id,
+       qu.question_id,
+       tq.qno,
+       1.00
+FROM tmp_quizzes tquiz
+         JOIN quiz q ON q.title = tquiz.title
+         JOIN tmp_questions tq ON tq.topic_key = tquiz.topic_key AND tq.qno <= 10
+         JOIN tmp_topics tt ON tt.topic_key = tq.topic_key
+         JOIN subject s ON s.subject_name = tt.subject_name
+         JOIN topic tp ON tp.subject_id = s.subject_id AND tp.topic_name = tt.topic_name
+         JOIN question qu ON qu.topic_id = tp.topic_id AND qu.content = tq.content
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM quiz_question qq
+    WHERE qq.quiz_id = q.quiz_id
+      AND qq.question_id = qu.question_id
 );
 
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @student_id, @quiz_dsa_id, '2026-03-25 20:00:00', '2026-03-25 20:12:00', 2.00, 2, 'GRADED', 720, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @student_id AND quiz_id = @quiz_dsa_id AND started_at = '2026-03-25 20:00:00'
-);
-
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @student_id, @quiz_sql_id, '2026-03-26 21:00:00', NULL, 0.00, 0, 'IN_PROGRESS', 420, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @student_id AND quiz_id = @quiz_sql_id AND started_at = '2026-03-26 21:00:00'
-);
-
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @minhanh_id, @quiz_collection_id, '2026-03-24 18:30:00', '2026-03-24 18:37:00', 4.00, 4, 'GRADED', 420, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @minhanh_id AND quiz_id = @quiz_collection_id AND started_at = '2026-03-24 18:30:00'
-);
-
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @hoangnam_id, @quiz_sql_id, '2026-03-25 21:30:00', '2026-03-25 21:45:00', 1.00, 1, 'GRADED', 900, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @hoangnam_id AND quiz_id = @quiz_sql_id AND started_at = '2026-03-25 21:30:00'
-);
-
-INSERT INTO attempt (user_id, quiz_id, started_at, submitted_at, total_score, correct_count, status, duration_seconds, total_questions)
-SELECT @thuha_id, @quiz_oop_id, '2026-03-26 18:00:00', '2026-03-26 18:06:00', 4.00, 4, 'GRADED', 360, 4
-    WHERE NOT EXISTS (
-    SELECT 1 FROM attempt WHERE user_id = @thuha_id AND quiz_id = @quiz_oop_id AND started_at = '2026-03-26 18:00:00'
-);
-
-SET @attempt_student_oop  = (SELECT attempt_id FROM attempt WHERE user_id = @student_id  AND quiz_id = @quiz_oop_id        AND started_at = '2026-03-24 19:00:00' LIMIT 1);
-SET @attempt_student_dsa  = (SELECT attempt_id FROM attempt WHERE user_id = @student_id  AND quiz_id = @quiz_dsa_id        AND started_at = '2026-03-25 20:00:00' LIMIT 1);
-SET @attempt_student_sql  = (SELECT attempt_id FROM attempt WHERE user_id = @student_id  AND quiz_id = @quiz_sql_id        AND started_at = '2026-03-26 21:00:00' LIMIT 1);
-SET @attempt_minhanh_col  = (SELECT attempt_id FROM attempt WHERE user_id = @minhanh_id  AND quiz_id = @quiz_collection_id AND started_at = '2026-03-24 18:30:00' LIMIT 1);
-SET @attempt_hoangnam_sql = (SELECT attempt_id FROM attempt WHERE user_id = @hoangnam_id AND quiz_id = @quiz_sql_id        AND started_at = '2026-03-25 21:30:00' LIMIT 1);
-SET @attempt_thuha_oop    = (SELECT attempt_id FROM attempt WHERE user_id = @thuha_id    AND quiz_id = @quiz_oop_id        AND started_at = '2026-03-26 18:00:00' LIMIT 1);
-
 -- =========================================================
--- 9) ATTEMPT QUESTION
+-- 5) COMMUNITY
 -- =========================================================
 
--- helper insert block
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_oop, @q1, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_oop AND question_id = @q1);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_oop, @q2, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_oop AND question_id = @q2);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_oop, @q3, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_oop AND question_id = @q3);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_oop, @q4, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_oop AND question_id = @q4);
-
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_dsa, @q9, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_dsa AND question_id = @q9);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_dsa, @q10, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_dsa AND question_id = @q10);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_dsa, @q11, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_dsa AND question_id = @q11);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_dsa, @q12, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_dsa AND question_id = @q12);
-
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_sql, @q13, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_sql AND question_id = @q13);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_sql, @q14, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_sql AND question_id = @q14);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_sql, @q15, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_sql AND question_id = @q15);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_student_sql, @q16, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_student_sql AND question_id = @q16);
-
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_minhanh_col, @q5, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_minhanh_col AND question_id = @q5);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_minhanh_col, @q6, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_minhanh_col AND question_id = @q6);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_minhanh_col, @q7, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_minhanh_col AND question_id = @q7);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_minhanh_col, @q8, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_minhanh_col AND question_id = @q8);
-
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_hoangnam_sql, @q13, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_hoangnam_sql AND question_id = @q13);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_hoangnam_sql, @q14, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_hoangnam_sql AND question_id = @q14);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_hoangnam_sql, @q15, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_hoangnam_sql AND question_id = @q15);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_hoangnam_sql, @q16, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_hoangnam_sql AND question_id = @q16);
-
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_thuha_oop, @q1, 1, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_thuha_oop AND question_id = @q1);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_thuha_oop, @q2, 2, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_thuha_oop AND question_id = @q2);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_thuha_oop, @q3, 3, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_thuha_oop AND question_id = @q3);
-INSERT INTO attempt_question (attempt_id, question_id, order_no, score_weight)
-SELECT @attempt_thuha_oop, @q4, 4, 1.00
-    WHERE NOT EXISTS (SELECT 1 FROM attempt_question WHERE attempt_id = @attempt_thuha_oop AND question_id = @q4);
-
--- =========================================================
--- 10) ATTEMPT ANSWER
--- =========================================================
-
-SET @q1_true  = (SELECT option_id FROM answer_option WHERE question_id = @q1  AND is_correct = TRUE  LIMIT 1);
-SET @q2_true  = (SELECT option_id FROM answer_option WHERE question_id = @q2  AND is_correct = TRUE  LIMIT 1);
-SET @q3_true  = (SELECT option_id FROM answer_option WHERE question_id = @q3  AND is_correct = TRUE  LIMIT 1);
-SET @q3_wrong = (SELECT option_id FROM answer_option WHERE question_id = @q3  AND option_label = 'A' LIMIT 1);
-SET @q4_true  = (SELECT option_id FROM answer_option WHERE question_id = @q4  AND is_correct = TRUE  LIMIT 1);
-SET @q5_true  = (SELECT option_id FROM answer_option WHERE question_id = @q5  AND is_correct = TRUE  LIMIT 1);
-SET @q6_true  = (SELECT option_id FROM answer_option WHERE question_id = @q6  AND is_correct = TRUE  LIMIT 1);
-SET @q7_true  = (SELECT option_id FROM answer_option WHERE question_id = @q7  AND is_correct = TRUE  LIMIT 1);
-SET @q8_true  = (SELECT option_id FROM answer_option WHERE question_id = @q8  AND is_correct = TRUE  LIMIT 1);
-SET @q9_true  = (SELECT option_id FROM answer_option WHERE question_id = @q9  AND is_correct = TRUE  LIMIT 1);
-SET @q10_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q10 AND option_label = 'D' LIMIT 1);
-SET @q11_true = (SELECT option_id FROM answer_option WHERE question_id = @q11 AND is_correct = TRUE  LIMIT 1);
-SET @q12_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q12 AND option_label = 'B' LIMIT 1);
-SET @q13_true = (SELECT option_id FROM answer_option WHERE question_id = @q13 AND is_correct = TRUE  LIMIT 1);
-SET @q13_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q13 AND option_label = 'C' LIMIT 1);
-SET @q14_true = (SELECT option_id FROM answer_option WHERE question_id = @q14 AND is_correct = TRUE  LIMIT 1);
-SET @q14_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q14 AND option_label = 'A' LIMIT 1);
-SET @q15_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q15 AND option_label = 'A' LIMIT 1);
-SET @q16_wrong= (SELECT option_id FROM answer_option WHERE question_id = @q16 AND option_label = 'D' LIMIT 1);
-
--- student oop 3/4
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q1_true, TRUE, 1.00, '2026-03-24 19:02:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_oop AND aq.question_id = @q1
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q2_true, TRUE, 1.00, '2026-03-24 19:03:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_oop AND aq.question_id = @q2
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q3_wrong, FALSE, 0.00, '2026-03-24 19:05:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_oop AND aq.question_id = @q3
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q4_true, TRUE, 1.00, '2026-03-24 19:07:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_oop AND aq.question_id = @q4
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- student dsa 2/4
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q9_true, TRUE, 1.00, '2026-03-25 20:02:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_dsa AND aq.question_id = @q9
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q10_wrong, FALSE, 0.00, '2026-03-25 20:04:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_dsa AND aq.question_id = @q10
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q11_true, TRUE, 1.00, '2026-03-25 20:07:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_dsa AND aq.question_id = @q11
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q12_wrong, FALSE, 0.00, '2026-03-25 20:10:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_dsa AND aq.question_id = @q12
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- student sql in progress 2 answered
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q13_true, TRUE, 1.00, '2026-03-26 21:03:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_sql AND aq.question_id = @q13
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id, @q14_wrong, FALSE, 0.00, '2026-03-26 21:05:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_student_sql AND aq.question_id = @q14
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- minhanh all correct
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id,
-       (SELECT option_id FROM answer_option WHERE question_id = aq.question_id AND is_correct = TRUE LIMIT 1),
-       TRUE, 1.00, '2026-03-24 18:31:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_minhanh_col
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- hoangnam only 1 correct
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id,
-       CASE
-           WHEN aq.question_id = @q13 THEN @q13_wrong
-           WHEN aq.question_id = @q14 THEN @q14_true
-           WHEN aq.question_id = @q15 THEN @q15_wrong
-           WHEN aq.question_id = @q16 THEN @q16_wrong
-           END,
-       CASE WHEN aq.question_id = @q14 THEN TRUE ELSE FALSE END,
-       CASE WHEN aq.question_id = @q14 THEN 1.00 ELSE 0.00 END,
-       '2026-03-25 21:35:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_hoangnam_sql
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- thuha all correct
-INSERT INTO attempt_answer (attempt_question_id, selected_option_id, is_correct, score_obtained, answered_at)
-SELECT aq.attempt_question_id,
-       (SELECT option_id FROM answer_option WHERE question_id = aq.question_id AND is_correct = TRUE LIMIT 1),
-       TRUE, 1.00, '2026-03-26 18:02:00'
-FROM attempt_question aq
-WHERE aq.attempt_id = @attempt_thuha_oop
-  AND NOT EXISTS (SELECT 1 FROM attempt_answer WHERE attempt_question_id = aq.attempt_question_id);
-
--- =========================================================
--- 11) LEARNING PROGRESS
--- =========================================================
-
-INSERT INTO learning_progress (user_id, topic_id, total_quizzes, completed_quizzes, progress_percentage, total_attempts, correct_rate, mastery_score, last_practiced_at, updated_at)
-SELECT @student_id, @oop_topic_id, 1, 1, 75.00, 1, 75.00, 7.50, '2026-03-24 19:08:30', '2026-03-24 19:08:30'
-    WHERE NOT EXISTS (SELECT 1 FROM learning_progress WHERE user_id = @student_id AND topic_id = @oop_topic_id);
-
-INSERT INTO learning_progress (user_id, topic_id, total_quizzes, completed_quizzes, progress_percentage, total_attempts, correct_rate, mastery_score, last_practiced_at, updated_at)
-SELECT @student_id, @sort_topic_id, 1, 1, 50.00, 1, 50.00, 5.00, '2026-03-25 20:12:00', '2026-03-25 20:12:00'
-    WHERE NOT EXISTS (SELECT 1 FROM learning_progress WHERE user_id = @student_id AND topic_id = @sort_topic_id);
-
-INSERT INTO learning_progress (user_id, topic_id, total_quizzes, completed_quizzes, progress_percentage, total_attempts, correct_rate, mastery_score, last_practiced_at, updated_at)
-SELECT @minhanh_id, @collection_topic_id, 1, 1, 100.00, 1, 100.00, 9.80, '2026-03-24 18:37:00', '2026-03-24 18:37:00'
-    WHERE NOT EXISTS (SELECT 1 FROM learning_progress WHERE user_id = @minhanh_id AND topic_id = @collection_topic_id);
-
-INSERT INTO learning_progress (user_id, topic_id, total_quizzes, completed_quizzes, progress_percentage, total_attempts, correct_rate, mastery_score, last_practiced_at, updated_at)
-SELECT @hoangnam_id, @sql_topic_id, 1, 1, 25.00, 1, 25.00, 2.50, '2026-03-25 21:45:00', '2026-03-25 21:45:00'
-    WHERE NOT EXISTS (SELECT 1 FROM learning_progress WHERE user_id = @hoangnam_id AND topic_id = @sql_topic_id);
-
-INSERT INTO learning_progress (user_id, topic_id, total_quizzes, completed_quizzes, progress_percentage, total_attempts, correct_rate, mastery_score, last_practiced_at, updated_at)
-SELECT @thuha_id, @oop_topic_id, 1, 1, 100.00, 1, 100.00, 10.00, '2026-03-26 18:06:00', '2026-03-26 18:06:00'
-    WHERE NOT EXISTS (SELECT 1 FROM learning_progress WHERE user_id = @thuha_id AND topic_id = @oop_topic_id);
-
--- =========================================================
--- 12) USER QUESTION MEMORY
--- =========================================================
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @student_id, @q1, TRUE, 2, 0, 3, 8.50, '2026-03-24 19:08:30', '2026-03-30 08:00:00', '2026-03-24 19:08:30', '2026-03-24 19:08:30'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q1);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @student_id, @q3, FALSE, 0, 2, 3, 3.20, '2026-03-24 19:08:30', '2026-03-27 08:00:00', '2026-03-24 19:08:30', '2026-03-24 19:08:30'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q3);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @student_id, @q4, TRUE, 1, 0, 2, 7.00, '2026-03-24 19:08:30', '2026-03-29 08:00:00', '2026-03-24 19:08:30', '2026-03-24 19:08:30'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q4);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @student_id, @q10, FALSE, 0, 3, 4, 2.50, '2026-03-25 20:12:00', '2026-03-26 09:00:00', '2026-03-25 20:12:00', '2026-03-25 20:12:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q10);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @student_id, @q12, FALSE, 0, 2, 4, 3.00, '2026-03-25 20:12:00', '2026-03-26 10:00:00', '2026-03-25 20:12:00', '2026-03-25 20:12:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @student_id AND question_id = @q12);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @minhanh_id, @q6, TRUE, 4, 0, 4, 9.70, '2026-03-24 18:37:00', '2026-04-05 08:00:00', '2026-03-24 18:37:00', '2026-03-24 18:37:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @minhanh_id AND question_id = @q6);
-
-INSERT INTO user_question_memory (user_id, question_id, last_result, correct_streak, wrong_streak, review_count, memory_score, last_reviewed_at, next_review_at, created_at, updated_at)
-SELECT @hoangnam_id, @q15, FALSE, 0, 4, 5, 1.80, '2026-03-25 21:45:00', '2026-03-26 07:00:00', '2026-03-25 21:45:00', '2026-03-25 21:45:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_question_memory WHERE user_id = @hoangnam_id AND question_id = @q15);
-
--- =========================================================
--- 13) USER QUIZ PROGRESS
--- highest_score phải <= 1 theo CHECK
--- =========================================================
-
-INSERT INTO user_quiz_progress (user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at)
-SELECT @student_id, @quiz_oop_id, @oop_topic_id, 0.75, 1, '2026-03-24 19:08:30'
-    WHERE NOT EXISTS (SELECT 1 FROM user_quiz_progress WHERE user_id = @student_id AND quiz_id = @quiz_oop_id);
-
-INSERT INTO user_quiz_progress (user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at)
-SELECT @student_id, @quiz_dsa_id, @sort_topic_id, 0.50, 1, '2026-03-25 20:12:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_quiz_progress WHERE user_id = @student_id AND quiz_id = @quiz_dsa_id);
-
-INSERT INTO user_quiz_progress (user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at)
-SELECT @minhanh_id, @quiz_collection_id, @collection_topic_id, 1.00, 1, '2026-03-24 18:37:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_quiz_progress WHERE user_id = @minhanh_id AND quiz_id = @quiz_collection_id);
-
-INSERT INTO user_quiz_progress (user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at)
-SELECT @hoangnam_id, @quiz_sql_id, @sql_topic_id, 0.25, 1, '2026-03-25 21:45:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_quiz_progress WHERE user_id = @hoangnam_id AND quiz_id = @quiz_sql_id);
-
-INSERT INTO user_quiz_progress (user_id, quiz_id, topic_id, highest_score, total_attempts, last_attempt_at)
-SELECT @thuha_id, @quiz_oop_id, @oop_topic_id, 1.00, 1, '2026-03-26 18:06:00'
-    WHERE NOT EXISTS (SELECT 1 FROM user_quiz_progress WHERE user_id = @thuha_id AND quiz_id = @quiz_oop_id);
-
--- =========================================================
--- 14) QUESTION POST
--- =========================================================
-
-INSERT INTO question_post (user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at)
-SELECT @student_id, @oop_topic_id,
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @student_id, tp.topic_id,
        'Phân biệt abstract class và interface trong Java như thế nào?',
        'Mình đang hơi rối giữa abstract class và interface. Trong bài toán thực tế thì khi nào nên chọn abstract class, khi nào nên chọn interface?',
        'VISIBLE', 125, 0, 0, '#E8F0FE', '2026-03-27 09:00:00', '2026-03-27 09:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Phân biệt abstract class và interface trong Java như thế nào?');
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Lập trình Java' AND tp.topic_name = 'OOP cơ bản'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Phân biệt abstract class và interface trong Java như thế nào?');
 
-INSERT INTO question_post (user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at)
-SELECT @minhanh_id, @collection_topic_id,
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @minhanh_id, tp.topic_id,
        'Vì sao HashMap không đảm bảo thứ tự phần tử?',
        'Mình thấy duyệt HashMap mỗi lần có thể ra thứ tự khác nhau. Cơ chế bên trong của nó là gì và khi nào nên dùng LinkedHashMap?',
        'VISIBLE', 98, 0, 0, '#FFF4E5', '2026-03-27 10:00:00', '2026-03-27 10:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Vì sao HashMap không đảm bảo thứ tự phần tử?');
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Lập trình Java' AND tp.topic_name = 'Collections Framework'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Vì sao HashMap không đảm bảo thứ tự phần tử?');
 
-INSERT INTO question_post (user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at)
-SELECT @hoangnam_id, @sort_topic_id,
-       'Bubble Sort với Insertion Sort nên chọn cái nào khi mảng gần như có thứ tự?',
-       'Nếu dữ liệu gần như đã được sắp xếp rồi thì nên dùng Bubble Sort hay Insertion Sort? Mong mọi người giải thích theo trực giác.',
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @hoangnam_id, tp.topic_id,
+       'Insertion Sort có thật sự hợp hơn khi dữ liệu gần như có thứ tự không?',
+       'Mọi người giải thích giúp mình tại sao với mảng gần như có thứ tự thì Insertion Sort thường được nhắc tới nhiều hơn các thuật toán đơn giản khác.',
        'VISIBLE', 76, 0, 0, '#EAFBF1', '2026-03-27 11:00:00', '2026-03-27 11:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Bubble Sort với Insertion Sort nên chọn cái nào khi mảng gần như có thứ tự?');
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Cấu trúc dữ liệu và giải thuật' AND tp.topic_name = 'Sắp xếp cơ bản'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Insertion Sort có thật sự hợp hơn khi dữ liệu gần như có thứ tự không?');
 
-INSERT INTO question_post (user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at)
-SELECT @thuha_id, @join_topic_id,
-       'INNER JOIN khác LEFT JOIN ở trường hợp nào dễ thấy nhất?',
-       'Ai có thể cho mình một ví dụ ngắn dễ nhớ để phân biệt INNER JOIN và LEFT JOIN không? Mình đọc lý thuyết rồi mà vẫn hay lẫn.',
-       'VISIBLE', 143, 0, 0, '#F5EFFF', '2026-03-27 12:00:00', '2026-03-27 12:00:00'
-    WHERE NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'INNER JOIN khác LEFT JOIN ở trường hợp nào dễ thấy nhất?');
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @thuha_id, tp.topic_id,
+       'Binary Search bắt buộc phải có mảng tăng dần hay chỉ cần có thứ tự bất kỳ?',
+       'Nếu dữ liệu được sắp xếp giảm dần thì Binary Search có dùng được không, hay bắt buộc phải là tăng dần?',
+       'VISIBLE', 89, 0, 0, '#F5EFFF', '2026-03-27 12:00:00', '2026-03-27 12:00:00'
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Cấu trúc dữ liệu và giải thuật' AND tp.topic_name = 'Tìm kiếm và độ phức tạp'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Binary Search bắt buộc phải có mảng tăng dần hay chỉ cần có thứ tự bất kỳ?');
 
-INSERT INTO question_post (user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at)
-SELECT @student_id, @oop_topic_id,
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @giabao_id, tp.topic_id,
+       'HAVING khác WHERE ở ví dụ nào dễ nhớ nhất?',
+       'Mình hay bị nhầm WHERE và HAVING. Mọi người cho mình một ví dụ ngắn gọn dễ nhớ với GROUP BY được không?',
+       'VISIBLE', 143, 0, 0, '#E9F7FF', '2026-03-27 13:00:00', '2026-03-27 13:00:00'
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Cơ sở dữ liệu' AND tp.topic_name = 'SQL cơ bản'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'HAVING khác WHERE ở ví dụ nào dễ nhớ nhất?');
+
+INSERT INTO question_post (
+    user_id, topic_id, title, content, status, view_count, like_count, comment_count, theme_color, created_at, updated_at
+)
+SELECT @student_id, tp.topic_id,
        'Post vi phạm để demo moderation',
-       'Nội dung này được tạo ra chỉ để demo chức năng ẩn/khôi phục/xóa trong khu vực quản trị.',
-       'HIDDEN', 12, 0, 0, '#FFECEC', '2026-03-27 13:00:00', '2026-03-27 13:15:00'
-    WHERE NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Post vi phạm để demo moderation');
+       'Nội dung này được tạo ra chỉ để demo chức năng ẩn nội dung trong khu vực quản trị.',
+       'HIDDEN', 12, 0, 0, '#FFECEC', '2026-03-27 14:00:00', '2026-03-27 14:15:00'
+FROM topic tp
+         JOIN subject s ON s.subject_id = tp.subject_id
+WHERE s.subject_name = 'Lập trình Java' AND tp.topic_name = 'OOP cơ bản'
+  AND NOT EXISTS (SELECT 1 FROM question_post WHERE title = 'Post vi phạm để demo moderation');
 
-SET @post1 = (SELECT question_post_id FROM question_post WHERE title = 'Phân biệt abstract class và interface trong Java như thế nào?' LIMIT 1);
-SET @post2 = (SELECT question_post_id FROM question_post WHERE title = 'Vì sao HashMap không đảm bảo thứ tự phần tử?' LIMIT 1);
-SET @post3 = (SELECT question_post_id FROM question_post WHERE title = 'Bubble Sort với Insertion Sort nên chọn cái nào khi mảng gần như có thứ tự?' LIMIT 1);
-SET @post4 = (SELECT question_post_id FROM question_post WHERE title = 'INNER JOIN khác LEFT JOIN ở trường hợp nào dễ thấy nhất?' LIMIT 1);
-SET @post5 = (SELECT question_post_id FROM question_post WHERE title = 'Post vi phạm để demo moderation' LIMIT 1);
-
--- =========================================================
--- 15) COMMENT
--- =========================================================
+SET @post_1 = (SELECT question_post_id FROM question_post WHERE title = 'Phân biệt abstract class và interface trong Java như thế nào?' LIMIT 1);
+SET @post_2 = (SELECT question_post_id FROM question_post WHERE title = 'Vì sao HashMap không đảm bảo thứ tự phần tử?' LIMIT 1);
+SET @post_3 = (SELECT question_post_id FROM question_post WHERE title = 'Insertion Sort có thật sự hợp hơn khi dữ liệu gần như có thứ tự không?' LIMIT 1);
+SET @post_4 = (SELECT question_post_id FROM question_post WHERE title = 'Binary Search bắt buộc phải có mảng tăng dần hay chỉ cần có thứ tự bất kỳ?' LIMIT 1);
+SET @post_5 = (SELECT question_post_id FROM question_post WHERE title = 'HAVING khác WHERE ở ví dụ nào dễ nhớ nhất?' LIMIT 1);
+SET @post_hidden = (SELECT question_post_id FROM question_post WHERE title = 'Post vi phạm để demo moderation' LIMIT 1);
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post1, @minhanh_id, NULL,
+SELECT @post_1, @minhanh_id, NULL,
        'Interface phù hợp khi bạn muốn mô tả capability chung cho nhiều class không cùng hệ kế thừa.',
        'VISIBLE', '2026-03-27 09:15:00', '2026-03-27 09:15:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post1 AND user_id = @minhanh_id AND parent_id IS NULL
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_1 AND user_id = @minhanh_id
       AND content = 'Interface phù hợp khi bạn muốn mô tả capability chung cho nhiều class không cùng hệ kế thừa.'
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post1, @thuha_id, NULL,
+SELECT @post_1, @thuha_id, NULL,
        'Abstract class hợp khi bạn muốn tái sử dụng code chung và vẫn giữ một số phần bắt buộc subclass phải override.',
        'VISIBLE', '2026-03-27 09:20:00', '2026-03-27 09:20:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post1 AND user_id = @thuha_id AND parent_id IS NULL
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_1 AND user_id = @thuha_id
       AND content = 'Abstract class hợp khi bạn muốn tái sử dụng code chung và vẫn giữ một số phần bắt buộc subclass phải override.'
 );
 
-SET @parent_comment_1 = (
-    SELECT comment_id FROM comment
-    WHERE question_post_id = @post1
+SET @parent_comment_oop = (
+    SELECT comment_id
+    FROM comment
+    WHERE question_post_id = @post_1
       AND content = 'Interface phù hợp khi bạn muốn mô tả capability chung cho nhiều class không cùng hệ kế thừa.'
     LIMIT 1
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post1, @student_id, @parent_comment_1,
-       'Ví dụ này dễ hiểu quá, cảm ơn bạn. Mình sẽ thử nhớ theo hướng capability vs base implementation.',
+SELECT @post_1, @student_id, @parent_comment_oop,
+       'Ví dụ này dễ hiểu quá, cảm ơn bạn. Mình sẽ nhớ theo hướng capability và base implementation.',
        'VISIBLE', '2026-03-27 09:25:00', '2026-03-27 09:25:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post1 AND user_id = @student_id AND parent_id = @parent_comment_1
-      AND content = 'Ví dụ này dễ hiểu quá, cảm ơn bạn. Mình sẽ thử nhớ theo hướng capability vs base implementation.'
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_1 AND user_id = @student_id
+      AND content = 'Ví dụ này dễ hiểu quá, cảm ơn bạn. Mình sẽ nhớ theo hướng capability và base implementation.'
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post2, @student_id, NULL,
-       'HashMap ưu tiên hiệu năng tra cứu theo hash, còn LinkedHashMap thêm linked list để giữ thứ tự chèn.',
+SELECT @post_2, @student_id, NULL,
+       'HashMap ưu tiên hiệu năng tra cứu theo hash, còn LinkedHashMap thêm cơ chế giữ thứ tự chèn.',
        'VISIBLE', '2026-03-27 10:10:00', '2026-03-27 10:10:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post2 AND user_id = @student_id AND parent_id IS NULL
-      AND content = 'HashMap ưu tiên hiệu năng tra cứu theo hash, còn LinkedHashMap thêm linked list để giữ thứ tự chèn.'
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_2 AND user_id = @student_id
+      AND content = 'HashMap ưu tiên hiệu năng tra cứu theo hash, còn LinkedHashMap thêm cơ chế giữ thứ tự chèn.'
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post3, @thuha_id, NULL,
-       'Nếu mảng gần như có thứ tự thì Insertion Sort thường hợp hơn vì số lần dịch chuyển ít.',
+SELECT @post_3, @thuha_id, NULL,
+       'Đúng rồi, vì khi dữ liệu gần có thứ tự thì số lần dịch chuyển của Insertion Sort thấp hơn khá nhiều.',
        'VISIBLE', '2026-03-27 11:12:00', '2026-03-27 11:12:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post3 AND user_id = @thuha_id AND parent_id IS NULL
-      AND content = 'Nếu mảng gần như có thứ tự thì Insertion Sort thường hợp hơn vì số lần dịch chuyển ít.'
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_3 AND user_id = @thuha_id
+      AND content = 'Đúng rồi, vì khi dữ liệu gần có thứ tự thì số lần dịch chuyển của Insertion Sort thấp hơn khá nhiều.'
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post4, @hoangnam_id, NULL,
-       'INNER JOIN chỉ lấy các dòng khớp ở cả 2 bên, còn LEFT JOIN giữ toàn bộ bảng bên trái kể cả khi không khớp.',
-       'VISIBLE', '2026-03-27 12:10:00', '2026-03-27 12:10:00'
+SELECT @post_4, @hoangnam_id, NULL,
+       'Chỉ cần dữ liệu có thứ tự nhất quán là được, tăng dần hay giảm dần thì đều có thể điều chỉnh điều kiện so sánh.',
+       'VISIBLE', '2026-03-27 12:15:00', '2026-03-27 12:15:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post4 AND user_id = @hoangnam_id AND parent_id IS NULL
-      AND content = 'INNER JOIN chỉ lấy các dòng khớp ở cả 2 bên, còn LEFT JOIN giữ toàn bộ bảng bên trái kể cả khi không khớp.'
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_4 AND user_id = @hoangnam_id
+      AND content = 'Chỉ cần dữ liệu có thứ tự nhất quán là được, tăng dần hay giảm dần thì đều có thể điều chỉnh điều kiện so sánh.'
 );
 
 INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
-SELECT @post5, @hoangnam_id, NULL,
+SELECT @post_5, @minhanh_id, NULL,
+       'WHERE lọc trước khi nhóm, còn HAVING lọc sau khi đã GROUP BY. Đây là cách nhớ ngắn nhất.',
+       'VISIBLE', '2026-03-27 13:20:00', '2026-03-27 13:20:00'
+    WHERE NOT EXISTS (
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_5 AND user_id = @minhanh_id
+      AND content = 'WHERE lọc trước khi nhóm, còn HAVING lọc sau khi đã GROUP BY. Đây là cách nhớ ngắn nhất.'
+);
+
+INSERT INTO comment (question_post_id, user_id, parent_id, content, status, created_at, updated_at)
+SELECT @post_hidden, @hoangnam_id, NULL,
        'Comment này cũng dùng để demo moderation và hiện đang bị ẩn.',
-       'HIDDEN', '2026-03-27 13:05:00', '2026-03-27 13:15:00'
+       'HIDDEN', '2026-03-27 14:10:00', '2026-03-27 14:15:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM comment WHERE question_post_id = @post5 AND user_id = @hoangnam_id AND parent_id IS NULL
+    SELECT 1 FROM comment
+    WHERE question_post_id = @post_hidden AND user_id = @hoangnam_id
       AND content = 'Comment này cũng dùng để demo moderation và hiện đang bị ẩn.'
 );
 
 SET @hidden_comment_id = (
-    SELECT comment_id FROM comment
-    WHERE question_post_id = @post5
+    SELECT comment_id
+    FROM comment
+    WHERE question_post_id = @post_hidden
       AND content = 'Comment này cũng dùng để demo moderation và hiện đang bị ẩn.'
     LIMIT 1
 );
 
--- =========================================================
--- 16) POST LIKES
--- =========================================================
-
-INSERT INTO post_likes (user_id, post_id, created_at)
-SELECT @minhanh_id, @post1, '2026-03-27 09:30:00'
-    WHERE NOT EXISTS (SELECT 1 FROM post_likes WHERE user_id = @minhanh_id AND post_id = @post1);
-
-INSERT INTO post_likes (user_id, post_id, created_at)
-SELECT @thuha_id, @post1, '2026-03-27 09:31:00'
-    WHERE NOT EXISTS (SELECT 1 FROM post_likes WHERE user_id = @thuha_id AND post_id = @post1);
-
-INSERT INTO post_likes (user_id, post_id, created_at)
-SELECT @student_id, @post2, '2026-03-27 10:20:00'
-    WHERE NOT EXISTS (SELECT 1 FROM post_likes WHERE user_id = @student_id AND post_id = @post2);
-
-INSERT INTO post_likes (user_id, post_id, created_at)
-SELECT @minhanh_id, @post4, '2026-03-27 12:20:00'
-    WHERE NOT EXISTS (SELECT 1 FROM post_likes WHERE user_id = @minhanh_id AND post_id = @post4);
-
-INSERT INTO post_likes (user_id, post_id, created_at)
-SELECT @student_id, @post4, '2026-03-27 12:21:00'
-    WHERE NOT EXISTS (SELECT 1 FROM post_likes WHERE user_id = @student_id AND post_id = @post4);
-
--- =========================================================
--- 17) MODERATION RECORD
--- =========================================================
-
 INSERT INTO moderation_record (moderator_id, target_type, target_id, action, reason, created_at)
-SELECT @admin_id, 'QUESTION_POST', @post5, 'HIDE',
-       'Ẩn bài để demo chức năng kiểm duyệt nội dung cộng đồng.', '2026-03-27 13:15:00'
+SELECT @admin_id, 'QUESTION_POST', @post_hidden, 'HIDE',
+       'Ẩn bài để demo kiểm duyệt nội dung cộng đồng.', '2026-03-27 14:15:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM moderation_record WHERE target_type = 'QUESTION_POST' AND target_id = @post5 AND action = 'HIDE'
+    SELECT 1
+    FROM moderation_record
+    WHERE target_type = 'QUESTION_POST'
+      AND target_id = @post_hidden
+      AND action = 'HIDE'
 );
 
 INSERT INTO moderation_record (moderator_id, target_type, target_id, action, reason, created_at)
 SELECT @admin_id, 'COMMENT', @hidden_comment_id, 'HIDE',
-       'Ẩn comment để demo moderation chi tiết theo bình luận.', '2026-03-27 13:16:00'
+       'Ẩn comment để demo kiểm duyệt bình luận.', '2026-03-27 14:16:00'
     WHERE NOT EXISTS (
-    SELECT 1 FROM moderation_record WHERE target_type = 'COMMENT' AND target_id = @hidden_comment_id AND action = 'HIDE'
-);
-
-INSERT INTO moderation_record (moderator_id, target_type, target_id, action, reason, created_at)
-SELECT @admin_id, 'QUESTION', @q17, 'HIDE',
-       'Ẩn câu hỏi sai kiến thức để demo moderation trên ngân hàng câu hỏi.', '2026-03-27 13:17:00'
-    WHERE NOT EXISTS (
-    SELECT 1 FROM moderation_record WHERE target_type = 'QUESTION' AND target_id = @q17 AND action = 'HIDE'
-);
-
--- =========================================================
--- 18) SYNC DENORMALIZED COUNTS
--- =========================================================
-
-UPDATE question_post p
-SET p.like_count = (
-    SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.question_post_id
+    SELECT 1
+    FROM moderation_record
+    WHERE target_type = 'COMMENT'
+      AND target_id = @hidden_comment_id
+      AND action = 'HIDE'
 );
 
 UPDATE question_post p
 SET p.comment_count = (
-    SELECT COUNT(*) FROM comment c
+    SELECT COUNT(*)
+    FROM comment c
     WHERE c.question_post_id = p.question_post_id
       AND c.status = 'VISIBLE'
 );
 
 -- =========================================================
--- 19) BACKFILL total_questions nếu cần
+-- 6) CLEANUP TEMP
 -- =========================================================
-
-UPDATE attempt a
-SET a.total_questions = (
-    SELECT COUNT(*) FROM attempt_question aq WHERE aq.attempt_id = a.attempt_id
-)
-WHERE a.total_questions = 0;
-
--- =========================================================
--- 20) CHECK NHANH
--- =========================================================
--- SELECT COUNT(*) AS role_count FROM role;
--- SELECT COUNT(*) AS user_count FROM users;
--- SELECT COUNT(*) AS subject_count FROM subject;
--- SELECT COUNT(*) AS topic_count FROM topic;
--- SELECT COUNT(*) AS question_count FROM question;
--- SELECT COUNT(*) AS answer_option_count FROM answer_option;
--- SELECT COUNT(*) AS quiz_count FROM quiz;
--- SELECT COUNT(*) AS attempt_count FROM attempt;
--- SELECT COUNT(*) AS progress_count FROM learning_progress;
--- SELECT COUNT(*) AS memory_count FROM user_question_memory;
--- SELECT COUNT(*) AS post_count FROM question_post;
--- SELECT COUNT(*) AS comment_count FROM comment;
--- SELECT COUNT(*) AS moderation_count FROM moderation_record;
+DROP TEMPORARY TABLE IF EXISTS tmp_quizzes;
+DROP TEMPORARY TABLE IF EXISTS tmp_questions;
+DROP TEMPORARY TABLE IF EXISTS tmp_topics;
+DROP TEMPORARY TABLE IF EXISTS tmp_subjects;
